@@ -1,0 +1,25 @@
+<Solution>
+  <Folder Name="/src/">
+    <File Path=".gitignore" />
+    <File Path="src/.env" />
+    <File Path="src/AGENTS.md" />
+    <File Path="src/docker-compose.yaml" />
+    <File Path="src/example.env" />
+  </Folder>
+  <Folder Name="/src/Backend/">
+    <Project Path="src/Backend/UrbanShade.API/UrbanShade.API.csproj" Id="b4d27f0c-be12-4617-baad-543b258880bd" />
+    <Project Path="src/Backend/UrbanShade.Application/UrbanShade.Application.csproj" Id="53099097-d828-48a7-a48f-a42be7544ea7" />
+    <Project Path="src/Backend/UrbanShade.Domain/UrbanShade.Domain.csproj" Id="e6c08d26-fcc8-4813-b2da-b3884365b8e1" />
+    <Project Path="src/Backend/UrbanShade.Infraestructure/UrbanShade.Infraestructure.csproj" Id="59e59afd-f7b4-42dc-886a-8f5f42c8101f" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/UrbanShade.Communication/UrbanShade.Communication.csproj" Id="c74d462f-1a4e-4989-889a-11d63f098431" />
+    <Project Path="src/Shared/UrbanShade.Exceptions/UrbanShade.Exceptions.csproj" Id="86b7659c-d3f6-4747-8be2-13f351e394fb" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CommomTestsUtilities/CommomTestsUtilities.csproj" Id="7187768a-05c2-444d-9660-6559273361b3" />
+    <Project Path="tests/UseCases.Tests/UseCases.Tests.csproj" Id="a1864bdf-bde2-487c-af76-154a9ff9bedf" />
+    <Project Path="tests/Validator.Tests/Validator.Tests.csproj" Id="05d71a77-1cbb-4e93-838c-4b205b101092" />
+    <Project Path="tests/WebApi.Tests/WebApi.Tests.csproj" Id="b76ce79a-92c5-4f85-87ed-ef2005d5ba45" />
+  </Folder>
+</Solution>
