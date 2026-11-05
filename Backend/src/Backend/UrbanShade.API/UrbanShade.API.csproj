@@ -8,6 +8,14 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\UrbanShade.Communication\UrbanShade.Communication.csproj" />
+    <ProjectReference Include="..\..\Shared\UrbanShade.Exceptions\UrbanShade.Exceptions.csproj" />
+    <ProjectReference Include="..\UrbanShade.Application\UrbanShade.Application.csproj" />
+    <ProjectReference Include="..\UrbanShade.Infraestructure\UrbanShade.Infraestructure.csproj" />
   </ItemGroup>
 
 </Project>

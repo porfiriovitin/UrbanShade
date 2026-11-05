@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Shared\UrbanShade.Communication\UrbanShade.Communication.csproj" />
+    <ProjectReference Include="..\UrbanShade.Domain\UrbanShade.Domain.csproj" />
+  </ItemGroup>
+
 </Project>

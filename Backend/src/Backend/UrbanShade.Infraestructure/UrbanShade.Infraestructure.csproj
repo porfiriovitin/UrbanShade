@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\UrbanShade.Domain\UrbanShade.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
