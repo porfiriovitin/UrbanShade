@@ -1,5 +1,6 @@
 using UrbanShade.API.Filters;
 using UrbanShade.Infraestructure;
+using UrbanShade.Infraestructure.Migrations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+await ExecuteMigrations();
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
@@ -25,3 +28,12 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+async Task ExecuteMigrations()
+{
+
+    await using var scope = app.Services.CreateAsyncScope();
+
+    await DatabaseMigration.ExecuteMigrations(scope.ServiceProvider);
+
+}
