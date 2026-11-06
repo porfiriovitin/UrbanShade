@@ -1,10 +1,13 @@
 <Solution>
+  <Folder Name="/Itens de Solução/">
+    <File Path="ef_core.txt" />
+  </Folder>
   <Folder Name="/src/">
+    <File Path=".env" />
     <File Path=".gitignore" />
-    <File Path="src/.env" />
+    <File Path="docker-compose.yaml" />
     <File Path="src/AGENTS.md" />
-    <File Path="src/docker-compose.yaml" />
-    <File Path="src/example.env" />
+    <File Path="example.env" />
   </Folder>
   <Folder Name="/src/Backend/">
     <Project Path="src/Backend/UrbanShade.API/UrbanShade.API.csproj" Id="b4d27f0c-be12-4617-baad-543b258880bd" />

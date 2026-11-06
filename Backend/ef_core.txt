@@ -1,0 +1,7 @@
+EF CORE worksheet (i always forget the commands lol)
+
+1. Create:
+dotnet ef migrations add NOME DA MIGRATION --project .\src\Backend\UrbanShade.Infraestructure --startup-project .\src\Backend\UrbanShade.API --context UrbanShadeDbContext --output-dir Migrations
+
+2.Update Db:
+dotnet ef database update --project .\src\Backend\UrbanShade.Infraestructure --startup-project .\src\Backend\UrbanShade.API --context UrbanShadeDbContext
