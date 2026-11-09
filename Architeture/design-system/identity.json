@@ -1,0 +1,232 @@
+
+{
+  "project": {
+    "name": "UrbanShade",
+    "platform": "Android",
+    "language": "Kotlin",
+    "uiFramework": "Jetpack Compose",
+    "designSystem": "Material Design 3",
+    "type": "Native Mobile Application"
+  },
+  "brand": {
+    "name": "UrbanShade",
+    "tagline": "Tecnologia urbana para cidades mais verdes e agradáveis.",
+    "description": "Aplicativo de inteligência urbana focado em conforto térmico, áreas verdes, mobilidade e sustentabilidade.",
+    "personality": [
+      "modern",
+      "minimal",
+      "sustainable",
+      "friendly",
+      "professional",
+      "trustworthy"
+    ],
+    "visualStyle": "Clean, flat, geometric, modern",
+    "avoid": [
+      "glassmorphism",
+      "unnecessary gradients",
+      "heavy shadows",
+      "excessive animations",
+      "decorative 3D elements",
+      "visual clutter"
+    ]
+  },
+  "colors": {
+    "brand": {
+      "primary": "#102D35",
+      "secondary": "#EBF7F5",
+      "accent": "#D9FA57"
+    },
+    "neutral": {
+      "white": "#FFFFFF",
+      "50": "#F4F9F8",
+      "100": "#DDEDEC",
+      "200": "#A8C2C6",
+      "400": "#3A5A60",
+      "500": "#1F3F46"
+    },
+    "semantic": {
+      "success": "#68BD92",
+      "warning": "#F5C451",
+      "error": "#F27676",
+      "info": "#70C9E5"
+    },
+    "themes": {
+      "default": "dark",
+      "dark": {
+        "primary": "#D9FA57",
+        "onPrimary": "#102D35",
+        "secondary": "#EBF7F5",
+        "onSecondary": "#102D35",
+        "background": "#102D35",
+        "onBackground": "#EBF7F5",
+        "surface": "#173A42",
+        "onSurface": "#EBF7F5",
+        "surfaceVariant": "#1F454D",
+        "onSurfaceVariant": "#A8C2C6",
+        "outline": "#3A5A60",
+        "error": "#F27676"
+      },
+      "light": {
+        "primary": "#102D35",
+        "onPrimary": "#EBF7F5",
+        "secondary": "#D9FA57",
+        "onSecondary": "#102D35",
+        "background": "#EBF7F5",
+        "onBackground": "#102D35",
+        "surface": "#FFFFFF",
+        "onSurface": "#102D35",
+        "surfaceVariant": "#F4F9F8",
+        "onSurfaceVariant": "#3A5A60",
+        "outline": "#A8C2C6",
+        "error": "#B3261E"
+      }
+    }
+  },
+  "typography": {
+    "fontFamily": "League Spartan",
+    "source": "Local Android font resources",
+    "resourceDirectory": "app/src/main/res/font/",
+    "fontFiles": {
+      "regular": "league_spartan_regular.ttf",
+      "medium": "league_spartan_medium.ttf",
+      "semiBold": "league_spartan_semibold.ttf",
+      "bold": "league_spartan_bold.ttf",
+      "extraBold": "league_spartan_extrabold.ttf"
+    },
+    "weights": {
+      "regular": 400,
+      "medium": 500,
+      "semiBold": 600,
+      "bold": 700,
+      "extraBold": 800
+    },
+    "scale": {
+      "displayLarge": {
+        "sizeSp": 48,
+        "lineHeightSp": 52,
+        "weight": 800
+      },
+      "headlineLarge": {
+        "sizeSp": 32,
+        "lineHeightSp": 38,
+        "weight": 700
+      },
+      "headlineMedium": {
+        "sizeSp": 28,
+        "lineHeightSp": 34,
+        "weight": 700
+      },
+      "titleLarge": {
+        "sizeSp": 24,
+        "lineHeightSp": 30,
+        "weight": 700
+      },
+      "titleMedium": {
+        "sizeSp": 20,
+        "lineHeightSp": 26,
+        "weight": 600
+      },
+      "bodyLarge": {
+        "sizeSp": 16,
+        "lineHeightSp": 24,
+        "weight": 400
+      },
+      "bodyMedium": {
+        "sizeSp": 14,
+        "lineHeightSp": 20,
+        "weight": 400
+      },
+      "labelLarge": {
+        "sizeSp": 14,
+        "lineHeightSp": 20,
+        "weight": 600
+      },
+      "labelSmall": {
+        "sizeSp": 12,
+        "lineHeightSp": 16,
+        "weight": 500
+      }
+    }
+  },
+  "icons": {
+    "library": "Material Symbols Outlined",
+    "style": "outlined",
+    "defaultSizeDp": 24,
+    "strokeStyle": "rounded",
+    "colors": {
+      "default": "#EBF7F5",
+      "active": "#D9FA57",
+      "disabled": "#A8C2C6"
+    },
+    "usage": {
+      "home": "home",
+      "map": "map",
+      "location": "location_on",
+      "greenAreas": "park",
+      "sustainability": "eco",
+      "mobility": "directions_bike",
+      "notifications": "notifications",
+      "profile": "person",
+      "settings": "settings",
+      "search": "search",
+      "add": "add",
+      "warning": "warning",
+      "calendar": "calendar_month"
+    }
+  },
+  "maps": {
+    "style": "Minimal and clean",
+    "marker": {
+      "background": "#D9FA57",
+      "icon": "#102D35",
+      "selectedScale": 1.15
+    },
+    "overlays": {
+      "greenAreas": "#68BD92",
+      "highlight": "#D9FA57",
+      "opacity": 0.25
+    },
+    "controls": {
+      "background": "#102D35",
+      "iconColor": "#EBF7F5",
+      "radiusDp": 16
+    }
+  },
+  "motion": {
+    "style": "Subtle and purposeful",
+    "durationMs": {
+      "fast": 150,
+      "normal": 250,
+      "slow": 350
+    },
+    "respectReducedMotion": true,
+    "avoid": [
+      "bouncing animations",
+      "unnecessary transitions",
+      "excessive motion"
+    ]
+  },
+  "accessibility": {
+    "minimumTouchTargetDp": 48,
+    "supportDynamicFontScaling": true,
+    "supportScreenReaders": true,
+    "contentDescriptionsRequired": true,
+    "minimumContrastRatio": 4.5,
+    "doNotUseColorAsOnlyIndicator": true
+  },
+  "designRules": [
+    "Use Jetpack Compose for all UI components.",
+    "Use Material Design 3 as the component foundation.",
+    "Use League Spartan as the primary font.",
+    "Use dp for dimensions and sp for text.",
+    "Default to dark theme.",
+    "Prefer flat surfaces over elevated components.",
+    "Use accent green primarily for actions and highlights.",
+    "Maintain consistent spacing and rounded corners.",
+    "Prioritize readability and accessibility.",
+    "Follow Android edge-to-edge and system insets conventions.",
+    "Use native Android navigation patterns.",
+    "Keep the interface clean, minimal and functional.",
+    "Never introduce new brand colors without justification."
+  ]
+}
