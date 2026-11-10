@@ -2,7 +2,7 @@
 
 public enum ResponseStatus
 {
-    Sucess,
+    Success,
     Error,
     Unauthorized,
 }

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Filters;
 using UrbanShade.Communication.Enums;
 using UrbanShade.Communication.Responses;
+using UrbanShade.Exceptions;
 using UrbanShade.Exceptions.ExceptionsBase;
 
 namespace UrbanShade.API.Filters;
@@ -13,7 +14,12 @@ public class ExceptionFilter : IExceptionFilter
         int statusCode;
         List<string> errorMessages = [];
 
-        if (context.Exception is UrbanShadeBaseException baseException)
+        if (context.Exception is EmailAlreadyRegisteredException emailException)
+        {
+            statusCode = StatusCodes.Status409Conflict;
+            errorMessages.Add(emailException.Message);
+        }
+        else if (context.Exception is UrbanShadeBaseException baseException)
         {
             statusCode = (int)baseException.GetStatusCode();
             errorMessages = baseException.GetErrorMessages();

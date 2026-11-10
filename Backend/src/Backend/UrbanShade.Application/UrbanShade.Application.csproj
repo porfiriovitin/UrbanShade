@@ -7,8 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="12.2.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.14" />
+    <ProjectReference Include="..\..\Shared\UrbanShade.Exceptions\UrbanShade.Exceptions.csproj" />
     <ProjectReference Include="..\..\Shared\UrbanShade.Communication\UrbanShade.Communication.csproj" />
     <ProjectReference Include="..\UrbanShade.Domain\UrbanShade.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="UseCases\Authentication\Login\WithEmailAndPassword\" />
+    <Folder Include="UseCases\Authentication\Register\" />
   </ItemGroup>
 
 </Project>

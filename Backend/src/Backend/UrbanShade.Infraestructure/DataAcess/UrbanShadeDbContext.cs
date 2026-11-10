@@ -19,6 +19,10 @@ internal class UrbanShadeDbContext : DbContext
             .HasIndex(user => user.Email)
             .IsUnique();
 
+        modelBuilder.Entity<User>().Property(user => user.Role).HasConversion<string>();
+        modelBuilder.Entity<RefreshTokens>().HasIndex(token => token.Token).IsUnique();
+        modelBuilder.Entity<RefreshTokens>().HasIndex(token => token.FamilyId);
+
         modelBuilder.Entity<RefreshTokens>().HasOne<User>().WithMany().HasForeignKey(rt => rt.UserId).OnDelete(DeleteBehavior.Cascade);
     }
 
