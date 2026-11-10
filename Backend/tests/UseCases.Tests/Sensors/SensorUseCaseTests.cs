@@ -1,0 +1,97 @@
+using System.Net;
+using System.Text.Json;
+using UrbanShade.Application.UseCases.Sensors.Register;
+using UrbanShade.Application.UseCases.Sensors.Update;
+using UrbanShade.Application.UseCases.Sensors.UpdateStatus;
+using UrbanShade.Application.UseCases.Sensors.Delete;
+using UrbanShade.Application.UseCases.Sensors.GetById;
+using UrbanShade.Communication.Requests.Sensors;
+using UrbanShade.Domain.Entities;
+using UrbanShade.Domain.Enums;
+using UrbanShade.Domain.Repositories;
+using UrbanShade.Exceptions;
+
+namespace UseCases.Tests.Sensors;
+
+public sealed class SensorUseCaseTests
+{
+    [Fact]
+    public async Task Register_NormalizesAndSavesActiveSensor()
+    {
+        var store = new TestStore();
+        var response = await new RegisterSensorUseCase(store, store).Execute(new RegisterSensorRequest
+        {
+            Code = " urb-001 ", Name = " Sensor ", Latitude = -22, Longitude = -44
+        });
+        Assert.Equal("URB-001", response.Code);
+        Assert.Equal("Sensor", response.Name);
+        Assert.Equal("ACTIVE", response.Status);
+        Assert.True(store.Saved);
+    }
+
+    [Fact]
+    public async Task Register_RejectsDuplicateWithoutSaving()
+    {
+        var store = new TestStore { Duplicate = true };
+        var exception = await Assert.ThrowsAsync<SensorException>(() => new RegisterSensorUseCase(store, store).Execute(
+            new RegisterSensorRequest { Code = "URB-001", Name = "Sensor", Latitude = 0, Longitude = 0 }));
+        Assert.Equal(HttpStatusCode.Conflict, exception.GetStatusCode());
+        Assert.False(store.Saved);
+    }
+
+    [Fact]
+    public async Task Update_PreservesOmittedFieldsAndClearsOptionalFields()
+    {
+        var store = new TestStore { Sensor = new Sensor("URB-001", "Sensor", "Description", -22, -44, DateTime.UtcNow) };
+        var request = JsonSerializer.Deserialize<UpdateSensorRequest>("""{"description":null,"installedAt":null,"latitude":-23}""", new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+        var response = await new UpdateSensorUseCase(store, store).Execute(store.Sensor.Id, request);
+        Assert.Equal("URB-001", response.Code);
+        Assert.Equal("Sensor", response.Name);
+        Assert.Equal(-23, response.Latitude);
+        Assert.Equal(-44, response.Longitude);
+        Assert.Null(response.Description);
+        Assert.Null(response.InstalledAt);
+        Assert.NotNull(response.UpdatedAt);
+        Assert.True(store.Saved);
+    }
+
+    [Theory]
+    [InlineData(SensorStatus.INACTIVE)]
+    [InlineData(SensorStatus.MAINTENANCE)]
+    public async Task Status_HidesSensorFromCommonUserButNotAdministrator(SensorStatus status)
+    {
+        var store = new TestStore { Sensor = new Sensor("URB-001", "Sensor", null, 0, 0, null) };
+        await new UpdateSensorStatusUseCase(store, store).Execute(store.Sensor.Id, new UpdateSensorStatusRequest { Status = status.ToString() });
+        var useCase = new GetSensorByIdUseCase(store);
+        var exception = await Assert.ThrowsAsync<SensorException>(() => useCase.Execute(store.Sensor.Id, false));
+        Assert.Equal(HttpStatusCode.NotFound, exception.GetStatusCode());
+        Assert.Equal(status.ToString(), (await useCase.Execute(store.Sensor.Id, true)).Status);
+        Assert.True(store.Sensor.Active);
+    }
+
+    [Fact]
+    public async Task Delete_PreservesRecordAndRejectsFurtherOperations()
+    {
+        var store = new TestStore { Sensor = new Sensor("URB-001", "Sensor", null, 0, 0, null) };
+        var id = store.Sensor.Id;
+        await new DeleteSensorUseCase(store, store).Execute(id);
+        Assert.False(store.Sensor.Active);
+        Assert.NotNull(store.Sensor.DeletedAt);
+        Assert.Equal(store.Sensor.DeletedAt, store.Sensor.UpdatedAt);
+        var exception = await Assert.ThrowsAsync<SensorException>(() => new UpdateSensorUseCase(store, store).Execute(id, new UpdateSensorRequest { Name = "New" }));
+        Assert.Equal(HttpStatusCode.NotFound, exception.GetStatusCode());
+    }
+
+    private sealed class TestStore : ISensorRepository, IUnitOfWork
+    {
+        public Sensor? Sensor { get; set; }
+        public bool Duplicate { get; set; }
+        public bool Saved { get; private set; }
+        public Task<Sensor?> FindById(Guid id, CancellationToken cancellationToken) => Task.FromResult(Sensor?.Id == id && Sensor.DeletedAt is null ? Sensor : null);
+        public Task<bool> CodeExists(string code, Guid? exceptId, CancellationToken cancellationToken) => Task.FromResult(Duplicate);
+        public Task<List<Sensor>> GetAll(bool activeOnly, SensorStatus? status, string? code, string? name, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public void Add(Sensor sensor) => Sensor = sensor;
+        public Task SaveChanges(CancellationToken cancellationToken) { Saved = true; return Task.CompletedTask; }
+        public Task<ITransaction> BeginTransaction(CancellationToken cancellationToken) => throw new NotSupportedException();
+    }
+}

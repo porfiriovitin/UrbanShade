@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using UrbanShade.Infraestructure.DataAcess;
+using UrbanShade.Infraestructure.DataAcess.Seeds;
 
 namespace UrbanShade.Infraestructure.Migrations;
 
@@ -11,5 +12,6 @@ public class DatabaseMigration
         var dbContext = serviceProvider.GetRequiredService<UrbanShadeDbContext>();
 
         await dbContext.Database.MigrateAsync();
+        await SensorSeed.Execute(dbContext);
     }
 }

@@ -9,11 +9,19 @@ internal class UrbanShadeDbContext : DbContext
     public UrbanShadeDbContext(DbContextOptions<UrbanShadeDbContext> options) : base(options){ }
 
     public DbSet<User> Users { get; set; }
+    public DbSet<Sensor> Sensors { get; set; }
     public DbSet<RefreshTokens> RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<Sensor>().HasQueryFilter(sensor => sensor.DeletedAt == null);
+        modelBuilder.Entity<Sensor>().HasIndex(sensor => sensor.Code).IsUnique();
+        modelBuilder.Entity<Sensor>().Property(sensor => sensor.Code).HasMaxLength(50);
+        modelBuilder.Entity<Sensor>().Property(sensor => sensor.Name).HasMaxLength(150);
+        modelBuilder.Entity<Sensor>().Property(sensor => sensor.Description).HasMaxLength(500);
+        modelBuilder.Entity<Sensor>().Property(sensor => sensor.Status).HasConversion<string>();
 
         modelBuilder.Entity<User>()
             .HasIndex(user => user.Email)

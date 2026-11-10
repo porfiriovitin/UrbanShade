@@ -1,4 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
+using UrbanShade.Application.UseCases.Sensors.Register;
+using UrbanShade.Application.UseCases.Sensors.Update;
+using UrbanShade.Application.UseCases.Sensors.UpdateStatus;
+using UrbanShade.Application.UseCases.Sensors.Delete;
+using UrbanShade.Application.UseCases.Sensors.GetAll;
+using UrbanShade.Application.UseCases.Sensors.GetById;
 using UrbanShade.Application.UseCases.Authentication;
 using UrbanShade.Application.UseCases.Authentication.Login.WithEmailAndPassword;
 using UrbanShade.Application.UseCases.Authentication.Register;
@@ -13,6 +19,12 @@ public static class DependencyInjectionExtension
     public static void AddApplication(this IServiceCollection services)
     {
         services.AddScoped<TokenIssuer>();
+        services.AddScoped<IRegisterSensorUseCase, RegisterSensorUseCase>();
+        services.AddScoped<IUpdateSensorUseCase, UpdateSensorUseCase>();
+        services.AddScoped<IUpdateSensorStatusUseCase, UpdateSensorStatusUseCase>();
+        services.AddScoped<IDeleteSensorUseCase, DeleteSensorUseCase>();
+        services.AddScoped<IGetSensorsUseCase, GetSensorsUseCase>();
+        services.AddScoped<IGetSensorByIdUseCase, GetSensorByIdUseCase>();
         services.AddScoped<IRegisterUseCase, RegisterUseCase>();
         services.AddScoped<ILoginWithEmailAndPasswordUseCase, LoginWithEmailAndPasswordUseCase>();
         services.AddScoped<IRefreshUseCase, RefreshUseCase>();

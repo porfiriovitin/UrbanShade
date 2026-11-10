@@ -8,9 +8,6 @@ public class User : EntityBase
 
     public User(string name, string email, string hashedPassword)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        ArgumentException.ThrowIfNullOrWhiteSpace(email);
-        ArgumentException.ThrowIfNullOrWhiteSpace(hashedPassword);
         Name = name.Trim();
         Email = email.Trim().ToLowerInvariant();
         HashedPassword = hashedPassword;

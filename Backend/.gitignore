@@ -8,6 +8,9 @@
 
 .agents/
 
+misc/
+
+
 # app settings.
 appsettings.Development.json
 src/Backend/MyRecipeBook.API/appsettings.Development.json

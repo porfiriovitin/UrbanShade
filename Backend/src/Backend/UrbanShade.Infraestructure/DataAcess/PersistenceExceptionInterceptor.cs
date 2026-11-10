@@ -23,6 +23,18 @@ internal sealed class PersistenceExceptionInterceptor : SaveChangesInterceptor
                 InnerException: PostgresException
                 {
                     SqlState: PostgresErrorCodes.UniqueViolation,
+                    ConstraintName: "IX_Sensors_Code"
+                }
+            })
+        {
+            throw new SensorException(System.Net.HttpStatusCode.Conflict, "Sensor code already registered.");
+        }
+
+        if (exception is DbUpdateException
+            {
+                InnerException: PostgresException
+                {
+                    SqlState: PostgresErrorCodes.UniqueViolation,
                     ConstraintName: "IX_Users_Email"
                 }
             })

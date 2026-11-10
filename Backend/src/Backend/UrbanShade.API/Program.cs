@@ -2,6 +2,7 @@ using UrbanShade.API.Filters;
 using UrbanShade.API.Authentication;
 using UrbanShade.Application;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi;
 using UrbanShade.Communication.Responses;
 using UrbanShade.Communication.Enums;
 using UrbanShade.Infraestructure;
@@ -10,7 +11,23 @@ using UrbanShade.Infraestructure.Migrations;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    /// :: Define the JWT Bearer authentication scheme for Swagger.
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "Enter the access token."
+    });
+
+    /// :: Include the bearer token in requests sent through Swagger.
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+    });
+});
 
 builder.Services.AddMvc(options => { options.Filters.Add<ExceptionFilter>(); });
 
