@@ -27,12 +27,12 @@ public record UserResponse
 public record AuthenticationResponse
 {
     public string AccessToken { get; init; }
-    public DateTime AccessTokenExpiresAt { get; init; }
+    public string AccessTokenExpiresAt { get; init; }
     public string RefreshToken { get; init; }
-    public DateTime RefreshTokenExpiresAt { get; init; }
+    public string RefreshTokenExpiresAt { get; init; }
     public UserResponse User { get; init; }
 
-    public AuthenticationResponse(string AccessToken, DateTime AccessTokenExpiresAt, string RefreshToken, DateTime RefreshTokenExpiresAt, UserResponse User)
+    public AuthenticationResponse(string AccessToken, string AccessTokenExpiresAt, string RefreshToken, string RefreshTokenExpiresAt, UserResponse User)
     {
         this.AccessToken = AccessToken;
         this.AccessTokenExpiresAt = AccessTokenExpiresAt;
@@ -41,7 +41,7 @@ public record AuthenticationResponse
         this.User = User;
     }
 
-    public void Deconstruct(out string AccessToken, out DateTime AccessTokenExpiresAt, out string RefreshToken, out DateTime RefreshTokenExpiresAt, out UserResponse User)
+    public void Deconstruct(out string AccessToken, out string AccessTokenExpiresAt, out string RefreshToken, out string RefreshTokenExpiresAt, out UserResponse User)
     {
         AccessToken = this.AccessToken;
         AccessTokenExpiresAt = this.AccessTokenExpiresAt;

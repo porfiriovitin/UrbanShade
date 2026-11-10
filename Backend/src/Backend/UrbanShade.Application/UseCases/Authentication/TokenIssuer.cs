@@ -1,3 +1,4 @@
+using System.Globalization;
 using UrbanShade.Communication.Responses.Authentication;
 using UrbanShade.Domain.Entities;
 using UrbanShade.Domain.Repositories;
@@ -25,7 +26,9 @@ public sealed class TokenIssuer
         /// :: If no family ID is provided, generate a new one for the refresh token.
         _refreshTokens.Add(new RefreshTokens(refresh.Hash, user.Id, refresh.ExpiresAt, familyId));
 
-        return new(access.Value, access.ExpiresAt, refresh.Value, refresh.ExpiresAt, ToResponse(user));
+        /// :: Format token expiration dates for the authentication response.
+        return new(access.Value, access.ExpiresAt.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture),
+            refresh.Value, refresh.ExpiresAt.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture), ToResponse(user));
     }
 
     public static UserResponse ToResponse(User user) => new(user.Id, user.Name, user.Email, user.Role.ToString());
