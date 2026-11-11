@@ -14,6 +14,10 @@ public class GreenArea : EntityBase
         EstimatedAreaSquareMeters = area;
         ReferenceDate = referenceDate;
     }
+    public string? OsmElementType { get; private set; }
+    public long? OsmElementId { get; private set; }
+    public DateTime? ImportedAt { get; private set; }
+    public string SourceMetadata { get; private set; } = "{}";
     public string? Name { get; private set; }
     public Geometry Geometry { get; private set; } = null!;
     public GreenAreaSource Source { get; private set; }

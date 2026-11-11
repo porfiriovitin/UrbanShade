@@ -32,5 +32,5 @@ public sealed class RefreshGeoRegionUseCase : IRefreshGeoRegionUseCase
     }
     public async Task<GeoJobResponse> GetJob(Guid id, CancellationToken cancellationToken) =>
         ToResponse(await _jobs.FindById(id, cancellationToken) ?? throw new GeoException(HttpStatusCode.NotFound, "Job not found."));
-    public static GeoJobResponse ToResponse(GeoAnalysisJob job) => new(job.Id, job.GeoRegionId, job.Status.ToString().ToUpperInvariant(), job.CreatedAt, job.StartedAt, job.FinishedAt, job.ErrorMessage, job.ResultSummary, job.Attempts);
+    public static GeoJobResponse ToResponse(GeoAnalysisJob job) => new(job.Id, job.GeoRegionId, job.Status.ToString().ToUpperInvariant(), job.CreatedAt, job.StartedAt, job.FinishedAt, job.ErrorMessage, job.ResultSummary, job.Attempts, job.JobType == UrbanShade.Domain.Enums.GeoJobType.OpenStreetMap ? "OPENSTREETMAP" : "SATELLITE");
 }

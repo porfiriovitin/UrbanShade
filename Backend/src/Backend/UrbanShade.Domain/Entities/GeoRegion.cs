@@ -15,6 +15,8 @@ public class GeoRegion : EntityBase
     public string? Description { get; private set; }
     public Geometry Boundary { get; private set; } = null!;
     public int BoundaryVersion { get; private set; }
+    public DateTime? OpenStreetMapReferenceDate { get; private set; }
+    public DateTime? OpenStreetMapRequestedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
     public void Update(string name, string? description, Geometry boundary)
     {

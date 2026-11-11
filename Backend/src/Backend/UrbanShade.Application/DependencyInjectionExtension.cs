@@ -1,3 +1,5 @@
+using UrbanShade.Application.UseCases.GreenAreas.Import;
+using UrbanShade.Application.UseCases.GreenAreas.Refresh;
 using UrbanShade.Application.UseCases.GreenAreas.Query;
 using UrbanShade.Application.UseCases.SatelliteAnalyses.Query;
 using UrbanShade.Application.UseCases.GeoAnalysisJobs.ProcessPending;
@@ -46,6 +48,8 @@ public static class DependencyInjectionExtension
 {
     public static void AddApplication(this IServiceCollection services)
     {
+        services.AddScoped<IImportOpenStreetMapUseCase, ImportOpenStreetMapUseCase>();
+        services.AddScoped<IRefreshOpenStreetMapUseCase, RefreshOpenStreetMapUseCase>();
         services.AddScoped<IQueryGreenAreasUseCase, QueryGreenAreasUseCase>();
         services.AddScoped<IQuerySatelliteAnalysesUseCase, QuerySatelliteAnalysesUseCase>();
         services.AddScoped<IProcessPendingGeoAnalysesUseCase, ProcessPendingGeoAnalysesUseCase>();

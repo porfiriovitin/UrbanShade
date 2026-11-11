@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace UrbanShade.Communication.Responses.Geo;
 
 public sealed record GeoRegionResponse(Guid Id, Guid CityId, string Name, string? Description, JsonElement Boundary, bool IsActive, int BoundaryVersion, DateTime CreatedAt, DateTime? UpdatedAt);
-public sealed record GeoJobResponse(Guid Id, Guid GeoRegionId, string Status, DateTime CreatedAt, DateTime? StartedAt, DateTime? FinishedAt, string? ErrorMessage, string? ResultSummary, int Attempts);
+public sealed record GeoJobResponse(Guid Id, Guid GeoRegionId, string Status, DateTime CreatedAt, DateTime? StartedAt, DateTime? FinishedAt, string? ErrorMessage, string? ResultSummary, int Attempts, string JobType = "SATELLITE");
 public sealed record SatelliteAnalysisResponse(Guid Id, Guid RegionId, string Source, string AnalysisType, decimal? MeanValue, decimal? MinValue, decimal? MaxValue,
     decimal? VegetationCoveragePercent, decimal? VegetationAreaSquareMeters, decimal ValidPixelPercent, DateTime ObservationStartAt, DateTime ObservationEndAt,
     DateTime ProcessedAt, string AlgorithmVersion, string DatasetId, int BoundaryVersion);

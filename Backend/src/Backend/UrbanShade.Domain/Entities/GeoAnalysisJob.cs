@@ -6,8 +6,9 @@ namespace UrbanShade.Domain.Entities;
 public class GeoAnalysisJob : EntityBase
 {
     private GeoAnalysisJob() { }
-    public GeoAnalysisJob(GeoRegion region, DateTime start, DateTime end, string algorithmVersion, string parameters)
+    public GeoAnalysisJob(GeoRegion region, DateTime start, DateTime end, string algorithmVersion, string parameters, GeoJobType jobType = GeoJobType.Satellite)
     {
+        JobType = jobType;
         GeoRegionId = region.Id;
         Boundary = (Geometry)region.Boundary.Copy();
         BoundaryVersion = region.BoundaryVersion;
@@ -16,6 +17,7 @@ public class GeoAnalysisJob : EntityBase
         AlgorithmVersion = algorithmVersion;
         Parameters = parameters;
     }
+    public GeoJobType JobType { get; private set; }
     public Guid GeoRegionId { get; private set; }
     public Geometry Boundary { get; private set; } = null!;
     public int BoundaryVersion { get; private set; }

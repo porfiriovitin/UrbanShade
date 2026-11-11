@@ -19,6 +19,11 @@ public static class DependencyInjectionExtension
     public static void AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         AddDbContext(services, configuration);
+        var openStreetMap = configuration.GetSection("OpenStreetMap").Get<OpenStreetMapSettings>() ?? new OpenStreetMapSettings();
+        openStreetMap.Validate();
+        services.AddSingleton(openStreetMap);
+        services.AddHttpClient<IOpenStreetMapService, OverpassService>();
+        services.AddHostedService<OpenStreetMapBackgroundService>();
         var geo = configuration.GetSection("GoogleEarthEngine").Get<GeoAnalysisSettings>() ?? new GeoAnalysisSettings();
         geo.Validate();
         services.AddSingleton(geo);

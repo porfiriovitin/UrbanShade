@@ -4,6 +4,7 @@ using System.Text.Json;
 using NetTopologySuite.Geometries;
 using UrbanShade.Application.UseCases.GeoRegions;
 using UrbanShade.Domain.Geospatial;
+using UrbanShade.Domain.Enums;
 using UrbanShade.Domain.Repositories;
 using UrbanShade.Exceptions;
 
@@ -28,13 +29,34 @@ public sealed class QueryGreenAreasUseCase : IQueryGreenAreasUseCase
             type = "FeatureCollection",
             page,
             pageSize,
+            sources = new
+            {
+                openStreetMap = new
+                {
+                    attribution = "\u00a9 OpenStreetMap contributors",
+                    attributionUrl = "https://www.openstreetmap.org/copyright",
+                    license = "ODbL-1.0",
+                    licenseUrl = "https://opendatacommons.org/licenses/odbl/1-0/"
+                }
+            },
             features = areas.Select(area => new
             {
                 type = "Feature",
                 id = area.Id,
                 geometry = GeoJsonGeometry.Write(area.Geometry),
                 properties = new
-                { name = area.Name, source = area.Source.ToString().ToUpperInvariant(), estimatedAreaSquareMeters = area.EstimatedAreaSquareMeters, referenceDate = area.ReferenceDate, regionId = area.GeoRegionId }
+                {
+                    name = area.Name,
+                    source = area.Source.ToString().ToUpperInvariant(),
+                    estimatedAreaSquareMeters = area.EstimatedAreaSquareMeters,
+                    referenceDate = area.ReferenceDate,
+                    importedAt = area.ImportedAt,
+                    regionId = area.GeoRegionId,
+                    osmElementType = area.OsmElementType,
+                    osmElementId = area.OsmElementId,
+                    osmUrl = area.OsmElementId.HasValue ? $"https://www.openstreetmap.org/{area.OsmElementType}/{area.OsmElementId}" : null,
+                    sourceTags = area.Source == GreenAreaSource.OpenStreetMap ? JsonSerializer.Deserialize<JsonElement>(area.SourceMetadata) : (JsonElement?)null
+                }
             })
         });
     }

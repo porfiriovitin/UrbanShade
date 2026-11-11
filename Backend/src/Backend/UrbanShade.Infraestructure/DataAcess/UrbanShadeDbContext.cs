@@ -21,6 +21,7 @@ internal class UrbanShadeDbContext : DbContext
     public DbSet<SatelliteAnalysis> SatelliteAnalyses { get; set; }
     public DbSet<GeoAnalysisJob> GeoAnalysisJobs { get; set; }
     public DbSet<GreenArea> GreenAreas { get; set; }
+    public DbSet<GreenAreaRegion> GreenAreaRegions { get; set; }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
@@ -42,13 +43,14 @@ internal class UrbanShadeDbContext : DbContext
         modelBuilder.Entity<GeoRegion>().HasIndex(region => region.Boundary).HasMethod("gist");
         modelBuilder.Entity<GeoRegion>().HasOne<City>().WithMany().HasForeignKey(region => region.CityId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<GeoAnalysisJob>().Property(job => job.Boundary).HasColumnType("geometry(Geometry,4326)");
+        modelBuilder.Entity<GeoAnalysisJob>().Property(job => job.JobType).HasConversion<string>().HasDefaultValue(UrbanShade.Domain.Enums.GeoJobType.Satellite);
         modelBuilder.Entity<GeoAnalysisJob>().Property(job => job.Status).HasConversion<string>();
         modelBuilder.Entity<GeoAnalysisJob>().Property(job => job.AlgorithmVersion).HasMaxLength(32);
         modelBuilder.Entity<GeoAnalysisJob>().Property(job => job.ErrorMessage).HasMaxLength(500);
         modelBuilder.Entity<GeoAnalysisJob>().Property(job => job.ResultSummary).HasMaxLength(500);
         modelBuilder.Entity<GeoAnalysisJob>().HasOne<GeoRegion>().WithMany().HasForeignKey(job => job.GeoRegionId).OnDelete(DeleteBehavior.Restrict);
-        modelBuilder.Entity<GeoAnalysisJob>().HasIndex(job => new { job.GeoRegionId, job.BoundaryVersion, job.ObservationStartAt, job.ObservationEndAt, job.AlgorithmVersion, job.Parameters }).IsUnique();
-        modelBuilder.Entity<GeoAnalysisJob>().HasIndex(job => new { job.Status, job.LeaseExpiresAt, job.CreatedAt });
+        modelBuilder.Entity<GeoAnalysisJob>().HasIndex(job => new { job.GeoRegionId, job.BoundaryVersion, job.ObservationStartAt, job.ObservationEndAt, job.AlgorithmVersion, job.Parameters, job.JobType }).IsUnique();
+        modelBuilder.Entity<GeoAnalysisJob>().HasIndex(job => new { job.JobType, job.Status, job.LeaseExpiresAt, job.CreatedAt });
         modelBuilder.Entity<SatelliteAnalysis>().Property(analysis => analysis.DataSource).HasConversion<string>();
         modelBuilder.Entity<SatelliteAnalysis>().Property(analysis => analysis.AnalysisType).HasConversion<string>();
         modelBuilder.Entity<SatelliteAnalysis>().Property(analysis => analysis.Metadata).HasColumnType("jsonb");
@@ -58,6 +60,13 @@ internal class UrbanShadeDbContext : DbContext
         modelBuilder.Entity<SatelliteAnalysis>().HasOne<GeoRegion>().WithMany().HasForeignKey(analysis => analysis.GeoRegionId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<SatelliteAnalysis>().HasOne<GeoAnalysisJob>().WithMany().HasForeignKey(analysis => analysis.GeoAnalysisJobId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<GreenArea>().Property(area => area.Geometry).HasColumnType("geometry(Geometry,4326)");
+        modelBuilder.Entity<GreenArea>().Property(area => area.OsmElementType).HasMaxLength(16);
+        modelBuilder.Entity<GreenArea>().Property(area => area.SourceMetadata).HasColumnType("jsonb").HasDefaultValue("{}");
+        modelBuilder.Entity<GreenArea>().HasIndex(area => new { area.OsmElementType, area.OsmElementId }).IsUnique()
+            .HasFilter("\"OsmElementType\" IS NOT NULL AND \"OsmElementId\" IS NOT NULL");
+        modelBuilder.Entity<GreenAreaRegion>().HasKey(link => new { link.GreenAreaId, link.GeoRegionId });
+        modelBuilder.Entity<GreenAreaRegion>().HasOne<GreenArea>().WithMany().HasForeignKey(link => link.GreenAreaId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<GreenAreaRegion>().HasOne<GeoRegion>().WithMany().HasForeignKey(link => link.GeoRegionId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<GreenArea>().Property(area => area.Source).HasConversion<string>();
         modelBuilder.Entity<GreenArea>().HasIndex(area => area.Geometry).HasMethod("gist");
         modelBuilder.Entity<GreenArea>().HasOne<GeoRegion>().WithMany().HasForeignKey(area => area.GeoRegionId).OnDelete(DeleteBehavior.Restrict);

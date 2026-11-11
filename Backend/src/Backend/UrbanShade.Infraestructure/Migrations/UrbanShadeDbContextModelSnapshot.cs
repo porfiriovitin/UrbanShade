@@ -96,6 +96,12 @@ namespace UrbanShade.Infraestructure.Migrations
                     b.Property<Guid>("GeoRegionId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("JobType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasDefaultValue("Satellite");
+
                     b.Property<DateTime?>("LeaseExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -125,9 +131,9 @@ namespace UrbanShade.Infraestructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Status", "LeaseExpiresAt", "CreatedAt");
+                    b.HasIndex("JobType", "Status", "LeaseExpiresAt", "CreatedAt");
 
-                    b.HasIndex("GeoRegionId", "BoundaryVersion", "ObservationStartAt", "ObservationEndAt", "AlgorithmVersion", "Parameters")
+                    b.HasIndex("GeoRegionId", "BoundaryVersion", "ObservationStartAt", "ObservationEndAt", "AlgorithmVersion", "Parameters", "JobType")
                         .IsUnique();
 
                     b.ToTable("GeoAnalysisJobs");
@@ -165,6 +171,12 @@ namespace UrbanShade.Infraestructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
+                    b.Property<DateTime?>("OpenStreetMapReferenceDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("OpenStreetMapRequestedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -201,8 +213,18 @@ namespace UrbanShade.Infraestructure.Migrations
                         .IsRequired()
                         .HasColumnType("geometry(Geometry,4326)");
 
+                    b.Property<DateTime?>("ImportedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Name")
                         .HasColumnType("text");
+
+                    b.Property<long?>("OsmElementId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("OsmElementType")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
 
                     b.Property<DateTime?>("ReferenceDate")
                         .HasColumnType("timestamp with time zone");
@@ -214,6 +236,12 @@ namespace UrbanShade.Infraestructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("SourceMetadata")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValue("{}");
+
                     b.HasKey("Id");
 
                     b.HasIndex("GeoRegionId");
@@ -224,7 +252,29 @@ namespace UrbanShade.Infraestructure.Migrations
 
                     b.HasIndex("SatelliteAnalysisId");
 
+                    b.HasIndex("OsmElementType", "OsmElementId")
+                        .IsUnique()
+                        .HasFilter("\"OsmElementType\" IS NOT NULL AND \"OsmElementId\" IS NOT NULL");
+
                     b.ToTable("GreenAreas");
+                });
+
+            modelBuilder.Entity("UrbanShade.Domain.Entities.GreenAreaRegion", b =>
+                {
+                    b.Property<Guid>("GreenAreaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("GeoRegionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BoundaryVersion")
+                        .HasColumnType("integer");
+
+                    b.HasKey("GreenAreaId", "GeoRegionId");
+
+                    b.HasIndex("GeoRegionId");
+
+                    b.ToTable("GreenAreaRegions");
                 });
 
             modelBuilder.Entity("UrbanShade.Domain.Entities.Organization", b =>
@@ -357,7 +407,6 @@ namespace UrbanShade.Infraestructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<int>("BoundaryVersion")
-                        .IsConcurrencyToken()
                         .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
@@ -631,6 +680,21 @@ namespace UrbanShade.Infraestructure.Migrations
                         .WithMany()
                         .HasForeignKey("SatelliteAnalysisId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("UrbanShade.Domain.Entities.GreenAreaRegion", b =>
+                {
+                    b.HasOne("UrbanShade.Domain.Entities.GeoRegion", null)
+                        .WithMany()
+                        .HasForeignKey("GeoRegionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("UrbanShade.Domain.Entities.GreenArea", null)
+                        .WithMany()
+                        .HasForeignKey("GreenAreaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("UrbanShade.Domain.Entities.OrganizationMember", b =>

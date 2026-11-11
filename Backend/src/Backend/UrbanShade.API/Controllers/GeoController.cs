@@ -7,6 +7,7 @@ using UrbanShade.Application.UseCases.GeoRegions.Update;
 using UrbanShade.Application.UseCases.GeoAnalysisJobs.Refresh;
 using UrbanShade.Application.UseCases.SatelliteAnalyses.Query;
 using UrbanShade.Application.UseCases.GreenAreas.Query;
+using UrbanShade.Application.UseCases.GreenAreas.Refresh;
 using UrbanShade.Communication.Enums;
 using UrbanShade.Communication.Requests.Geo;
 using UrbanShade.Communication.Responses;
@@ -63,6 +64,14 @@ public sealed class GeoController : ControllerBase
     public async Task<IActionResult> Refresh(Guid id, [FromServices] IRefreshGeoRegionUseCase useCase, CancellationToken cancellationToken, [FromBody] RefreshGeoRegionRequest? request = null)
     {
         var response = await useCase.Execute(id, request ?? new RefreshGeoRegionRequest(), cancellationToken);
+        return AcceptedAtAction(nameof(GetJob), new { id = response.Id }, Payload(response));
+    }
+    [HttpPost("regions/{id:guid}/refresh-green-areas")]
+    [Authorize(Policy = "PlatformAdministration")]
+    [EnableRateLimiting("GeoAdministration")]
+    public async Task<IActionResult> RefreshGreenAreas(Guid id, [FromServices] IRefreshOpenStreetMapUseCase useCase, CancellationToken cancellationToken)
+    {
+        var response = await useCase.Execute(id, cancellationToken);
         return AcceptedAtAction(nameof(GetJob), new { id = response.Id }, Payload(response));
     }
     [HttpGet("jobs/{id:guid}")]

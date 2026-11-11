@@ -21,6 +21,7 @@ public sealed class UrbanShadeApplicationFactory : WebApplicationFactory<Program
         builder.UseSetting("SensorSimulation:Enabled", "false");
         builder.UseSetting("ThermalAnalysis:Enabled", "false");
         builder.UseSetting("GoogleEarthEngine:Enabled", "false");
+        builder.UseSetting("OpenStreetMap:Enabled", "false");
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["ConnectionStrings:DbConnection"] = ConnectionString,
