@@ -15,10 +15,14 @@
     <Project Path="src/Backend/UrbanShade.Domain/UrbanShade.Domain.csproj" Id="e6c08d26-fcc8-4813-b2da-b3884365b8e1" />
     <Project Path="src/Backend/UrbanShade.Infraestructure/UrbanShade.Infraestructure.csproj" Id="59e59afd-f7b4-42dc-886a-8f5f42c8101f" />
   </Folder>
+  <Folder Name="/src/Docs/">
+    <File Path="src/Docs/fluxo-instituicoes-primeiro-acesso.md" />
+    <File Path="src/Docs/README.md" />
+  </Folder>
   <Folder Name="/src/misc/" />
   <Folder Name="/src/misc/specs/">
-    <File Path="spec1-sensores.md" />
     <File Path="src/misc/specs/spec-base.md" />
+    <File Path="src/misc/specs/spec2-leitura-sensor.md" />
   </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/UrbanShade.Communication/UrbanShade.Communication.csproj" Id="c74d462f-1a4e-4989-889a-11d63f098431" />
