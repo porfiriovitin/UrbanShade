@@ -18,6 +18,12 @@ internal sealed class PersistenceExceptionInterceptor : SaveChangesInterceptor
 
     private static void TranslateException(Exception exception)
     {
+        if (exception is DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } postgres } &&
+            postgres.ConstraintName is "IX_Organizations_Document" or "IX_OrganizationMembers_OrganizationId_UserId")
+        {
+            throw new OrganizationException(System.Net.HttpStatusCode.Conflict, "Organization document or membership already registered.");
+        }
+
         if (exception is DbUpdateException
             {
                 InnerException: PostgresException

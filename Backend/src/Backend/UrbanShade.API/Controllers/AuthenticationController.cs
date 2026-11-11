@@ -5,6 +5,7 @@ using UrbanShade.Application.UseCases.Authentication.Register;
 using UrbanShade.Application.UseCases.Authentication.Refresh;
 using UrbanShade.Application.UseCases.Authentication.Logout;
 using UrbanShade.Application.UseCases.Authentication.Me;
+using UrbanShade.Application.UseCases.Authentication.ChangePassword;
 using UrbanShade.Communication.Enums;
 using UrbanShade.Communication.Requests.Authentication;
 using UrbanShade.Communication.Responses;
@@ -17,6 +18,24 @@ namespace UrbanShade.API.Controllers;
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class AuthenticationController : ControllerBase
 {
+    [Authorize(Policy = "FirstAccess")]
+    [HttpPost("first-access/password")]
+    public async Task<IActionResult> CompleteFirstAccess(ChangePasswordRequest request, [FromServices] IChangePasswordUseCase useCase, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(User.FindFirst("sub")?.Value, out var id) || !int.TryParse(User.FindFirst("security_version")?.Value, out var version)) return Unauthorized();
+        await useCase.Execute(id, version, request, true, cancellationToken);
+        return NoContent();
+    }
+
+    [Authorize]
+    [HttpPut("password")]
+    public async Task<IActionResult> ChangePassword(ChangePasswordRequest request, [FromServices] IChangePasswordUseCase useCase, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(User.FindFirst("sub")?.Value, out var id) || !int.TryParse(User.FindFirst("security_version")?.Value, out var version)) return Unauthorized();
+        await useCase.Execute(id, version, request, false, cancellationToken);
+        return NoContent();
+    }
+
     [AllowAnonymous]
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterRequest request, [FromServices] IRegisterUseCase useCase, CancellationToken cancellationToken)

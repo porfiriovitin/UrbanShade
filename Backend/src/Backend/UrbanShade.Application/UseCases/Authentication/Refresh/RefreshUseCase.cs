@@ -14,14 +14,16 @@ public sealed class RefreshUseCase : IRefreshUseCase
     private readonly ITokenService _tokens;
     private readonly TokenIssuer _issuer;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IOrganizationRepository? _organizations;
 
-    public RefreshUseCase(IRefreshTokenRepository refreshTokens, IUserRepository users, ITokenService tokens, TokenIssuer issuer, IUnitOfWork unitOfWork)
+    public RefreshUseCase(IRefreshTokenRepository refreshTokens, IUserRepository users, ITokenService tokens, TokenIssuer issuer, IUnitOfWork unitOfWork, IOrganizationRepository? organizations = null)
     {
         _refreshTokens = refreshTokens;
         _users = users;
         _tokens = tokens;
         _issuer = issuer;
         _unitOfWork = unitOfWork;
+        _organizations = organizations;
     }
 
     public async Task<AuthenticationResponse> Execute(RefreshTokenRequest request, CancellationToken cancellationToken = default)
@@ -44,7 +46,7 @@ public sealed class RefreshUseCase : IRefreshUseCase
 
         /// :: If the token is not usable or the user is not found or inactive, revoke all tokens in the same family and throw an invalid token exception.
         var user = await _users.FindById(token.UserId, cancellationToken);
-        if (!token.IsUsable(now) || user is null || !user.Active)
+        if (!token.IsUsable(now) || user is null || !user.Active || user.MustChangePassword || token.SecurityVersion != user.SecurityVersion)
         {
             await _refreshTokens.RevokeFamily(token.FamilyId, now, cancellationToken);
             await transaction.Commit(cancellationToken);
@@ -55,7 +57,8 @@ public sealed class RefreshUseCase : IRefreshUseCase
         token.Revoke(now);
 
         /// :: Issue new access and refresh tokens for the user, preserving the family ID for session continuity.
-        AuthenticationResponse response = _issuer.Issue(user, token.FamilyId);
+        var organizationIds = _organizations is null ? [] : await _organizations.GetActiveIdsForUser(user.Id, cancellationToken);
+        AuthenticationResponse response = _issuer.Issue(user, token.FamilyId, organizationIds);
 
         /// :: Save the changes to the database and commit the transaction to persist the new tokens and revocation.
         await _unitOfWork.SaveChanges(cancellationToken);

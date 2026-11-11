@@ -16,13 +16,15 @@ public sealed class LoginWithEmailAndPasswordUseCase : ILoginWithEmailAndPasswor
     private readonly IPasswordHasher _passwords;
     private readonly TokenIssuer _issuer;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IOrganizationRepository? _organizations;
 
-    public LoginWithEmailAndPasswordUseCase(IUserRepository users, IPasswordHasher passwords, TokenIssuer issuer, IUnitOfWork unitOfWork)
+    public LoginWithEmailAndPasswordUseCase(IUserRepository users, IPasswordHasher passwords, TokenIssuer issuer, IUnitOfWork unitOfWork, IOrganizationRepository? organizations = null)
     {
         _users = users;
         _passwords = passwords;
         _issuer = issuer;
         _unitOfWork = unitOfWork;
+        _organizations = organizations;
     }
 
     public async Task<AuthenticationResponse> Execute(LoginRequest request, CancellationToken cancellationToken = default)
@@ -41,11 +43,12 @@ public sealed class LoginWithEmailAndPasswordUseCase : ILoginWithEmailAndPasswor
         /// :: Verify password against the hash (real or dummy).
         var valid = await _passwords.Verify(request.Password, hash);
 
-        if (user is null || !valid || !user.Active)
+        if (user is null || !valid || !user.Active || (user.MustChangePassword && (!user.TemporaryPasswordExpiresAt.HasValue || user.TemporaryPasswordExpiresAt <= DateTime.UtcNow)))
             throw new AuthenticationException(HttpStatusCode.Unauthorized, "Invalid email or password.");
 
         /// :: Issue tokens for the authenticated user.
-        AuthenticationResponse response = _issuer.Issue(user);
+        var organizationIds = _organizations is null ? [] : await _organizations.GetActiveIdsForUser(user.Id, cancellationToken);
+        AuthenticationResponse response = _issuer.Issue(user, organizationIds: organizationIds);
 
         /// :: Save the refresh token to the database.
         await _unitOfWork.SaveChanges(cancellationToken);

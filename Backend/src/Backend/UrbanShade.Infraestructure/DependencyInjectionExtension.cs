@@ -19,9 +19,14 @@ public static class DependencyInjectionExtension
         var jwt = configuration.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();
         jwt.Validate();
         services.AddSingleton(jwt);
+        var firstAccess = configuration.GetSection("FirstAccess").Get<FirstAccessSettings>() ?? new FirstAccessSettings();
+        firstAccess.Validate();
+        services.AddSingleton(firstAccess);
         services.AddSingleton<IPasswordHasher, Argon2idPasswordHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IOrganizationRepository, OrganizationRepository>();
+        services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<ISensorRepository, SensorRepository>();
         services.AddScoped<ISensorReadingRepository, SensorReadingRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();

@@ -198,13 +198,16 @@ public sealed class AuthenticationTests : BaseIntegrationTest
     [InlineData("PlatformAdministrator", HttpStatusCode.OK)]
     public async Task Administration_RequiresPlatformAdministrator(string role, HttpStatusCode expected)
     {
-        var token = new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
+        var user = new User("Administration", Guid.NewGuid().ToString("N") + "@example.com", "hash");
+        user.UpdateRole(Enum.Parse<UrbanShade.Domain.Enums.UserRoles>(role));
+        await using (var scope = Factory.Services.CreateAsyncScope())
         {
-            Expires = DateTime.UtcNow.AddMinutes(5),
-            Claims = new Dictionary<string, object> { ["sub"] = Guid.NewGuid().ToString(), ["role"] = role },
-            SigningCredentials = new(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(UrbanShadeApplicationFactory.SigningKey)), SecurityAlgorithms.HmacSha256)
-        });
-        Client.DefaultRequestHeaders.Authorization = new("Bearer", token);
+            var context = scope.ServiceProvider.GetRequiredService<UrbanShadeDbContext>();
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+        }
+        var tokens = new UrbanShade.Infraestructure.Security.JwtTokenService(new() { SigningKey = UrbanShadeApplicationFactory.SigningKey });
+        Client.DefaultRequestHeaders.Authorization = new("Bearer", tokens.CreateAccessToken(user).Value);
         var response = await Client.GetAsync("/test/administration");
         Assert.Equal(expected, response.StatusCode);
         if (expected == HttpStatusCode.Forbidden)

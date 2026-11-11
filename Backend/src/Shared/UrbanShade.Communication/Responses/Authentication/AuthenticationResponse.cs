@@ -26,6 +26,10 @@ public record UserResponse
 
 public record AuthenticationResponse
 {
+    public bool MustChangePassword { get; init; }
+    public string? FirstAccessToken { get; init; }
+    public string? FirstAccessTokenExpiresAt { get; init; }
+    public List<Guid> OrganizationIds { get; init; } = [];
     public string AccessToken { get; init; }
     public string AccessTokenExpiresAt { get; init; }
     public string RefreshToken { get; init; }

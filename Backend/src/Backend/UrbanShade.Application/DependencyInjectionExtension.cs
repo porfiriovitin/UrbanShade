@@ -1,4 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
+using UrbanShade.Application.UseCases.Organizations;
+using UrbanShade.Application.UseCases.Organizations.Register;
+using UrbanShade.Application.UseCases.Organizations.Update;
+using UrbanShade.Application.UseCases.Organizations.GetAll;
+using UrbanShade.Application.UseCases.Organizations.GetById;
+using UrbanShade.Application.UseCases.Organizations.Members;
+using UrbanShade.Application.UseCases.Organizations.Sensors;
+using UrbanShade.Application.UseCases.Authentication.ChangePassword;
 using UrbanShade.Application.UseCases.SensorReadings.Generate;
 using UrbanShade.Application.UseCases.SensorReadings.GetHistory;
 using UrbanShade.Application.UseCases.SensorReadings.GetLatest;
@@ -23,6 +31,14 @@ public static class DependencyInjectionExtension
     public static void AddApplication(this IServiceCollection services)
     {
         services.AddScoped<TokenIssuer>();
+        services.AddScoped<OrganizationAccess>();
+        services.AddScoped<IRegisterOrganizationUseCase, RegisterOrganizationUseCase>();
+        services.AddScoped<IUpdateOrganizationUseCase, UpdateOrganizationUseCase>();
+        services.AddScoped<IGetOrganizationsUseCase, GetOrganizationsUseCase>();
+        services.AddScoped<IGetOrganizationByIdUseCase, GetOrganizationByIdUseCase>();
+        services.AddScoped<IOrganizationMembersUseCase, OrganizationMembersUseCase>();
+        services.AddScoped<IOrganizationSensorsUseCase, OrganizationSensorsUseCase>();
+        services.AddScoped<IChangePasswordUseCase, ChangePasswordUseCase>();
         services.AddScoped<SensorReadingGenerator>();
         services.AddScoped<IGenerateSensorReadingsUseCase, GenerateSensorReadingsUseCase>();
         services.AddScoped<IGetSensorReadingsUseCase, GetSensorReadingsUseCase>();

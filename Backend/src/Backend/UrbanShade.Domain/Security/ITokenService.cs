@@ -43,7 +43,8 @@ public record RefreshToken
 
 public interface ITokenService
 {
-    AccessToken CreateAccessToken(User user);
+    AccessToken CreateAccessToken(User user, IReadOnlyCollection<Guid>? organizationIds = null);
+    AccessToken CreateFirstAccessToken(User user);
     RefreshToken CreateRefreshToken();
     string HashRefreshToken(string token);
 }

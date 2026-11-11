@@ -17,6 +17,9 @@ public class User : EntityBase
     public string Email { get; private set; } = string.Empty;
     public string HashedPassword { get; private set; } = string.Empty;
     public UserRoles Role { get; private set; } = UserRoles.Citizen;
+    public bool MustChangePassword { get; private set; }
+    public DateTime? TemporaryPasswordExpiresAt { get; private set; }
+    public int SecurityVersion { get; private set; }
 
     public void Deactivate()
     {
@@ -26,6 +29,17 @@ public class User : EntityBase
     public void UpdatePassword(string hashedPassword)
     {
         HashedPassword = hashedPassword;
+        MustChangePassword = false;
+        TemporaryPasswordExpiresAt = null;
+        SecurityVersion++;
+    }
+
+    public void SetTemporaryPassword(string hashedPassword, DateTime expiresAt)
+    {
+        HashedPassword = hashedPassword;
+        MustChangePassword = true;
+        TemporaryPasswordExpiresAt = expiresAt;
+        SecurityVersion++;
     }
 
     public void UpdateRole(UserRoles role)

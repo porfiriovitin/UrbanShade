@@ -17,18 +17,32 @@ public sealed class TokenIssuer
         _refreshTokens = refreshTokens;
     }
 
-    public AuthenticationResponse Issue(User user, Guid? familyId = null)
+    public AuthenticationResponse Issue(User user, Guid? familyId = null, IReadOnlyCollection<Guid>? organizationIds = null)
     {
+        if (user.MustChangePassword)
+        {
+            var firstAccess = _tokens.CreateFirstAccessToken(user);
+            return new AuthenticationResponse(string.Empty, string.Empty, string.Empty, string.Empty, ToResponse(user))
+            {
+                MustChangePassword = true,
+                FirstAccessToken = firstAccess.Value,
+                FirstAccessTokenExpiresAt = firstAccess.ExpiresAt.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture)
+            };
+        }
+
         /// :: Create acess and refresh tokens for the user.
-        var access = _tokens.CreateAccessToken(user);
+        var access = _tokens.CreateAccessToken(user, organizationIds);
         var refresh = _tokens.CreateRefreshToken();
 
         /// :: If no family ID is provided, generate a new one for the refresh token.
-        _refreshTokens.Add(new RefreshTokens(refresh.Hash, user.Id, refresh.ExpiresAt, familyId));
+        _refreshTokens.Add(new RefreshTokens(refresh.Hash, user.Id, refresh.ExpiresAt, familyId, user.SecurityVersion));
 
         /// :: Format token expiration dates for the authentication response.
         return new(access.Value, access.ExpiresAt.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture),
-            refresh.Value, refresh.ExpiresAt.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture), ToResponse(user));
+            refresh.Value, refresh.ExpiresAt.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture), ToResponse(user))
+        {
+            OrganizationIds = organizationIds?.ToList() ?? []
+        };
     }
 
     public static UserResponse ToResponse(User user) => new(user.Id, user.Name, user.Email, user.Role.ToString());

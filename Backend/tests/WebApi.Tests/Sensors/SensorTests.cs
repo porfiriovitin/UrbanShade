@@ -167,8 +167,12 @@ public sealed class SensorTests : BaseIntegrationTest
 
     private void Authenticate(UserRoles role)
     {
-        var user = new User("Sensor Test", "sensor@example.com", "hash");
+        var user = new User("Sensor Test", Guid.NewGuid().ToString("N") + "@example.com", "hash");
         user.UpdateRole(role);
+        using var scope = Factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<UrbanShadeDbContext>();
+        context.Users.Add(user);
+        context.SaveChanges();
         var service = new JwtTokenService(new JwtSettings { SigningKey = UrbanShadeApplicationFactory.SigningKey });
         Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", service.CreateAccessToken(user).Value);
     }

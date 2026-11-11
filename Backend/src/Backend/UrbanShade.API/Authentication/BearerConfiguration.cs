@@ -5,6 +5,8 @@ using UrbanShade.Communication.Enums;
 using UrbanShade.Communication.Responses;
 using UrbanShade.Infraestructure.Security;
 using UrbanShade.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
+using UrbanShade.Domain.Repositories;
 
 namespace UrbanShade.API.Authentication;
 
@@ -39,6 +41,25 @@ internal static class BearerConfiguration
             /// :: Set up challenges and forbidden responses handler.
             options.Events = new JwtBearerEvents
             {
+                OnTokenValidated = async context =>
+                {
+                    var principal = context.Principal!;
+                    if (!Guid.TryParse(principal.FindFirst("sub")?.Value, out var id) ||
+                        !int.TryParse(principal.FindFirst("security_version")?.Value, out var version))
+                    {
+                        context.Fail("Invalid token.");
+                        return;
+                    }
+
+                    /// :: Check live account state so password changes invalidate existing tokens.
+                    var users = context.HttpContext.RequestServices.GetRequiredService<IUserRepository>();
+                    var user = await users.FindById(id, context.HttpContext.RequestAborted);
+                    var firstAccess = principal.FindFirst("purpose")?.Value == "first_access";
+                    if (user is null || !user.Active || user.SecurityVersion != version ||
+                        (firstAccess ? !user.MustChangePassword || !user.TemporaryPasswordExpiresAt.HasValue || user.TemporaryPasswordExpiresAt <= DateTime.UtcNow
+                            : user.MustChangePassword || principal.FindFirst("purpose")?.Value != "access" || principal.FindFirst("role")?.Value != user.Role.ToString()))
+                        context.Fail("Account or session is unavailable.");
+                },
                 OnChallenge = async context =>
                 {
                     context.HandleResponse();
@@ -65,6 +86,9 @@ internal static class BearerConfiguration
                 }
             };
         });
-        services.AddAuthorizationBuilder().AddPolicy("PlatformAdministration", policy => policy.RequireRole(nameof(UserRoles.PlatformAdministrator)));
+        services.AddAuthorizationBuilder()
+            .SetDefaultPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().RequireClaim("purpose", "access").Build())
+            .AddPolicy("PlatformAdministration", policy => policy.RequireAuthenticatedUser().RequireClaim("purpose", "access").RequireRole(nameof(UserRoles.PlatformAdministrator)))
+            .AddPolicy("FirstAccess", policy => policy.RequireAuthenticatedUser().RequireClaim("purpose", "first_access"));
     }
 }

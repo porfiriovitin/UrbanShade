@@ -29,6 +29,7 @@ public sealed class GetSensorByIdUseCase : IGetSensorByIdUseCase
     internal static SensorResponse ToResponse(Sensor sensor) => new()
     {
         Id = sensor.Id,
+        OrganizationId = sensor.OrganizationId,
         Code = sensor.Code,
         Name = sensor.Name,
         Description = sensor.Description,
