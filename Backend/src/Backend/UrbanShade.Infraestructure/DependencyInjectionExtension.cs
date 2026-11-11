@@ -22,6 +22,16 @@ public static class DependencyInjectionExtension
     public static void AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         AddDbContext(services, configuration);
+        var routing = configuration.GetSection("Routing").Get<UrbanShade.Domain.Routing.RoutingSettings>() ?? new();
+        routing.Validate();
+        services.AddSingleton(routing);
+        services.AddOptions<UrbanShade.Infraestructure.Routing.OpenRouteServiceOptions>().Bind(configuration.GetSection("OpenRouteService"))
+            .Validate(options => !routing.Enabled || !string.IsNullOrWhiteSpace(options.ApiKey), "OpenRouteService:Api_Key is required when routing is enabled.").ValidateOnStart();
+        services.AddSingleton<UrbanShade.Infraestructure.Routing.OpenRouteServiceResponseParser>();
+        services.AddSingleton<UrbanShade.Infraestructure.Routing.RoutingGeometryCache>();
+        services.AddHttpClient<UrbanShade.Domain.Routing.IRoutingProvider, UrbanShade.Infraestructure.Routing.OpenRouteServiceProvider>(client => client.Timeout = Timeout.InfiniteTimeSpan)
+            .RedactLoggedHeaders(["Authorization"]);
+        services.AddScoped<IRouteGeometryRepository, RouteGeometryRepository>();
         var regional = configuration.GetSection("RegionThermalAnalysis").Get<UrbanShade.Domain.RegionThermalAnalysis.RegionThermalAnalysisSettings>() ?? new();
         regional.Validate();
         services.AddSingleton(regional);

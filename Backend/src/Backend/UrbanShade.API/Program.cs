@@ -16,6 +16,9 @@ builder.Services.AddControllers();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("Routing", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     options.AddPolicy("RegionThermalAdministration", context => RateLimitPartition.GetFixedWindowLimiter(
         context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
@@ -23,7 +26,7 @@ builder.Services.AddRateLimiter(options =>
         await context.HttpContext.Response.WriteAsJsonAsync(new PayloadResponse
         {
             Status = nameof(ResponseStatus.Error),
-            Messages = ["Too many administrative requests. Try again shortly."]
+            Messages = [context.HttpContext.Request.Path.StartsWithSegments("/api/routes") ? "Too many routing requests. Try again shortly." : "Too many administrative requests. Try again shortly."]
         }, cancellationToken);
     options.AddPolicy("GeoAdministration", context => RateLimitPartition.GetFixedWindowLimiter(
         context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",

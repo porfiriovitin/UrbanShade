@@ -51,6 +51,9 @@ public static class DependencyInjectionExtension
 {
     public static void AddApplication(this IServiceCollection services)
     {
+        services.AddScoped<UrbanShade.Application.UseCases.Routes.Compare.ICompareRoutesUseCase, UrbanShade.Application.UseCases.Routes.Compare.CompareRoutesUseCase>();
+        services.AddSingleton<UrbanShade.Domain.Routing.RouteExposureCalculator>();
+        services.AddSingleton<UrbanShade.Domain.Routing.RouteRecommendationCalculator>();
         services.AddSingleton<UrbanShade.Domain.RegionThermalAnalysis.ExposureIndexCalculator>();
         services.AddScoped<UrbanShade.Application.UseCases.GeoRegions.UpdateReference.IUpdateReferenceRegionUseCase, UrbanShade.Application.UseCases.GeoRegions.UpdateReference.UpdateReferenceRegionUseCase>();
         services.AddScoped<UrbanShade.Application.UseCases.RegionThermalAnalyses.Analyze.IAnalyzeRegionThermalUseCase, UrbanShade.Application.UseCases.RegionThermalAnalyses.Analyze.AnalyzeRegionThermalUseCase>();
