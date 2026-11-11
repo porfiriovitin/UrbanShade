@@ -12,12 +12,27 @@ internal class UrbanShadeDbContext : DbContext
     public DbSet<Organization> Organizations { get; set; }
     public DbSet<OrganizationMember> OrganizationMembers { get; set; }
     public DbSet<Sensor> Sensors { get; set; }
+    public DbSet<City> Cities { get; set; }
     public DbSet<SensorReading> SensorReadings { get; set; }
+    public DbSet<ThermalAnalysis> ThermalAnalyses { get; set; }
     public DbSet<RefreshTokens> RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<City>().Property(city => city.Name).HasMaxLength(150);
+        modelBuilder.Entity<City>().Property(city => city.State).HasMaxLength(2);
+        modelBuilder.Entity<City>().Property(city => city.IbgeCode).HasMaxLength(7);
+        modelBuilder.Entity<City>().HasIndex(city => city.IbgeCode).IsUnique();
+        modelBuilder.Entity<Sensor>().HasOne<City>().WithMany().HasForeignKey(sensor => sensor.CityId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<Sensor>().HasIndex(sensor => new { sensor.CityId, sensor.OrganizationId });
+
+        modelBuilder.Entity<ThermalAnalysis>().Property(analysis => analysis.HeatIndex).HasPrecision(18, 2);
+        modelBuilder.Entity<ThermalAnalysis>().Property(analysis => analysis.RiskLevel).HasConversion<string>();
+        modelBuilder.Entity<ThermalAnalysis>().Property(analysis => analysis.AlgorithmVersion).HasMaxLength(32);
+        modelBuilder.Entity<ThermalAnalysis>().HasIndex(analysis => new { analysis.SensorReadingId, analysis.AlgorithmVersion }).IsUnique();
+        modelBuilder.Entity<ThermalAnalysis>().HasOne<SensorReading>().WithMany().HasForeignKey(analysis => analysis.SensorReadingId).OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<Organization>().Property(organization => organization.Name).HasMaxLength(150);
         modelBuilder.Entity<Organization>().Property(organization => organization.Document).HasMaxLength(30);

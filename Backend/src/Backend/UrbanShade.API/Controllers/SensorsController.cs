@@ -16,6 +16,10 @@ using UrbanShade.Application.UseCases.SensorReadings.GetLatest;
 using UrbanShade.Application.UseCases.SensorReadings.GetLatestBySensors;
 using UrbanShade.Communication.Requests.SensorReadings;
 using UrbanShade.Communication.Responses.SensorReadings;
+using UrbanShade.Application.UseCases.ThermalAnalyses.GetLatest;
+using UrbanShade.Application.UseCases.ThermalAnalyses.GetHistory;
+using UrbanShade.Communication.Requests.ThermalAnalyses;
+using UrbanShade.Communication.Responses.ThermalAnalyses;
 
 namespace UrbanShade.API.Controllers;
 
@@ -24,6 +28,30 @@ namespace UrbanShade.API.Controllers;
 [Route("api/sensors")]
 public sealed class SensorsController : ControllerBase
 {
+    [HttpGet("{id:guid}/thermal-analysis/latest")]
+    public async Task<IActionResult> GetLatestThermalAnalysis(Guid id, [FromServices] IGetLatestThermalAnalysisUseCase useCase, CancellationToken cancellationToken)
+    {
+        var response = await useCase.Execute(id, User.IsInRole(nameof(UserRoles.PlatformAdministrator)), cancellationToken);
+
+        return StatusCode(StatusCodes.Status200OK, new PayloadResponse<ThermalAnalysisResponse>
+        {
+            Status = nameof(ResponseStatus.Success),
+            Data = response
+        });
+    }
+
+    [HttpGet("{id:guid}/thermal-analyses")]
+    public async Task<IActionResult> GetThermalAnalyses(Guid id, [FromQuery] GetThermalAnalysesRequest request, [FromServices] IGetThermalAnalysesUseCase useCase, CancellationToken cancellationToken)
+    {
+        var response = await useCase.Execute(id, request, User.IsInRole(nameof(UserRoles.PlatformAdministrator)), cancellationToken);
+
+        return StatusCode(StatusCodes.Status200OK, new PayloadResponse<PagedResponse<ThermalAnalysisResponse>>
+        {
+            Status = nameof(ResponseStatus.Success),
+            Data = response
+        });
+    }
+
     [HttpGet("{id:guid}/readings")]
     public async Task<IActionResult> GetReadings(Guid id, [FromQuery] GetSensorReadingsRequest request, [FromServices] IGetSensorReadingsUseCase useCase, CancellationToken cancellationToken)
     {

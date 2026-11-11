@@ -14,6 +14,9 @@ using UrbanShade.Communication.Responses.Authentication;
 using UrbanShade.Communication.Responses.Organizations;
 using UrbanShade.Communication.Responses.SensorReadings;
 using UrbanShade.Communication.Responses.Sensors;
+using UrbanShade.Application.UseCases.ThermalAnalyses.GetMap;
+using UrbanShade.Application.UseCases.ThermalAnalyses.GetOverview;
+using UrbanShade.Communication.Responses.ThermalAnalyses;
 
 namespace UrbanShade.API.Controllers;
 
@@ -24,6 +27,28 @@ namespace UrbanShade.API.Controllers;
 public sealed class OrganizationsController : ControllerBase
 {
     private Guid ActorId => Guid.Parse(User.FindFirst("sub")!.Value);
+
+    [HttpGet("{id:guid}/thermal/map")]
+    public async Task<IActionResult> GetThermalMap(Guid id, [FromQuery] Guid? cityId, [FromServices] IGetThermalMapUseCase useCase, CancellationToken cancellationToken)
+    {
+        var response = await useCase.Execute(cityId, id, ActorId, cancellationToken);
+        return StatusCode(StatusCodes.Status200OK, new PayloadResponse<ThermalMapResponse>
+        {
+            Status = nameof(ResponseStatus.Success),
+            Data = response
+        });
+    }
+
+    [HttpGet("{id:guid}/thermal/overview")]
+    public async Task<IActionResult> GetThermalOverview(Guid id, [FromQuery] Guid? cityId, [FromServices] IGetThermalOverviewUseCase useCase, CancellationToken cancellationToken)
+    {
+        var response = await useCase.Execute(cityId, id, ActorId, cancellationToken);
+        return StatusCode(StatusCodes.Status200OK, new PayloadResponse<ThermalOverviewResponse>
+        {
+            Status = nameof(ResponseStatus.Success),
+            Data = response
+        });
+    }
 
     [Authorize(Policy = "PlatformAdministration")]
     [HttpPost]

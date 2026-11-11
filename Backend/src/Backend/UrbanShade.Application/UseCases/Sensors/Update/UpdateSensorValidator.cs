@@ -13,5 +13,6 @@ public sealed class UpdateSensorValidator : AbstractValidator<UpdateSensorReques
         RuleFor(request => request.Latitude).Must(latitude => latitude.HasValue && double.IsFinite(latitude.Value) && latitude.Value >= -90 && latitude.Value <= 90).When(request => request.HasLatitude).WithMessage("Latitude must be between -90 and 90.");
         RuleFor(request => request.Longitude).Must(longitude => longitude.HasValue && double.IsFinite(longitude.Value) && longitude.Value >= -180 && longitude.Value <= 180).When(request => request.HasLongitude).WithMessage("Longitude must be between -180 and 180.");
         RuleFor(request => request.InstalledAt).Must(date => !date.HasValue || date.Value.Kind == DateTimeKind.Utc).WithMessage("InstalledAt must be a UTC date.");
+        RuleFor(request => request.CityId).Must(id => id != Guid.Empty).WithMessage("CityId must be a valid city identifier.");
     }
 }

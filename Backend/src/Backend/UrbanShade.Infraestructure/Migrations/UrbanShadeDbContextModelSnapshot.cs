@@ -22,6 +22,41 @@ namespace UrbanShade.Infraestructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("UrbanShade.Domain.Entities.City", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IbgeCode")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(2)
+                        .HasColumnType("character varying(2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IbgeCode")
+                        .IsUnique();
+
+                    b.ToTable("Cities");
+                });
+
             modelBuilder.Entity("UrbanShade.Domain.Entities.Organization", b =>
                 {
                     b.Property<Guid>("Id")
@@ -142,6 +177,9 @@ namespace UrbanShade.Infraestructure.Migrations
                     b.Property<bool>("Active")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid?>("CityId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -188,6 +226,8 @@ namespace UrbanShade.Infraestructure.Migrations
 
                     b.HasIndex("OrganizationId");
 
+                    b.HasIndex("CityId", "OrganizationId");
+
                     b.ToTable("Sensors");
                 });
 
@@ -222,6 +262,45 @@ namespace UrbanShade.Infraestructure.Migrations
                     b.HasIndex("SensorId", "MeasuredAt");
 
                     b.ToTable("SensorReadings");
+                });
+
+            modelBuilder.Entity("UrbanShade.Domain.Entities.ThermalAnalysis", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("AlgorithmVersion")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("AnalyzedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("HeatIndex")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("RiskLevel")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("SensorReadingId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SensorReadingId", "AlgorithmVersion")
+                        .IsUnique();
+
+                    b.ToTable("ThermalAnalyses");
                 });
 
             modelBuilder.Entity("UrbanShade.Domain.Entities.User", b =>
@@ -295,6 +374,11 @@ namespace UrbanShade.Infraestructure.Migrations
 
             modelBuilder.Entity("UrbanShade.Domain.Entities.Sensor", b =>
                 {
+                    b.HasOne("UrbanShade.Domain.Entities.City", null)
+                        .WithMany()
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("UrbanShade.Domain.Entities.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
@@ -306,6 +390,15 @@ namespace UrbanShade.Infraestructure.Migrations
                     b.HasOne("UrbanShade.Domain.Entities.Sensor", null)
                         .WithMany()
                         .HasForeignKey("SensorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("UrbanShade.Domain.Entities.ThermalAnalysis", b =>
+                {
+                    b.HasOne("UrbanShade.Domain.Entities.SensorReading", null)
+                        .WithMany()
+                        .HasForeignKey("SensorReadingId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

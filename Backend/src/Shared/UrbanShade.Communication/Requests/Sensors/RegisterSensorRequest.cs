@@ -8,4 +8,5 @@ public class RegisterSensorRequest
     public double? Latitude { get; init; }
     public double? Longitude { get; init; }
     public DateTime? InstalledAt { get; init; }
+    public Guid? CityId { get; init; }
 }

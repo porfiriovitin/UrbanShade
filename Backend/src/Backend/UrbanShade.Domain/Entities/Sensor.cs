@@ -23,6 +23,7 @@ public class Sensor : EntityBase
     public double Longitude { get; private set; }
     public SensorStatus Status { get; private set; } = SensorStatus.ACTIVE;
     public Guid? OrganizationId { get; private set; }
+    public Guid? CityId { get; private set; }
     public DateTime? InstalledAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
     public DateTime? DeletedAt { get; private set; }
@@ -58,6 +59,13 @@ public class Sensor : EntityBase
         if (OrganizationId.HasValue && OrganizationId.Value != organizationId)
             throw new InvalidOperationException("Sensor transfers between organizations are not supported.");
         OrganizationId = organizationId;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void AssignCity(Guid? cityId)
+    {
+        if (cityId == Guid.Empty) throw new ArgumentException("A valid city is required.", nameof(cityId));
+        CityId = cityId;
         UpdatedAt = DateTime.UtcNow;
     }
 }

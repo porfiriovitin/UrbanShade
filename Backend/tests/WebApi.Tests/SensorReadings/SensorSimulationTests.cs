@@ -9,6 +9,8 @@ using UrbanShade.Domain.Entities;
 using UrbanShade.Domain.Enums;
 using UrbanShade.Domain.Repositories;
 using UrbanShade.Domain.Simulation;
+using UrbanShade.Domain.ThermalAnalysis;
+using UrbanShade.Application.UseCases.ThermalAnalyses.ProcessPending;
 using UrbanShade.Infraestructure.DataAcess;
 using UrbanShade.Infraestructure.DataAcess.Repositories;
 
@@ -149,7 +151,7 @@ public sealed class SensorSimulationTests : IClassFixture<UrbanShadeApplicationF
         using var services = new ServiceCollection().BuildServiceProvider();
         var logger = new RecordingLogger();
         using var worker = new SensorSimulationBackgroundService(services.GetRequiredService<IServiceScopeFactory>(),
-            new SensorSimulationSettings { Enabled = false }, TimeProvider.System, logger);
+            new SensorSimulationSettings { Enabled = false }, new ThermalAnalysisSettings { Enabled = false }, TimeProvider.System, logger);
         await worker.StartAsync(CancellationToken.None);
         await worker.ExecuteTask!.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.Empty(logger.Errors);
@@ -164,7 +166,7 @@ public sealed class SensorSimulationTests : IClassFixture<UrbanShadeApplicationF
         var logger = new RecordingLogger();
         using var services = new ServiceCollection().AddScoped<IGenerateSensorReadingsUseCase>(_ => new ProbeUseCase(state)).BuildServiceProvider();
         using var worker = new SensorSimulationBackgroundService(services.GetRequiredService<IServiceScopeFactory>(),
-            new SensorSimulationSettings { IntervalMinutes = 0.001 }, time, logger);
+            new SensorSimulationSettings { IntervalMinutes = 0.001 }, new ThermalAnalysisSettings { Enabled = false }, time, logger);
 
         await worker.StartAsync(CancellationToken.None);
         await state.SecondCycle.Task.WaitAsync(TimeSpan.FromSeconds(5));
@@ -182,7 +184,7 @@ public sealed class SensorSimulationTests : IClassFixture<UrbanShadeApplicationF
         var state = new WorkerState { Block = true };
         using var services = new ServiceCollection().AddScoped<IGenerateSensorReadingsUseCase>(_ => new ProbeUseCase(state)).BuildServiceProvider();
         using var worker = new SensorSimulationBackgroundService(services.GetRequiredService<IServiceScopeFactory>(),
-            new SensorSimulationSettings { IntervalMinutes = 0.001 }, TimeProvider.System, new RecordingLogger());
+            new SensorSimulationSettings { IntervalMinutes = 0.001 }, new ThermalAnalysisSettings { Enabled = false }, TimeProvider.System, new RecordingLogger());
 
         await worker.StartAsync(CancellationToken.None);
         await state.FirstCycle.Task.WaitAsync(TimeSpan.FromSeconds(5));
@@ -191,6 +193,46 @@ public sealed class SensorSimulationTests : IClassFixture<UrbanShadeApplicationF
         await worker.StopAsync(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(5));
         Assert.True(state.Cancelled);
         Assert.Equal(1, state.Disposals);
+    }
+
+    [Fact]
+    public async Task Worker_ProcessesThermalDataWithSimulationDisabled_AndRetriesWithFreshScopes()
+    {
+        var state = new WorkerState { FailFirst = true };
+        var logger = new RecordingLogger();
+        using var services = new ServiceCollection().AddScoped<IProcessPendingThermalAnalysesUseCase>(_ => new ThermalProbeUseCase(state)).BuildServiceProvider();
+        using var worker = new SensorSimulationBackgroundService(services.GetRequiredService<IServiceScopeFactory>(),
+            new SensorSimulationSettings { Enabled = false, IntervalMinutes = 0.001 }, new ThermalAnalysisSettings(), TimeProvider.System, logger);
+
+        await worker.StartAsync(CancellationToken.None);
+        await state.SecondCycle.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await worker.StopAsync(CancellationToken.None);
+        Assert.True(state.Calls >= 2);
+        Assert.True(state.Disposals >= 2);
+        Assert.Single(logger.Errors);
+    }
+
+    [Fact]
+    public async Task Worker_ProcessesPendingAnalysesEvenWhenGenerationFails()
+    {
+        var generation = new WorkerState { FailFirst = true };
+        var thermal = new WorkerState();
+        var logger = new RecordingLogger();
+        using var services = new ServiceCollection()
+            .AddScoped<IGenerateSensorReadingsUseCase>(_ => new ProbeUseCase(generation))
+            .AddScoped<IProcessPendingThermalAnalysesUseCase>(_ => new ThermalProbeUseCase(thermal))
+            .BuildServiceProvider();
+        using var worker = new SensorSimulationBackgroundService(services.GetRequiredService<IServiceScopeFactory>(),
+            new SensorSimulationSettings { IntervalMinutes = 1 }, new ThermalAnalysisSettings(), TimeProvider.System, logger);
+
+        await worker.StartAsync(CancellationToken.None);
+        await thermal.FirstCycle.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await worker.StopAsync(CancellationToken.None);
+        Assert.Equal(1, generation.Calls);
+        Assert.Equal(1, thermal.Calls);
+        Assert.Equal(1, generation.Disposals);
+        Assert.Equal(1, thermal.Disposals);
+        Assert.Single(logger.Errors);
     }
 
     private UrbanShadeDbContext Context(params IInterceptor[] interceptors) => new(new DbContextOptionsBuilder<UrbanShadeDbContext>()
@@ -230,6 +272,7 @@ public sealed class SensorSimulationTests : IClassFixture<UrbanShadeApplicationF
     {
         private readonly ISensorRepository _inner;
         public GatedSensorRepository(ISensorRepository inner) { _inner = inner; }
+        public Task<List<Sensor>> GetActiveForThermalMap(Guid? cityId, Guid? organizationId, CancellationToken cancellationToken) => _inner.GetActiveForThermalMap(cityId, organizationId, cancellationToken);
         public TaskCompletionSource Locked { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public async Task<List<Sensor>> GetActiveForReadingGeneration(CancellationToken cancellationToken)
@@ -255,6 +298,14 @@ public sealed class SensorSimulationTests : IClassFixture<UrbanShadeApplicationF
         public bool Cancelled;
         public TaskCompletionSource FirstCycle { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource SecondCycle { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    }
+
+    private sealed class ThermalProbeUseCase : IProcessPendingThermalAnalysesUseCase, IDisposable
+    {
+        private readonly ProbeUseCase _probe;
+        public ThermalProbeUseCase(WorkerState state) { _probe = new ProbeUseCase(state); }
+        public Task Execute(CancellationToken cancellationToken = default) => _probe.Execute(cancellationToken);
+        public void Dispose() => _probe.Dispose();
     }
 
     private sealed class ProbeUseCase : IGenerateSensorReadingsUseCase, IDisposable

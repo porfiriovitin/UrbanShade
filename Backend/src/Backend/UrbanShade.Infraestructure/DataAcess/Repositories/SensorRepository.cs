@@ -29,6 +29,14 @@ internal sealed class SensorRepository : ISensorRepository
     public Task<bool> CodeExists(string code, Guid? exceptId, CancellationToken cancellationToken) =>
         _context.Sensors.IgnoreQueryFilters().AnyAsync(sensor => sensor.Code == code && (!exceptId.HasValue || sensor.Id != exceptId.Value), cancellationToken);
 
+    public Task<List<Sensor>> GetActiveForThermalMap(Guid? cityId, Guid? organizationId, CancellationToken cancellationToken)
+    {
+        var query = _context.Sensors.AsNoTracking().Where(sensor => sensor.Active && sensor.Status == SensorStatus.ACTIVE);
+        if (cityId.HasValue) query = query.Where(sensor => sensor.CityId == cityId.Value);
+        if (organizationId.HasValue) query = query.Where(sensor => sensor.OrganizationId == organizationId.Value);
+        return query.OrderBy(sensor => sensor.Code).ToListAsync(cancellationToken);
+    }
+
     public Task<List<Sensor>> GetAll(bool activeOnly, SensorStatus? status, string? code, string? name, CancellationToken cancellationToken)
     {
         var query = _context.Sensors.AsNoTracking();

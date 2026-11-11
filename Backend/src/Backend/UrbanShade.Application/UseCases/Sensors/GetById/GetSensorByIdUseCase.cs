@@ -30,6 +30,7 @@ public sealed class GetSensorByIdUseCase : IGetSensorByIdUseCase
     {
         Id = sensor.Id,
         OrganizationId = sensor.OrganizationId,
+        CityId = sensor.CityId,
         Code = sensor.Code,
         Name = sensor.Name,
         Description = sensor.Description,

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using UrbanShade.Domain.Security;
 using UrbanShade.Domain.Simulation;
+using UrbanShade.Domain.ThermalAnalysis;
 using UrbanShade.Infraestructure.DataAcess;
 using UrbanShade.Infraestructure.DataAcess.Repositories;
 using UrbanShade.Infraestructure.Security;
@@ -28,7 +29,9 @@ public static class DependencyInjectionExtension
         services.AddScoped<IOrganizationRepository, OrganizationRepository>();
         services.AddScoped<IAccountRepository, AccountRepository>();
         services.AddScoped<ISensorRepository, SensorRepository>();
+        services.AddScoped<ICityRepository, CityRepository>();
         services.AddScoped<ISensorReadingRepository, SensorReadingRepository>();
+        services.AddScoped<IThermalAnalysisRepository, ThermalAnalysisRepository>();
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -36,6 +39,9 @@ public static class DependencyInjectionExtension
         var simulation = configuration.GetSection("SensorSimulation").Get<SensorSimulationSettings>() ?? new SensorSimulationSettings();
         simulation.Validate();
         services.AddSingleton(simulation);
+        var thermal = configuration.GetSection("ThermalAnalysis").Get<ThermalAnalysisSettings>() ?? new ThermalAnalysisSettings();
+        thermal.Validate();
+        services.AddSingleton(thermal);
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton(Random.Shared);
         services.AddHostedService<SensorSimulationBackgroundService>();

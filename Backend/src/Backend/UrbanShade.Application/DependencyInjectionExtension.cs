@@ -23,6 +23,15 @@ using UrbanShade.Application.UseCases.Authentication.Register;
 using UrbanShade.Application.UseCases.Authentication.Refresh;
 using UrbanShade.Application.UseCases.Authentication.Logout;
 using UrbanShade.Application.UseCases.Authentication.Me;
+using UrbanShade.Application.UseCases.ThermalAnalyses.ProcessPending;
+using UrbanShade.Application.UseCases.ThermalAnalyses.GetLatest;
+using UrbanShade.Application.UseCases.ThermalAnalyses.GetHistory;
+using UrbanShade.Application.UseCases.ThermalAnalyses.GetMap;
+using UrbanShade.Application.UseCases.ThermalAnalyses.GetOverview;
+using UrbanShade.Domain.ThermalAnalysis;
+using UrbanShade.Application.UseCases.Cities.Register;
+using UrbanShade.Application.UseCases.Cities.GetAll;
+using UrbanShade.Application.UseCases.Cities.GetById;
 
 namespace UrbanShade.Application;
 
@@ -30,6 +39,15 @@ public static class DependencyInjectionExtension
 {
     public static void AddApplication(this IServiceCollection services)
     {
+        services.AddScoped<IRegisterCityUseCase, RegisterCityUseCase>();
+        services.AddScoped<IGetCitiesUseCase, GetCitiesUseCase>();
+        services.AddScoped<IGetCityByIdUseCase, GetCityByIdUseCase>();
+        services.AddSingleton<HeatIndexCalculator>();
+        services.AddScoped<IProcessPendingThermalAnalysesUseCase, ProcessPendingThermalAnalysesUseCase>();
+        services.AddScoped<IGetLatestThermalAnalysisUseCase, GetLatestThermalAnalysisUseCase>();
+        services.AddScoped<IGetThermalAnalysesUseCase, GetThermalAnalysesUseCase>();
+        services.AddScoped<IGetThermalMapUseCase, GetThermalMapUseCase>();
+        services.AddScoped<IGetThermalOverviewUseCase, GetThermalOverviewUseCase>();
         services.AddScoped<TokenIssuer>();
         services.AddScoped<OrganizationAccess>();
         services.AddScoped<IRegisterOrganizationUseCase, RegisterOrganizationUseCase>();

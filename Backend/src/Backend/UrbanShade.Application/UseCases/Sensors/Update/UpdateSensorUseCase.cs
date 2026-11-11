@@ -13,11 +13,13 @@ public sealed class UpdateSensorUseCase : IUpdateSensorUseCase
 {
     private readonly ISensorRepository _sensors;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICityRepository _cities;
 
-    public UpdateSensorUseCase(ISensorRepository sensors, IUnitOfWork unitOfWork)
+    public UpdateSensorUseCase(ISensorRepository sensors, IUnitOfWork unitOfWork, ICityRepository cities)
     {
         _sensors = sensors;
         _unitOfWork = unitOfWork;
+        _cities = cities;
     }
 
     public async Task<SensorResponse> Execute(Guid id, UpdateSensorRequest request, CancellationToken cancellationToken = default)
@@ -31,7 +33,11 @@ public sealed class UpdateSensorUseCase : IUpdateSensorUseCase
         if (await _sensors.CodeExists(code, id, cancellationToken))
             throw new SensorException(HttpStatusCode.Conflict, "Sensor code already registered.");
 
+        if (request.HasCityId && request.CityId.HasValue && await _cities.FindById(request.CityId.Value, cancellationToken) is null)
+            throw new CityException(HttpStatusCode.NotFound, "City is unavailable.");
+
         /// :: Preserve omitted fields and allow clearing optional values.
+        if (request.HasCityId) sensor.AssignCity(request.CityId);
         sensor.Update(code, request.HasName ? request.Name! : sensor.Name,
             request.HasDescription ? request.Description : sensor.Description,
             request.HasLatitude ? request.Latitude!.Value : sensor.Latitude,

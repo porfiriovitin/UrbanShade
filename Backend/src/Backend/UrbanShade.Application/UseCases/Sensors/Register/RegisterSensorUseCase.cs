@@ -13,11 +13,13 @@ public sealed class RegisterSensorUseCase : IRegisterSensorUseCase
 {
     private readonly ISensorRepository _sensors;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICityRepository _cities;
 
-    public RegisterSensorUseCase(ISensorRepository sensors, IUnitOfWork unitOfWork)
+    public RegisterSensorUseCase(ISensorRepository sensors, IUnitOfWork unitOfWork, ICityRepository cities)
     {
         _sensors = sensors;
         _unitOfWork = unitOfWork;
+        _cities = cities;
     }
 
     public async Task<SensorResponse> Execute(RegisterSensorRequest request, CancellationToken cancellationToken = default)
@@ -28,7 +30,11 @@ public sealed class RegisterSensorUseCase : IRegisterSensorUseCase
         if (await _sensors.CodeExists(code, null, cancellationToken))
             throw new SensorException(HttpStatusCode.Conflict, "Sensor code already registered.");
 
+        if (request.CityId.HasValue && await _cities.FindById(request.CityId.Value, cancellationToken) is null)
+            throw new CityException(HttpStatusCode.NotFound, "City is unavailable.");
+
         var sensor = new Sensor(code, request.Name, request.Description, request.Latitude!.Value, request.Longitude!.Value, request.InstalledAt);
+        if (request.CityId.HasValue) sensor.AssignCity(request.CityId);
         _sensors.Add(sensor);
         await _unitOfWork.SaveChanges(cancellationToken);
 

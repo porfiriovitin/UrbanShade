@@ -178,6 +178,7 @@ public sealed class SensorReadingUseCaseTests
         public Task<Sensor?> FindById(Guid id, CancellationToken cancellationToken) => Task.FromResult(Sensors.SingleOrDefault(sensor => sensor.Id == id && sensor.DeletedAt is null));
         public Task<Sensor?> FindForReadingHistory(Guid id, CancellationToken cancellationToken) => Task.FromResult(Sensors.SingleOrDefault(sensor => sensor.Id == id));
         public Task<List<Sensor>> GetActiveForReadingGeneration(CancellationToken cancellationToken) => Task.FromResult(Sensors.Where(sensor => sensor.Status == SensorStatus.ACTIVE && sensor.DeletedAt is null && sensor.Active).ToList());
+        public Task<List<Sensor>> GetActiveForThermalMap(Guid? cityId, Guid? organizationId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task<List<Sensor>> GetAll(bool activeOnly, SensorStatus? status, string? code, string? name, CancellationToken cancellationToken) => GetActiveForReadingGeneration(cancellationToken);
         public Task<bool> CodeExists(string code, Guid? exceptId, CancellationToken cancellationToken) => throw new NotSupportedException();
         public void Add(Sensor sensor) => Sensors.Add(sensor);

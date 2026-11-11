@@ -18,6 +18,9 @@ internal sealed class PersistenceExceptionInterceptor : SaveChangesInterceptor
 
     private static void TranslateException(Exception exception)
     {
+        if (exception is DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "IX_Cities_IbgeCode" } })
+            throw new CityException(System.Net.HttpStatusCode.Conflict, "City IBGE code already registered.");
+
         if (exception is DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } postgres } &&
             postgres.ConstraintName is "IX_Organizations_Document" or "IX_OrganizationMembers_OrganizationId_UserId")
         {
