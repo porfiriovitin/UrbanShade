@@ -11,6 +11,9 @@ using UrbanShade.Infraestructure.DataAcess;
 using UrbanShade.Infraestructure.DataAcess.Repositories;
 using UrbanShade.Infraestructure.Security;
 using UrbanShade.Infraestructure.Workers;
+using Microsoft.Extensions.Options;
+using UrbanShade.Domain.Weather;
+using UrbanShade.Infraestructure.Weather;
 
 namespace UrbanShade.Infraestructure;
 
@@ -19,6 +22,20 @@ public static class DependencyInjectionExtension
     public static void AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         AddDbContext(services, configuration);
+        services.AddOptions<OpenMeteoSettings>()
+            .Bind(configuration.GetSection("OpenMeteo"))
+            .Validate(settings => { settings.Validate(); return true; })
+            .ValidateOnStart();
+        services.AddMemoryCache();
+        services.AddScoped<IWeatherRepository, WeatherRepository>();
+        services.AddHttpClient<IOpenMeteoService, OpenMeteoService>((provider, client) =>
+        {
+            var settings = provider.GetRequiredService<IOptions<OpenMeteoSettings>>().Value;
+            client.BaseAddress = new Uri(settings.BaseUrl.TrimEnd('/') + "/");
+            client.Timeout = Timeout.InfiniteTimeSpan;
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("UrbanShade/1.0");
+        });
+        services.AddHostedService<WeatherBackgroundService>();
         var openStreetMap = configuration.GetSection("OpenStreetMap").Get<OpenStreetMapSettings>() ?? new OpenStreetMapSettings();
         openStreetMap.Validate();
         services.AddSingleton(openStreetMap);

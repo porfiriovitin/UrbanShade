@@ -8,4 +8,6 @@ public interface IGeoRegionRepository
     Task<GeoRegion?> FindById(Guid id, CancellationToken cancellationToken);
     Task<List<GeoRegion>> GetAll(Guid? cityId, int page, int pageSize, CancellationToken cancellationToken);
     Task<double> GetArea(Geometry boundary, CancellationToken cancellationToken);
+    Task<GeoRegion?> FindIncludingInactive(Guid id, CancellationToken cancellationToken);
+    Task<Point> GetWeatherPoint(Guid id, CancellationToken cancellationToken);
 }

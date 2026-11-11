@@ -41,6 +41,9 @@ using UrbanShade.Domain.ThermalAnalysis;
 using UrbanShade.Application.UseCases.Cities.Register;
 using UrbanShade.Application.UseCases.Cities.GetAll;
 using UrbanShade.Application.UseCases.Cities.GetById;
+using UrbanShade.Application.Services;
+using UrbanShade.Application.UseCases.Weather.Query;
+using UrbanShade.Application.UseCases.Weather.Refresh;
 
 namespace UrbanShade.Application;
 
@@ -48,6 +51,9 @@ public static class DependencyInjectionExtension
 {
     public static void AddApplication(this IServiceCollection services)
     {
+        services.AddScoped<WeatherService>();
+        services.AddScoped<IQueryWeatherUseCase, QueryWeatherUseCase>();
+        services.AddScoped<IRefreshWeatherUseCase, RefreshWeatherUseCase>();
         services.AddScoped<IImportOpenStreetMapUseCase, ImportOpenStreetMapUseCase>();
         services.AddScoped<IRefreshOpenStreetMapUseCase, RefreshOpenStreetMapUseCase>();
         services.AddScoped<IQueryGreenAreasUseCase, QueryGreenAreasUseCase>();

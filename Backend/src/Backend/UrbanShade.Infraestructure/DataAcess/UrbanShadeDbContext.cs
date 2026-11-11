@@ -18,6 +18,8 @@ internal class UrbanShadeDbContext : DbContext
     public DbSet<RefreshTokens> RefreshTokens { get; set; }
 
     public DbSet<GeoRegion> GeoRegions { get; set; }
+    public DbSet<WeatherSnapshot> WeatherSnapshots { get; set; }
+    public DbSet<WeatherForecast> WeatherForecasts { get; set; }
     public DbSet<SatelliteAnalysis> SatelliteAnalyses { get; set; }
     public DbSet<GeoAnalysisJob> GeoAnalysisJobs { get; set; }
     public DbSet<GreenArea> GreenAreas { get; set; }
@@ -36,6 +38,18 @@ internal class UrbanShadeDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.HasPostgresExtension("postgis");
+        modelBuilder.Entity<WeatherSnapshot>().HasOne<GeoRegion>().WithMany().HasForeignKey(item => item.GeoRegionId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<WeatherForecast>().HasOne<GeoRegion>().WithMany().HasForeignKey(item => item.GeoRegionId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<WeatherSnapshot>().HasIndex(item => new { item.GeoRegionId, item.BoundaryVersion, item.FetchedAt });
+        modelBuilder.Entity<WeatherSnapshot>().HasIndex(item => new { item.GeoRegionId, item.ObservedAt });
+        modelBuilder.Entity<WeatherForecast>().HasIndex(item => new { item.GeoRegionId, item.Source, item.ForecastAt }).IsUnique();
+        modelBuilder.Entity<WeatherForecast>().HasIndex(item => new { item.GeoRegionId, item.BoundaryVersion, item.ForecastAt });
+        modelBuilder.Entity<WeatherSnapshot>().Property(item => item.Source).HasMaxLength(32);
+        modelBuilder.Entity<WeatherSnapshot>().Property(item => item.Model).HasMaxLength(100);
+        modelBuilder.Entity<WeatherForecast>().Property(item => item.Source).HasMaxLength(32);
+        foreach (var entityType in new[] { typeof(WeatherSnapshot), typeof(WeatherForecast) })
+            foreach (var property in modelBuilder.Model.FindEntityType(entityType)!.GetProperties().Where(property => property.ClrType == typeof(decimal?)))
+            { property.SetPrecision(18); property.SetScale(6); }
         modelBuilder.Entity<GeoRegion>().Property(region => region.BoundaryVersion).IsConcurrencyToken();
         modelBuilder.Entity<GeoRegion>().Property(region => region.Name).HasMaxLength(150);
         modelBuilder.Entity<GeoRegion>().Property(region => region.Description).HasMaxLength(500);

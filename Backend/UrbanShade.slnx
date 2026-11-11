@@ -17,8 +17,11 @@
     <Project Path="src/Backend/UrbanShade.Infraestructure/UrbanShade.Infraestructure.csproj" Id="59e59afd-f7b4-42dc-886a-8f5f42c8101f" />
   </Folder>
   <Folder Name="/src/Docs/">
+    <File Path="src/Docs/areas-verdes-openstreetmap.md" />
     <File Path="src/Docs/fluxo-instituicoes-primeiro-acesso.md" />
-    <File Path="src/Docs/README.md" />
+    <File Path="src/Docs/integracao-satelites.md" />
+    <File Path="src/Docs/municipios-e-analise-termica.md" />
+    <File Path="src/Docs/regioes-e-consultas-geoespaciais.md" />
   </Folder>
   <Folder Name="/src/misc/" />
   <Folder Name="/src/misc/specs/">

@@ -18,6 +18,8 @@ public class GeoRegion : EntityBase
     public DateTime? OpenStreetMapReferenceDate { get; private set; }
     public DateTime? OpenStreetMapRequestedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
+    public DateTime? WeatherRequestedAt { get; private set; }
+    public DateTime? WeatherRetryAfter { get; private set; }
     public void Update(string name, string? description, Geometry boundary)
     {
         if (string.IsNullOrWhiteSpace(name) || name.Trim().Length > 150 || description?.Length > 500)

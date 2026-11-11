@@ -10,6 +10,10 @@ internal sealed class GeoRegionRepository : IGeoRegionRepository
     private readonly UrbanShadeDbContext _context;
     public GeoRegionRepository(UrbanShadeDbContext context) { _context = context; }
     public void Add(GeoRegion region) => _context.GeoRegions.Add(region);
+    public Task<GeoRegion?> FindIncludingInactive(Guid id, CancellationToken cancellationToken) =>
+        _context.GeoRegions.AsNoTracking().SingleOrDefaultAsync(region => region.Id == id, cancellationToken);
+    public Task<Point> GetWeatherPoint(Guid id, CancellationToken cancellationToken) =>
+        _context.GeoRegions.Where(region => region.Id == id && region.Active).Select(region => (Point)region.Boundary.PointOnSurface).SingleAsync(cancellationToken);
     public Task<GeoRegion?> FindById(Guid id, CancellationToken cancellationToken) => _context.GeoRegions.SingleOrDefaultAsync(region => region.Id == id && region.Active, cancellationToken);
     public Task<List<GeoRegion>> GetAll(Guid? cityId, int page, int pageSize, CancellationToken cancellationToken) =>
         _context.GeoRegions.AsNoTracking().Where(region => region.Active && (!cityId.HasValue || region.CityId == cityId)).OrderBy(region => region.Name).ThenBy(region => region.Id)

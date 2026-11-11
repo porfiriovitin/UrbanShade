@@ -15,19 +15,26 @@ public sealed class UrbanShadeApplicationFactory : WebApplicationFactory<Program
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Tests");
-        builder.ConfigureServices(services => services.AddControllers().AddApplicationPart(typeof(Resources.AdministrationProbeController).Assembly));
+        builder.ConfigureServices(services =>
+        {
+            services.AddControllers().AddApplicationPart(typeof(Resources.AdministrationProbeController).Assembly);
+            services.AddSingleton<Weather.WeatherTestProvider>();
+            services.AddSingleton<UrbanShade.Domain.Weather.IOpenMeteoService>(provider => provider.GetRequiredService<Weather.WeatherTestProvider>());
+        });
         builder.UseSetting("ConnectionStrings:DbConnection", ConnectionString);
         builder.UseSetting("Jwt:SigningKey", SigningKey);
         builder.UseSetting("SensorSimulation:Enabled", "false");
         builder.UseSetting("ThermalAnalysis:Enabled", "false");
         builder.UseSetting("GoogleEarthEngine:Enabled", "false");
         builder.UseSetting("OpenStreetMap:Enabled", "false");
+        builder.UseSetting("OpenMeteo:AutomaticRefreshEnabled", "false");
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["ConnectionStrings:DbConnection"] = ConnectionString,
             ["Jwt:SigningKey"] = SigningKey,
             ["SensorSimulation:Enabled"] = "false",
-            ["ThermalAnalysis:Enabled"] = "false"
+            ["ThermalAnalysis:Enabled"] = "false",
+            ["OpenMeteo:AutomaticRefreshEnabled"] = "false"
         }));
     }
 
