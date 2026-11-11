@@ -41,7 +41,8 @@ public sealed class RegionThermalAnalysisTests : BaseIntegrationTest
         {
             var context = scope.ServiceProvider.GetRequiredService<UrbanShadeDbContext>();
             Assert.Equal(1, await context.RegionThermalAnalyses.CountAsync(item => item.GeoRegionId == region.Id));
-            await context.SensorReadings.Where(item => context.Sensors.Any(sensor => sensor.Id == item.SensorId && sensor.Code.StartsWith(region.Id.ToString())))
+            var prefix = region.Id.ToString().ToUpperInvariant();
+            await context.SensorReadings.Where(item => context.Sensors.Any(sensor => sensor.Id == item.SensorId && sensor.Code.StartsWith(prefix)))
                 .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.MeasuredAt, DateTime.UtcNow.AddHours(-1)));
         }
         var expired = await Analyze(region.Id);
@@ -105,7 +106,8 @@ public sealed class RegionThermalAnalysisTests : BaseIntegrationTest
             var reference = new GeoRegion(region.CityId, "Reference park", null, region.Boundary);
             context.GeoRegions.Add(reference);
             stored.UpdateReference(reference.Id);
-            await context.Sensors.Where(item => item.Code.StartsWith(region.Id.ToString())).ExecuteUpdateAsync(setters => setters.SetProperty(item => item.Status, SensorStatus.INACTIVE));
+            var prefix = region.Id.ToString().ToUpperInvariant();
+            await context.Sensors.Where(item => item.Code.StartsWith(prefix)).ExecuteUpdateAsync(setters => setters.SetProperty(item => item.Status, SensorStatus.INACTIVE));
             var now = DateTime.UtcNow;
             context.WeatherSnapshots.Add(new WeatherSnapshot(region.Id, region.BoundaryVersion, .5, .5,
                 new WeatherObservation(now.AddMinutes(-1), now, new(32, 60, 99, 0, 0, 0, 0), [])));
