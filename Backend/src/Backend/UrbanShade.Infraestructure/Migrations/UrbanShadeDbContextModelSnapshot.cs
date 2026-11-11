@@ -109,6 +109,39 @@ namespace UrbanShade.Infraestructure.Migrations
                     b.ToTable("Sensors");
                 });
 
+            modelBuilder.Entity("UrbanShade.Domain.Entities.SensorReading", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("Humidity")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<DateTime>("MeasuredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SensorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Temperature")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SensorId", "MeasuredAt");
+
+                    b.ToTable("SensorReadings");
+                });
+
             modelBuilder.Entity("UrbanShade.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -151,6 +184,16 @@ namespace UrbanShade.Infraestructure.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+
+            modelBuilder.Entity("UrbanShade.Domain.Entities.SensorReading", b =>
+                {
+                    b.HasOne("UrbanShade.Domain.Entities.Sensor", null)
+                        .WithMany()
+                        .HasForeignKey("SensorId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 #pragma warning restore 612, 618

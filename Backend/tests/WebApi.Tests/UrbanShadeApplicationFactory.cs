@@ -18,10 +18,12 @@ public sealed class UrbanShadeApplicationFactory : WebApplicationFactory<Program
         builder.ConfigureServices(services => services.AddControllers().AddApplicationPart(typeof(Resources.AdministrationProbeController).Assembly));
         builder.UseSetting("ConnectionStrings:DbConnection", ConnectionString);
         builder.UseSetting("Jwt:SigningKey", SigningKey);
+        builder.UseSetting("SensorSimulation:Enabled", "false");
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["ConnectionStrings:DbConnection"] = ConnectionString,
-            ["Jwt:SigningKey"] = SigningKey
+            ["Jwt:SigningKey"] = SigningKey,
+            ["SensorSimulation:Enabled"] = "false"
         }));
     }
 

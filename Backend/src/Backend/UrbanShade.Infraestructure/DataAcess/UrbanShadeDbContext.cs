@@ -10,12 +10,17 @@ internal class UrbanShadeDbContext : DbContext
 
     public DbSet<User> Users { get; set; }
     public DbSet<Sensor> Sensors { get; set; }
+    public DbSet<SensorReading> SensorReadings { get; set; }
     public DbSet<RefreshTokens> RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<SensorReading>().Property(reading => reading.Temperature).HasPrecision(18, 6);
+        modelBuilder.Entity<SensorReading>().Property(reading => reading.Humidity).HasPrecision(18, 6);
+        modelBuilder.Entity<SensorReading>().HasIndex(reading => new { reading.SensorId, reading.MeasuredAt });
+        modelBuilder.Entity<SensorReading>().HasOne<Sensor>().WithMany().HasForeignKey(reading => reading.SensorId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<Sensor>().HasQueryFilter(sensor => sensor.DeletedAt == null);
         modelBuilder.Entity<Sensor>().HasIndex(sensor => sensor.Code).IsUnique();
         modelBuilder.Entity<Sensor>().Property(sensor => sensor.Code).HasMaxLength(50);

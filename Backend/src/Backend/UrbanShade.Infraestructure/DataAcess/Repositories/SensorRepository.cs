@@ -16,6 +16,16 @@ internal sealed class SensorRepository : ISensorRepository
 
     public Task<Sensor?> FindById(Guid id, CancellationToken cancellationToken) => _context.Sensors.SingleOrDefaultAsync(sensor => sensor.Id == id, cancellationToken);
 
+    public Task<Sensor?> FindForReadingHistory(Guid id, CancellationToken cancellationToken) =>
+        _context.Sensors.IgnoreQueryFilters().AsNoTracking().SingleOrDefaultAsync(sensor => sensor.Id == id, cancellationToken);
+
+    public Task<List<Sensor>> GetActiveForReadingGeneration(CancellationToken cancellationToken) =>
+        _context.Sensors.FromSqlRaw("""
+            SELECT * FROM "Sensors"
+            WHERE "Status" = 'ACTIVE' AND "Active" = TRUE AND "DeletedAt" IS NULL
+            ORDER BY "Id" FOR UPDATE
+            """).AsNoTracking().ToListAsync(cancellationToken);
+
     public Task<bool> CodeExists(string code, Guid? exceptId, CancellationToken cancellationToken) =>
         _context.Sensors.IgnoreQueryFilters().AnyAsync(sensor => sensor.Code == code && (!exceptId.HasValue || sensor.Id != exceptId.Value), cancellationToken);
 

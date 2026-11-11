@@ -86,6 +86,8 @@ public sealed class SensorUseCaseTests
     {
         public Sensor? Sensor { get; set; }
         public bool Duplicate { get; set; }
+        public Task<Sensor?> FindForReadingHistory(Guid id, CancellationToken cancellationToken) => Task.FromResult(Sensor?.Id == id ? Sensor : null);
+        public Task<List<Sensor>> GetActiveForReadingGeneration(CancellationToken cancellationToken) => throw new NotSupportedException();
         public bool Saved { get; private set; }
         public Task<Sensor?> FindById(Guid id, CancellationToken cancellationToken) => Task.FromResult(Sensor?.Id == id && Sensor.DeletedAt is null ? Sensor : null);
         public Task<bool> CodeExists(string code, Guid? exceptId, CancellationToken cancellationToken) => Task.FromResult(Duplicate);

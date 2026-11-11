@@ -11,6 +11,11 @@ using UrbanShade.Communication.Requests.Sensors;
 using UrbanShade.Communication.Responses;
 using UrbanShade.Communication.Responses.Sensors;
 using UrbanShade.Domain.Enums;
+using UrbanShade.Application.UseCases.SensorReadings.GetHistory;
+using UrbanShade.Application.UseCases.SensorReadings.GetLatest;
+using UrbanShade.Application.UseCases.SensorReadings.GetLatestBySensors;
+using UrbanShade.Communication.Requests.SensorReadings;
+using UrbanShade.Communication.Responses.SensorReadings;
 
 namespace UrbanShade.API.Controllers;
 
@@ -19,6 +24,43 @@ namespace UrbanShade.API.Controllers;
 [Route("api/sensors")]
 public sealed class SensorsController : ControllerBase
 {
+    [HttpGet("{id:guid}/readings")]
+    public async Task<IActionResult> GetReadings(Guid id, [FromQuery] GetSensorReadingsRequest request, [FromServices] IGetSensorReadingsUseCase useCase, CancellationToken cancellationToken)
+    {
+        var response = await useCase.Execute(id, request, User.IsInRole(nameof(UserRoles.PlatformAdministrator)), cancellationToken);
+
+        return StatusCode(StatusCodes.Status200OK, new PayloadResponse<PagedResponse<SensorReadingResponse>>
+        {
+            Status = nameof(ResponseStatus.Success),
+            Data = response
+        });
+    }
+
+    [HttpGet("{id:guid}/readings/latest")]
+    public async Task<IActionResult> GetLatestReading(Guid id, [FromServices] IGetLatestSensorReadingUseCase useCase, CancellationToken cancellationToken)
+    {
+        var response = await useCase.Execute(id, User.IsInRole(nameof(UserRoles.PlatformAdministrator)), cancellationToken);
+        if (response is null) return NoContent();
+
+        return StatusCode(StatusCodes.Status200OK, new PayloadResponse<SensorReadingResponse>
+        {
+            Status = nameof(ResponseStatus.Success),
+            Data = response
+        });
+    }
+
+    [HttpGet("latest-readings")]
+    public async Task<IActionResult> GetLatestReadings([FromServices] IGetLatestSensorReadingsUseCase useCase, CancellationToken cancellationToken)
+    {
+        var response = await useCase.Execute(cancellationToken);
+
+        return StatusCode(StatusCodes.Status200OK, new PayloadResponse<List<LatestSensorReadingResponse>>
+        {
+            Status = nameof(ResponseStatus.Success),
+            Data = response
+        });
+    }
+
     [Authorize(Policy = "PlatformAdministration")]
     [HttpPost]
     public async Task<IActionResult> Register(RegisterSensorRequest request, [FromServices] IRegisterSensorUseCase useCase, CancellationToken cancellationToken)

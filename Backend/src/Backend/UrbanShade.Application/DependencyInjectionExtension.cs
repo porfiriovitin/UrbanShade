@@ -1,4 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
+using UrbanShade.Application.UseCases.SensorReadings.Generate;
+using UrbanShade.Application.UseCases.SensorReadings.GetHistory;
+using UrbanShade.Application.UseCases.SensorReadings.GetLatest;
+using UrbanShade.Application.UseCases.SensorReadings.GetLatestBySensors;
 using UrbanShade.Application.UseCases.Sensors.Register;
 using UrbanShade.Application.UseCases.Sensors.Update;
 using UrbanShade.Application.UseCases.Sensors.UpdateStatus;
@@ -19,6 +23,11 @@ public static class DependencyInjectionExtension
     public static void AddApplication(this IServiceCollection services)
     {
         services.AddScoped<TokenIssuer>();
+        services.AddScoped<SensorReadingGenerator>();
+        services.AddScoped<IGenerateSensorReadingsUseCase, GenerateSensorReadingsUseCase>();
+        services.AddScoped<IGetSensorReadingsUseCase, GetSensorReadingsUseCase>();
+        services.AddScoped<IGetLatestSensorReadingUseCase, GetLatestSensorReadingUseCase>();
+        services.AddScoped<IGetLatestSensorReadingsUseCase, GetLatestSensorReadingsUseCase>();
         services.AddScoped<IRegisterSensorUseCase, RegisterSensorUseCase>();
         services.AddScoped<IUpdateSensorUseCase, UpdateSensorUseCase>();
         services.AddScoped<IUpdateSensorStatusUseCase, UpdateSensorStatusUseCase>();
