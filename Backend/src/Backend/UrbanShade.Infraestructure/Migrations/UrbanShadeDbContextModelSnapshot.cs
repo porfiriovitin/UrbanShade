@@ -177,6 +177,10 @@ namespace UrbanShade.Infraestructure.Migrations
                     b.Property<DateTime?>("OpenStreetMapRequestedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("ReferenceGeoRegionId")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -193,6 +197,8 @@ namespace UrbanShade.Infraestructure.Migrations
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Boundary"), "gist");
 
                     b.HasIndex("CityId");
+
+                    b.HasIndex("ReferenceGeoRegionId");
 
                     b.ToTable("GeoRegions");
                 });
@@ -392,6 +398,94 @@ namespace UrbanShade.Infraestructure.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("UrbanShade.Domain.Entities.RegionThermalAnalysis", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("AlgorithmVersion")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("AnalyzedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("AverageHeatIndex")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<int>("BoundaryVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ConfidenceLevel")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DataOrigin")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("DataQuality")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal?>("ExposureIndex")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<string>("ExposureLevel")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("GeoRegionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("InputSignature")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<bool?>("IsHeatIslandCandidate")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal?>("MeanNdvi")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<int>("SensorCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SourceMetadata")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<decimal?>("SurfaceTemperature")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<decimal?>("SurfaceTemperatureAnomaly")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.Property<decimal?>("VegetationCoveragePercent")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("numeric(18,6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GeoRegionId", "BoundaryVersion", "AnalyzedAt");
+
+                    b.ToTable("RegionThermalAnalyses");
                 });
 
             modelBuilder.Entity("UrbanShade.Domain.Entities.SatelliteAnalysis", b =>
@@ -825,6 +919,11 @@ namespace UrbanShade.Infraestructure.Migrations
                         .HasForeignKey("CityId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("UrbanShade.Domain.Entities.GeoRegion", null)
+                        .WithMany()
+                        .HasForeignKey("ReferenceGeoRegionId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("UrbanShade.Domain.Entities.GreenArea", b =>
@@ -876,6 +975,15 @@ namespace UrbanShade.Infraestructure.Migrations
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("UrbanShade.Domain.Entities.RegionThermalAnalysis", b =>
+                {
+                    b.HasOne("UrbanShade.Domain.Entities.GeoRegion", null)
+                        .WithMany()
+                        .HasForeignKey("GeoRegionId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

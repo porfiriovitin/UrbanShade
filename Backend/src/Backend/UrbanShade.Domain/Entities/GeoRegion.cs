@@ -11,6 +11,14 @@ public class GeoRegion : EntityBase
         Update(name, description, boundary);
     }
     public Guid CityId { get; private set; }
+    public Guid? ReferenceGeoRegionId { get; private set; }
+    public void UpdateReference(Guid? referenceRegionId)
+    {
+        if (referenceRegionId == Id || referenceRegionId == Guid.Empty)
+            throw new ArgumentException("A different reference region is required.", nameof(referenceRegionId));
+        ReferenceGeoRegionId = referenceRegionId;
+        UpdatedAt = DateTime.UtcNow;
+    }
     public string Name { get; private set; } = string.Empty;
     public string? Description { get; private set; }
     public Geometry Boundary { get; private set; } = null!;

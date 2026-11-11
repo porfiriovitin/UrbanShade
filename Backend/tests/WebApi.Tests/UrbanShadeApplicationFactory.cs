@@ -28,13 +28,15 @@ public sealed class UrbanShadeApplicationFactory : WebApplicationFactory<Program
         builder.UseSetting("GoogleEarthEngine:Enabled", "false");
         builder.UseSetting("OpenStreetMap:Enabled", "false");
         builder.UseSetting("OpenMeteo:AutomaticRefreshEnabled", "false");
+        builder.UseSetting("RegionThermalAnalysis:AutomaticRefreshEnabled", "false");
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["ConnectionStrings:DbConnection"] = ConnectionString,
             ["Jwt:SigningKey"] = SigningKey,
             ["SensorSimulation:Enabled"] = "false",
             ["ThermalAnalysis:Enabled"] = "false",
-            ["OpenMeteo:AutomaticRefreshEnabled"] = "false"
+            ["OpenMeteo:AutomaticRefreshEnabled"] = "false",
+            ["RegionThermalAnalysis:AutomaticRefreshEnabled"] = "false"
         }));
     }
 

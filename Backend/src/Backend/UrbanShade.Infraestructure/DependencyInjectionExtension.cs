@@ -22,6 +22,11 @@ public static class DependencyInjectionExtension
     public static void AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         AddDbContext(services, configuration);
+        var regional = configuration.GetSection("RegionThermalAnalysis").Get<UrbanShade.Domain.RegionThermalAnalysis.RegionThermalAnalysisSettings>() ?? new();
+        regional.Validate();
+        services.AddSingleton(regional);
+        services.AddScoped<IRegionThermalAnalysisRepository, RegionThermalAnalysisRepository>();
+        services.AddHostedService<RegionThermalAnalysisBackgroundService>();
         services.AddOptions<OpenMeteoSettings>()
             .Bind(configuration.GetSection("OpenMeteo"))
             .Validate(settings => { settings.Validate(); return true; })

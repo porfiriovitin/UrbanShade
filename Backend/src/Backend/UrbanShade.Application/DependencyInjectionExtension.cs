@@ -51,6 +51,15 @@ public static class DependencyInjectionExtension
 {
     public static void AddApplication(this IServiceCollection services)
     {
+        services.AddSingleton<UrbanShade.Domain.RegionThermalAnalysis.ExposureIndexCalculator>();
+        services.AddScoped<UrbanShade.Application.UseCases.GeoRegions.UpdateReference.IUpdateReferenceRegionUseCase, UrbanShade.Application.UseCases.GeoRegions.UpdateReference.UpdateReferenceRegionUseCase>();
+        services.AddScoped<UrbanShade.Application.UseCases.RegionThermalAnalyses.Analyze.IAnalyzeRegionThermalUseCase, UrbanShade.Application.UseCases.RegionThermalAnalyses.Analyze.AnalyzeRegionThermalUseCase>();
+        services.AddScoped<UrbanShade.Application.UseCases.RegionThermalAnalyses.ProcessPending.IProcessPendingRegionThermalAnalysesUseCase, UrbanShade.Application.UseCases.RegionThermalAnalyses.ProcessPending.ProcessPendingRegionThermalAnalysesUseCase>();
+        services.AddScoped<UrbanShade.Application.UseCases.RegionThermalAnalyses.GetLatest.IGetLatestRegionThermalAnalysisUseCase, UrbanShade.Application.UseCases.RegionThermalAnalyses.GetLatest.GetLatestRegionThermalAnalysisUseCase>();
+        services.AddScoped<UrbanShade.Application.UseCases.RegionThermalAnalyses.GetHistory.IGetRegionThermalHistoryUseCase, UrbanShade.Application.UseCases.RegionThermalAnalyses.GetHistory.GetRegionThermalHistoryUseCase>();
+        services.AddScoped<UrbanShade.Application.UseCases.RegionThermalAnalyses.GetRanking.IGetRegionThermalRankingUseCase, UrbanShade.Application.UseCases.RegionThermalAnalyses.GetRanking.GetRegionThermalRankingUseCase>();
+        services.AddScoped<UrbanShade.Application.UseCases.RegionThermalAnalyses.Compare.ICompareRegionThermalAnalysesUseCase, UrbanShade.Application.UseCases.RegionThermalAnalyses.Compare.CompareRegionThermalAnalysesUseCase>();
+        services.AddScoped<UrbanShade.Application.UseCases.RegionThermalAnalyses.GetMap.IGetRegionThermalMapUseCase, UrbanShade.Application.UseCases.RegionThermalAnalyses.GetMap.GetRegionThermalMapUseCase>();
         services.AddScoped<WeatherService>();
         services.AddScoped<IQueryWeatherUseCase, QueryWeatherUseCase>();
         services.AddScoped<IRefreshWeatherUseCase, RefreshWeatherUseCase>();

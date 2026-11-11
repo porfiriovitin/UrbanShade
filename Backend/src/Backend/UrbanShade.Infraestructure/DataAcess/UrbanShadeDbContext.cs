@@ -18,6 +18,7 @@ internal class UrbanShadeDbContext : DbContext
     public DbSet<RefreshTokens> RefreshTokens { get; set; }
 
     public DbSet<GeoRegion> GeoRegions { get; set; }
+    public DbSet<RegionThermalAnalysis> RegionThermalAnalyses { get; set; }
     public DbSet<WeatherSnapshot> WeatherSnapshots { get; set; }
     public DbSet<WeatherForecast> WeatherForecasts { get; set; }
     public DbSet<SatelliteAnalysis> SatelliteAnalyses { get; set; }
@@ -38,6 +39,19 @@ internal class UrbanShadeDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.HasPostgresExtension("postgis");
+        modelBuilder.Entity<GeoRegion>().HasOne<GeoRegion>().WithMany().HasForeignKey(item => item.ReferenceGeoRegionId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<GeoRegion>().Property(item => item.ReferenceGeoRegionId).IsConcurrencyToken();
+        modelBuilder.Entity<RegionThermalAnalysis>().HasOne<GeoRegion>().WithMany().HasForeignKey(item => item.GeoRegionId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<RegionThermalAnalysis>().HasIndex(item => new { item.GeoRegionId, item.BoundaryVersion, item.AnalyzedAt });
+        modelBuilder.Entity<RegionThermalAnalysis>().Property(item => item.SourceMetadata).HasColumnType("jsonb");
+        modelBuilder.Entity<RegionThermalAnalysis>().Property(item => item.ExposureLevel).HasConversion<string>();
+        modelBuilder.Entity<RegionThermalAnalysis>().Property(item => item.DataQuality).HasConversion<string>();
+        modelBuilder.Entity<RegionThermalAnalysis>().Property(item => item.ConfidenceLevel).HasConversion<string>();
+        modelBuilder.Entity<RegionThermalAnalysis>().Property(item => item.AlgorithmVersion).HasMaxLength(32);
+        modelBuilder.Entity<RegionThermalAnalysis>().Property(item => item.InputSignature).HasMaxLength(64);
+        modelBuilder.Entity<RegionThermalAnalysis>().Property(item => item.DataOrigin).HasMaxLength(32);
+        foreach (var property in modelBuilder.Model.FindEntityType(typeof(RegionThermalAnalysis))!.GetProperties().Where(property => property.ClrType == typeof(decimal?)))
+        { property.SetPrecision(18); property.SetScale(6); }
         modelBuilder.Entity<WeatherSnapshot>().HasOne<GeoRegion>().WithMany().HasForeignKey(item => item.GeoRegionId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<WeatherForecast>().HasOne<GeoRegion>().WithMany().HasForeignKey(item => item.GeoRegionId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<WeatherSnapshot>().HasIndex(item => new { item.GeoRegionId, item.BoundaryVersion, item.FetchedAt });

@@ -19,6 +19,16 @@ namespace UrbanShade.API.Controllers;
 [Route("api/geo")]
 public sealed class GeoController : ControllerBase
 {
+    [HttpPut("regions/{id:guid}/reference")]
+    [Authorize(Policy = "PlatformAdministration")]
+    [EnableRateLimiting("GeoAdministration")]
+    public async Task<IActionResult> UpdateReference(Guid id, UpdateReferenceRegionRequest request,
+        [FromServices] UrbanShade.Application.UseCases.GeoRegions.UpdateReference.IUpdateReferenceRegionUseCase useCase, CancellationToken cancellationToken)
+    {
+        await useCase.Execute(id, request, cancellationToken);
+        return NoContent();
+    }
+
     private static PayloadResponse<T> Payload<T>(T data) => new() { Status = nameof(ResponseStatus.Success), Data = data };
     [HttpPost("regions")]
     [Authorize(Policy = "PlatformAdministration")]
