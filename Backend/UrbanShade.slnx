@@ -6,7 +6,6 @@
     <File Path=".env" />
     <File Path=".gitignore" />
     <File Path="docker-compose.yaml" />
-    <File Path="gen-lang-client-0874883138-81ed01bdd5ba.json" />
     <File Path="src/AGENTS.md" />
     <File Path="example.env" />
   </Folder>
@@ -24,13 +23,7 @@
     <File Path="src/Docs/regioes-e-consultas-geoespaciais.md" />
   </Folder>
   <Folder Name="/src/misc/" />
-  <Folder Name="/src/misc/specs/">
-    <File Path="src/misc/specs/spec-base.md" />
-    <File Path="src/misc/specs/spec2-leitura-sensor.md" />
-    <File Path="src/misc/specs/spec3-analise-termica.md" />
-    <File Path="src/misc/specs/spec4-integracao-satelites.md" />
-    <File Path="src/misc/specs/spec5-integracao-meteorologica.md" />
-  </Folder>
+  <Folder Name="/src/misc/specs/" />
   <Folder Name="/src/Shared/">
     <Project Path="src/Shared/UrbanShade.Communication/UrbanShade.Communication.csproj" Id="c74d462f-1a4e-4989-889a-11d63f098431" />
     <Project Path="src/Shared/UrbanShade.Exceptions/UrbanShade.Exceptions.csproj" Id="86b7659c-d3f6-4747-8be2-13f351e394fb" />
