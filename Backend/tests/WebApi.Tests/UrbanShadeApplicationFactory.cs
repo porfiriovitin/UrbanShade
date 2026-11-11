@@ -9,7 +9,7 @@ namespace WebApi.Tests;
 public sealed class UrbanShadeApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public const string SigningKey = "integration-tests-signing-key-64-bytes-long-do-not-use-in-production";
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:16-alpine").Build();
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgis/postgis:16-3.7").Build();
     public string ConnectionString => _postgres.GetConnectionString();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -20,6 +20,7 @@ public sealed class UrbanShadeApplicationFactory : WebApplicationFactory<Program
         builder.UseSetting("Jwt:SigningKey", SigningKey);
         builder.UseSetting("SensorSimulation:Enabled", "false");
         builder.UseSetting("ThermalAnalysis:Enabled", "false");
+        builder.UseSetting("GoogleEarthEngine:Enabled", "false");
         builder.ConfigureAppConfiguration((_, configuration) => configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["ConnectionStrings:DbConnection"] = ConnectionString,

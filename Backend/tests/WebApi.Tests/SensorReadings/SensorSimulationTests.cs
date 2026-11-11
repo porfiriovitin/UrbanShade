@@ -236,7 +236,7 @@ public sealed class SensorSimulationTests : IClassFixture<UrbanShadeApplicationF
     }
 
     private UrbanShadeDbContext Context(params IInterceptor[] interceptors) => new(new DbContextOptionsBuilder<UrbanShadeDbContext>()
-        .UseNpgsql(_factory.ConnectionString).AddInterceptors(interceptors).Options);
+        .UseNpgsql(_factory.ConnectionString, postgres => postgres.UseNetTopologySuite()).AddInterceptors(interceptors).Options);
 
     private static Sensor Sensor() => new(Guid.NewGuid().ToString("N"), "Simulation Test", null, -22, -44, null);
 

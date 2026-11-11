@@ -225,7 +225,7 @@ public sealed class AuthenticationTests : BaseIntegrationTest
             await create.ExecuteNonQueryAsync();
         }
         var connectionString = new NpgsqlConnectionStringBuilder(Factory.ConnectionString) { Database = database }.ConnectionString;
-        await using var context = new UrbanShadeDbContext(new DbContextOptionsBuilder<UrbanShadeDbContext>().UseNpgsql(connectionString).Options);
+        await using var context = new UrbanShadeDbContext(new DbContextOptionsBuilder<UrbanShadeDbContext>().UseNpgsql(connectionString, postgres => postgres.UseNetTopologySuite()).Options);
         var migrator = context.GetService<IMigrator>();
         await migrator.MigrateAsync("20261106002431_InitialCreate");
         await using (var connection = new NpgsqlConnection(connectionString))

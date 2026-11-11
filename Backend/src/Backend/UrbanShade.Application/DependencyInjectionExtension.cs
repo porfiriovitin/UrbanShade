@@ -1,3 +1,10 @@
+using UrbanShade.Application.UseCases.GreenAreas.Query;
+using UrbanShade.Application.UseCases.SatelliteAnalyses.Query;
+using UrbanShade.Application.UseCases.GeoAnalysisJobs.ProcessPending;
+using UrbanShade.Application.UseCases.GeoAnalysisJobs.Refresh;
+using UrbanShade.Application.UseCases.GeoRegions.Update;
+using UrbanShade.Application.UseCases.GeoRegions.Query;
+using UrbanShade.Application.UseCases.GeoRegions.Register;
 using Microsoft.Extensions.DependencyInjection;
 using UrbanShade.Application.UseCases.Organizations;
 using UrbanShade.Application.UseCases.Organizations.Register;
@@ -39,6 +46,13 @@ public static class DependencyInjectionExtension
 {
     public static void AddApplication(this IServiceCollection services)
     {
+        services.AddScoped<IQueryGreenAreasUseCase, QueryGreenAreasUseCase>();
+        services.AddScoped<IQuerySatelliteAnalysesUseCase, QuerySatelliteAnalysesUseCase>();
+        services.AddScoped<IProcessPendingGeoAnalysesUseCase, ProcessPendingGeoAnalysesUseCase>();
+        services.AddScoped<IRefreshGeoRegionUseCase, RefreshGeoRegionUseCase>();
+        services.AddScoped<IUpdateGeoRegionUseCase, UpdateGeoRegionUseCase>();
+        services.AddScoped<IQueryGeoRegionsUseCase, QueryGeoRegionsUseCase>();
+        services.AddScoped<IRegisterGeoRegionUseCase, RegisterGeoRegionUseCase>();
         services.AddScoped<IRegisterCityUseCase, RegisterCityUseCase>();
         services.AddScoped<IGetCitiesUseCase, GetCitiesUseCase>();
         services.AddScoped<IGetCityByIdUseCase, GetCityByIdUseCase>();

@@ -1,3 +1,5 @@
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using UrbanShade.API.Filters;
 using UrbanShade.API.Authentication;
 using UrbanShade.Application;
@@ -11,6 +13,19 @@ using UrbanShade.Infraestructure.Migrations;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+        await context.HttpContext.Response.WriteAsJsonAsync(new PayloadResponse
+        {
+            Status = nameof(ResponseStatus.Error),
+            Messages = ["Too many administrative requests. Try again shortly."]
+        }, cancellationToken);
+    options.AddPolicy("GeoAdministration", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+});
 builder.Services.AddSwaggerGen(options =>
 {
     /// :: Define the JWT Bearer authentication scheme for Swagger.
@@ -57,6 +72,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 

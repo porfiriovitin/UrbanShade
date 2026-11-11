@@ -23,4 +23,7 @@
     <ProjectReference Include="..\UrbanShade.Infraestructure\UrbanShade.Infraestructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="appsettings.Development.json" CopyToPublishDirectory="Never" />
+  </ItemGroup>
 </Project>

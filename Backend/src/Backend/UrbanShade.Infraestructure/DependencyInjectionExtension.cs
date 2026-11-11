@@ -1,4 +1,6 @@
-﻿using UrbanShade.Domain.Repositories;
+using UrbanShade.Domain.Geospatial;
+using UrbanShade.Infraestructure.Geospatial;
+using UrbanShade.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +19,16 @@ public static class DependencyInjectionExtension
     public static void AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         AddDbContext(services, configuration);
+        var geo = configuration.GetSection("GoogleEarthEngine").Get<GeoAnalysisSettings>() ?? new GeoAnalysisSettings();
+        geo.Validate();
+        services.AddSingleton(geo);
+        services.AddOptions<GoogleEarthEngineOptions>().Bind(configuration.GetSection("GoogleEarthEngine"));
+        services.AddHttpClient<IEarthEngineService, EarthEngineService>(client => client.Timeout = TimeSpan.FromSeconds(90));
+        services.AddScoped<IGeoRegionRepository, GeoRegionRepository>();
+        services.AddScoped<ISatelliteAnalysisRepository, SatelliteAnalysisRepository>();
+        services.AddScoped<IGeoAnalysisJobRepository, GeoAnalysisJobRepository>();
+        services.AddScoped<IGreenAreaRepository, GreenAreaRepository>();
+        services.AddHostedService<GeoAnalysisBackgroundService>();
         var jwt = configuration.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();
         jwt.Validate();
         services.AddSingleton(jwt);
@@ -52,7 +64,7 @@ public static class DependencyInjectionExtension
         services.AddDbContext<UrbanShadeDbContext>(options =>
         {
             var connectionString = configuration.GetConnectionString("DbConnection");
-            options.UseNpgsql(connectionString);
+            options.UseNpgsql(connectionString, postgres => postgres.UseNetTopologySuite());
             options.AddInterceptors(new PersistenceExceptionInterceptor());
         });
     }
