@@ -14,6 +14,15 @@ public sealed class OrganizationValidator : AbstractValidator<OrganizationReques
         RuleFor(request => request.Document).Must(document => !string.IsNullOrWhiteSpace(document) && document.Trim().Length <= 30).WithMessage("Document is required and must have at most 30 characters.");
         RuleFor(request => request.ContactEmail).Must(email => BeAValidEmail(email)).WithMessage("A valid contact email is required.");
         RuleFor(request => request.ContactPhone).MaximumLength(30);
+        RuleFor(request => request.TimeZoneId).Must(BeAValidTimeZone).WithMessage("A valid time zone is required.");
+    }
+
+    private static bool BeAValidTimeZone(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length > 100) return false;
+        try { TimeZoneInfo.FindSystemTimeZoneById(value); return true; }
+        catch (TimeZoneNotFoundException) { return false; }
+        catch (InvalidTimeZoneException) { return false; }
     }
 
     internal static bool BeAValidEmail(string? email)

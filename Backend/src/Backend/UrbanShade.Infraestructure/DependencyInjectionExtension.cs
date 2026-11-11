@@ -22,6 +22,10 @@ public static class DependencyInjectionExtension
     public static void AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         AddDbContext(services, configuration);
+        var dashboard = configuration.GetSection("InstitutionalDashboard").Get<UrbanShade.Domain.InstitutionalDashboard.InstitutionalDashboardSettings>() ?? new();
+        dashboard.Validate();
+        services.AddSingleton(dashboard);
+        services.AddScoped<IInstitutionalDashboardRepository, InstitutionalDashboardRepository>();
         var routing = configuration.GetSection("Routing").Get<UrbanShade.Domain.Routing.RoutingSettings>() ?? new();
         routing.Validate();
         services.AddSingleton(routing);

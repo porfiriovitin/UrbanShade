@@ -15,6 +15,14 @@ public class Organization : EntityBase
         ContactPhone = contactPhone?.Trim();
     }
 
+    public string TimeZoneId { get; private set; } = "America/Sao_Paulo";
+
+    public void UpdateTimeZone(string timeZoneId)
+    {
+        TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+        TimeZoneId = TimeZoneInfo.TryConvertWindowsIdToIanaId(timeZoneId, out var ianaId) ? ianaId : timeZoneId;
+    }
+
     public string Name { get; private set; } = string.Empty;
     public OrganizationType Type { get; private set; }
     public string Document { get; private set; } = string.Empty;

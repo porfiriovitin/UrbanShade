@@ -35,6 +35,7 @@ public sealed class UpdateOrganizationUseCase : IUpdateOrganizationUseCase
             throw new OrganizationException(HttpStatusCode.Conflict, "Organization document already registered.");
 
         organization.Update(request.Name, Enum.Parse<OrganizationType>(request.Type), document, request.ContactEmail, request.ContactPhone, request.Active);
+        organization.UpdateTimeZone(request.TimeZoneId);
         await _unitOfWork.SaveChanges(cancellationToken);
         await transaction.Commit(cancellationToken);
         return GetOrganizationByIdUseCase.ToResponse(organization);

@@ -89,6 +89,7 @@ internal static class BearerConfiguration
         services.AddAuthorizationBuilder()
             .SetDefaultPolicy(new AuthorizationPolicyBuilder().RequireAuthenticatedUser().RequireClaim("purpose", "access").Build())
             .AddPolicy("PlatformAdministration", policy => policy.RequireAuthenticatedUser().RequireClaim("purpose", "access").RequireRole(nameof(UserRoles.PlatformAdministrator)))
+            .AddPolicy("InstitutionalDashboard", policy => policy.RequireAuthenticatedUser().RequireClaim("purpose", "access").RequireRole(nameof(UserRoles.PlatformAdministrator), nameof(UserRoles.Manager)))
             .AddPolicy("FirstAccess", policy => policy.RequireAuthenticatedUser().RequireClaim("purpose", "first_access"));
     }
 }

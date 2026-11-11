@@ -320,6 +320,13 @@ namespace UrbanShade.Infraestructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasDefaultValue("America/Sao_Paulo");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasColumnType("text");
@@ -361,6 +368,34 @@ namespace UrbanShade.Infraestructure.Migrations
                         .IsUnique();
 
                     b.ToTable("OrganizationMembers");
+                });
+
+            modelBuilder.Entity("UrbanShade.Domain.Entities.OrganizationRegion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("GeoRegionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GeoRegionId");
+
+                    b.HasIndex("OrganizationId", "GeoRegionId")
+                        .IsUnique();
+
+                    b.ToTable("OrganizationRegions");
                 });
 
             modelBuilder.Entity("UrbanShade.Domain.Entities.RefreshTokens", b =>
@@ -965,6 +1000,21 @@ namespace UrbanShade.Infraestructure.Migrations
                     b.HasOne("UrbanShade.Domain.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("UrbanShade.Domain.Entities.OrganizationRegion", b =>
+                {
+                    b.HasOne("UrbanShade.Domain.Entities.GeoRegion", null)
+                        .WithMany()
+                        .HasForeignKey("GeoRegionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("UrbanShade.Domain.Entities.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

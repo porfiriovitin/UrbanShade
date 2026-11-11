@@ -45,6 +45,15 @@ internal sealed class OrganizationRepository : IOrganizationRepository
     public Task<Sensor?> FindSensorForUpdate(Guid sensorId, CancellationToken cancellationToken) =>
         _context.Sensors.FromSqlInterpolated($"SELECT * FROM \"Sensors\" WHERE \"Id\" = {sensorId} FOR UPDATE").SingleOrDefaultAsync(cancellationToken);
 
+    public Task<OrganizationRegion?> FindRegion(Guid organizationId, Guid regionId, CancellationToken cancellationToken) =>
+        _context.OrganizationRegions.SingleOrDefaultAsync(link => link.OrganizationId == organizationId && link.GeoRegionId == regionId, cancellationToken);
+
+    public Task<List<GeoRegion>> GetRegions(Guid organizationId, CancellationToken cancellationToken) =>
+        _context.GeoRegions.AsNoTracking().Where(region => region.Active && _context.OrganizationRegions.Any(link => link.OrganizationId == organizationId && link.GeoRegionId == region.Id && link.Active))
+            .OrderBy(region => region.Name).ThenBy(region => region.Id).ToListAsync(cancellationToken);
+
+    public void Add(OrganizationRegion region) => _context.OrganizationRegions.Add(region);
+
     public void Add(Organization organization) => _context.Organizations.Add(organization);
     public void Add(OrganizationMember member) => _context.OrganizationMembers.Add(member);
 }

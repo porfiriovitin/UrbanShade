@@ -31,6 +31,7 @@ public sealed class RegisterOrganizationUseCase : IRegisterOrganizationUseCase
             throw new OrganizationException(HttpStatusCode.Conflict, "Organization document already registered.");
 
         var organization = new Organization(request.Name, Enum.Parse<OrganizationType>(request.Type), document, request.ContactEmail, request.ContactPhone);
+        organization.UpdateTimeZone(request.TimeZoneId);
         _organizations.Add(organization);
         await _unitOfWork.SaveChanges(cancellationToken);
         return GetOrganizationByIdUseCase.ToResponse(organization);

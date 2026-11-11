@@ -13,6 +13,9 @@ public interface IOrganizationRepository
     Task<List<User>> GetMembers(Guid organizationId, CancellationToken cancellationToken);
     Task<List<Sensor>> GetSensors(Guid organizationId, CancellationToken cancellationToken);
     Task<Sensor?> FindSensorForUpdate(Guid sensorId, CancellationToken cancellationToken);
+    Task<OrganizationRegion?> FindRegion(Guid organizationId, Guid regionId, CancellationToken cancellationToken);
+    Task<List<GeoRegion>> GetRegions(Guid organizationId, CancellationToken cancellationToken);
+    void Add(OrganizationRegion region);
     void Add(Organization organization);
     void Add(OrganizationMember member);
 }

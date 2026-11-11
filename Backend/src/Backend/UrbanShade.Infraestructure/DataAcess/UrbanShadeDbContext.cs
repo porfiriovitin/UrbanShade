@@ -9,6 +9,7 @@ internal class UrbanShadeDbContext : DbContext
     public UrbanShadeDbContext(DbContextOptions<UrbanShadeDbContext> options) : base(options){ }
 
     public DbSet<User> Users { get; set; }
+    public DbSet<OrganizationRegion> OrganizationRegions { get; set; }
     public DbSet<Organization> Organizations { get; set; }
     public DbSet<OrganizationMember> OrganizationMembers { get; set; }
     public DbSet<Sensor> Sensors { get; set; }
@@ -114,6 +115,10 @@ internal class UrbanShadeDbContext : DbContext
         modelBuilder.Entity<ThermalAnalysis>().HasIndex(analysis => new { analysis.SensorReadingId, analysis.AlgorithmVersion }).IsUnique();
         modelBuilder.Entity<ThermalAnalysis>().HasOne<SensorReading>().WithMany().HasForeignKey(analysis => analysis.SensorReadingId).OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<OrganizationRegion>().HasIndex(link => new { link.OrganizationId, link.GeoRegionId }).IsUnique();
+        modelBuilder.Entity<OrganizationRegion>().HasOne<Organization>().WithMany().HasForeignKey(link => link.OrganizationId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<OrganizationRegion>().HasOne<GeoRegion>().WithMany().HasForeignKey(link => link.GeoRegionId).OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<Organization>().Property(organization => organization.TimeZoneId).HasMaxLength(100).HasDefaultValue("America/Sao_Paulo");
         modelBuilder.Entity<Organization>().Property(organization => organization.Name).HasMaxLength(150);
         modelBuilder.Entity<Organization>().Property(organization => organization.Document).HasMaxLength(30);
         modelBuilder.Entity<Organization>().Property(organization => organization.ContactEmail).HasMaxLength(254);

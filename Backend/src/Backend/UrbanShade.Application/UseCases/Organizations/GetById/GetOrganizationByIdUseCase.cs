@@ -28,6 +28,7 @@ public sealed class GetOrganizationByIdUseCase : IGetOrganizationByIdUseCase
     internal static OrganizationResponse ToResponse(Organization organization) => new()
     {
         Id = organization.Id,
+        TimeZoneId = organization.TimeZoneId,
         Name = organization.Name,
         Type = organization.Type.ToString(),
         Document = organization.Document,

@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using UrbanShade.Application.UseCases.Organizations.Regions;
+using UrbanShade.Communication.Responses.InstitutionalDashboard;
 using UrbanShade.Application.UseCases.Organizations.Register;
 using UrbanShade.Application.UseCases.Organizations.Update;
 using UrbanShade.Application.UseCases.Organizations.GetAll;
@@ -48,6 +50,33 @@ public sealed class OrganizationsController : ControllerBase
             Status = nameof(ResponseStatus.Success),
             Data = response
         });
+    }
+
+    [HttpGet("{id:guid}/regions")]
+    public async Task<IActionResult> GetRegions(Guid id, [FromServices] IOrganizationRegionsUseCase useCase, CancellationToken cancellationToken)
+    {
+        var response = await useCase.GetAll(ActorId, id, cancellationToken);
+        return StatusCode(StatusCodes.Status200OK, new PayloadResponse<List<InstitutionalRegionLinkResponse>>
+        {
+            Status = nameof(ResponseStatus.Success),
+            Data = response
+        });
+    }
+
+    [Authorize(Policy = "PlatformAdministration")]
+    [HttpPost("{id:guid}/regions/{regionId:guid}")]
+    public async Task<IActionResult> AssignRegion(Guid id, Guid regionId, [FromServices] IOrganizationRegionsUseCase useCase, CancellationToken cancellationToken)
+    {
+        await useCase.Assign(ActorId, id, regionId, cancellationToken);
+        return NoContent();
+    }
+
+    [Authorize(Policy = "PlatformAdministration")]
+    [HttpDelete("{id:guid}/regions/{regionId:guid}")]
+    public async Task<IActionResult> RemoveRegion(Guid id, Guid regionId, [FromServices] IOrganizationRegionsUseCase useCase, CancellationToken cancellationToken)
+    {
+        await useCase.Remove(ActorId, id, regionId, cancellationToken);
+        return NoContent();
     }
 
     [Authorize(Policy = "PlatformAdministration")]
