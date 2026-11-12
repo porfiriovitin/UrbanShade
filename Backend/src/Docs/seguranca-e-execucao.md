@@ -49,3 +49,18 @@ As suítes HTTP usam bancos descartáveis em Testcontainers, nunca a conexão lo
 ```powershell
 dotnet list UrbanShade.slnx package --vulnerable --include-transitive --no-restore
 ```
+
+
+## Consistência e execução do projeto acadêmico
+
+- A migration `AddWeatherRefreshLease` acrescenta duas colunas opcionais às regiões. Em Development e Tests, ela é aplicada pelo startup existente. A refatoração não executou migrations contra o banco da aplicação.
+- A atualização meteorológica usa lease persistido de dez minutos, com orçamento de oito minutos para o provedor. A conexão do banco não fica ocupada durante HTTP. A gravação exige a posse atual do lease e a mesma versão da região; respostas atrasadas são descartadas.
+- A simulação verifica a última leitura sob o bloqueio do sensor. Executar dois workers dentro de `SensorSimulation:IntervalMinutes` não duplica a amostra. O intervalo é contado desde a última leitura, não por alinhamento ao relógio de parede.
+- O ranking/mapa regional avalia somente a última análise da versão atual da região e a inclui quando elegível, sem recorrer a uma análise antiga quando a mais recente perdeu validade. Os critérios compartilhados incluem algoritmo, parâmetros, datas das fontes e região de referência. O painel institucional continua exigindo qualidade completa; rotas e consultas com `includePartial` podem aceitar dados parciais.
+- `GET /api/thermal/regions/{id}/latest` mantém o resultado para inspeção e acrescenta `isCurrent` e `validUntil`. Histórico preserva os valores originais e não implica atualidade.
+- Proveniência nova usa `schemaVersion: 1`, preservando os nomes JSON existentes. Documentos anteriores sem versão continuam legíveis como versão zero. Versões desconhecidas não alimentam recomendações.
+- `GET /api/weather/overview?cityId={id}` permite restringir o resumo a uma cidade. O limite é de 1000 regiões; excedê-lo retorna 400, sem resumo parcial. A consulta não carrega polígonos.
+- `IWeatherProvider` recebe e devolve dados normalizados. O adapter informa `Source`; dados sem procedência explícita são identificados como `UNKNOWN`. A seção de configuração `OpenMeteo` permanece compatível, mas URL, timeout e retries pertencem à infraestrutura.
+- Erros internos usam `ErrorKind`. Apenas a API traduz essas condições para HTTP. Falhas inesperadas tratadas pelo filtro incluem identificador da requisição no log, sem alterar o envelope público.
+
+A aplicação permanece um monólito para o trabalho acadêmico. Não são necessários novos serviços, broker de mensagens ou pacotes para essas mudanças.
