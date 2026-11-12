@@ -64,14 +64,14 @@ public sealed class RouteCalculatorTests
     [InlineData(1, 91)]
     public void ExpiredSources_AreUnknown_EvenWhenAnalysisIsRecent(int minutes, int days)
     {
-        var segment = Segment(1000, 50) with { SourceMetadata = Metadata(Now.AddMinutes(-minutes), Now.AddDays(-days)) };
+        var segment = Segment(1000, 50) with { Provenance = AnalysisProvenance.Read(Metadata(Now.AddMinutes(-minutes), Now.AddDays(-days))) };
         Assert.Null(Calculator().Calculate(Route(), [segment], Now).ExposureIndex);
     }
 
     [Fact]
     public void CorruptMetadataDifferentAlgorithmAndLowConfidence_CannotDriveRecommendations()
     {
-        Assert.Null(Calculator().Calculate(Route(), [Segment(1000, 50) with { SourceMetadata = "{}" }], Now).ExposureIndex);
+        Assert.Null(Calculator().Calculate(Route(), [Segment(1000, 50) with { Provenance = AnalysisProvenance.Read("{}") }], Now).ExposureIndex);
         Assert.Null(Calculator().Calculate(Route(), [Segment(1000, 50) with { AlgorithmVersion = "old" }], Now).ExposureIndex);
         var low = Calculator().Calculate(Route(), [Segment(1000, 50) with { ConfidenceLevel = ConfidenceLevel.LOW }], Now);
         Assert.NotNull(low.ExposureIndex);
@@ -110,14 +110,14 @@ public sealed class RouteCalculatorTests
         Assert.Throws<InvalidOperationException>(new RoutingSettings { MinimumThermalCoveragePercent = 101 }.Validate);
     }
 
-    private RouteExposureCalculator Calculator() => new(_settings, new RegionThermalAnalysisSettings());
+    private RouteExposureCalculator Calculator() => new(_settings, new RegionThermalAnalysisSettings(), new());
     private static CompareRoutesRequest Request(double latitude, double longitude) => new() { Origin = new() { Latitude = latitude, Longitude = longitude }, Destination = new() { Latitude = 0, Longitude = .01 } };
     internal static RouteCandidate Route(string id = "conventional", bool conventional = true, double distance = 1000, double duration = 720) =>
         new(id, new LineString([new(0,0), new(.01,0)]) { SRID = 4326 }, distance, duration, conventional, "test", "test attribution", []);
 
     internal static RouteThermalSegment Segment(double distance, decimal? index) => new(0, 1, 0, Route().Geometry, distance,
         Guid.Empty, index.HasValue ? Guid.NewGuid() : null, index, index >= 75 ? ExposureLevel.CRITICAL : index >= 50 ? ExposureLevel.HIGH : ExposureLevel.MODERATE,
-        RegionDataQuality.PARTIAL, ConfidenceLevel.MEDIUM, "SIMULATED_SENSORS", "1.0", Now, Metadata(Now.AddMinutes(-1),Now.AddDays(-1)));
+        RegionDataQuality.PARTIAL, ConfidenceLevel.MEDIUM, "SIMULATED_SENSORS", "1.0", Now, AnalysisProvenance.Read(Metadata(Now.AddMinutes(-1),Now.AddDays(-1))));
 
     private static string Metadata(DateTime sensorTime, DateTime satelliteTime) => JsonSerializer.Serialize(new
     {

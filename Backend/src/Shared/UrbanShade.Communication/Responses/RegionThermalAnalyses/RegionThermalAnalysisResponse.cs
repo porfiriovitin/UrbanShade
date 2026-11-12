@@ -4,6 +4,8 @@ namespace UrbanShade.Communication.Responses.RegionThermalAnalyses;
 
 public sealed class RegionThermalAnalysisResponse
 {
+    public bool? IsCurrent { get; init; }
+    public DateTime? ValidUntil { get; init; }
     public Guid Id { get; init; }
     public Guid RegionId { get; init; }
     public string RegionName { get; init; } = string.Empty;

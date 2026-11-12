@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Requests.SensorReadings;
 using UrbanShade.Communication.Responses;
 using UrbanShade.Communication.Responses.SensorReadings;
@@ -24,12 +23,12 @@ public sealed class GetSensorReadingsUseCase : IGetSensorReadingsUseCase
     {
         var result = new GetSensorReadingsValidator().Validate(request);
         if (!result.IsValid)
-            throw new SensorException(HttpStatusCode.BadRequest, [.. result.Errors.Select(error => error.ErrorMessage)]);
+            throw new SensorException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
 
         /// :: Deleted sensors remain accessible only through administrative history.
         var sensor = await _sensors.FindForReadingHistory(sensorId, cancellationToken);
         if (sensor is null || (!isAdministrator && (!sensor.Active || sensor.DeletedAt.HasValue || sensor.Status != SensorStatus.ACTIVE)))
-            throw new SensorException(HttpStatusCode.NotFound, "Sensor is unavailable.");
+            throw new SensorException(ErrorKind.NotFound, "Sensor is unavailable.");
 
         var history = await _readings.GetHistory(sensorId, request.StartDate?.UtcDateTime, request.EndDate?.UtcDateTime, request.Page, request.PageSize, cancellationToken);
 

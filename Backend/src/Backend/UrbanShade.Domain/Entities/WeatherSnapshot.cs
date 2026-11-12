@@ -7,6 +7,8 @@ public sealed class WeatherSnapshot : EntityBase
     private WeatherSnapshot() { }
     public WeatherSnapshot(Guid geoRegionId, int boundaryVersion, double latitude, double longitude, WeatherObservation observation)
     {
+        if (string.IsNullOrWhiteSpace(observation.Source) || observation.Source.Length > 32) throw new ArgumentException("A weather source is required.");
+        Source = observation.Source;
         GeoRegionId = geoRegionId;
         BoundaryVersion = boundaryVersion;
         Latitude = latitude;
@@ -34,6 +36,6 @@ public sealed class WeatherSnapshot : EntityBase
     public int? WeatherCode { get; private set; }
     public DateTime ObservedAt { get; private set; }
     public DateTime FetchedAt { get; private set; }
-    public string Source { get; private set; } = "OPEN_METEO";
+    public string Source { get; private set; } = string.Empty;
     public string? Model { get; private set; }
 }

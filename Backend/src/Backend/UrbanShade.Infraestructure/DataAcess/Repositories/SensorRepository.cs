@@ -36,7 +36,7 @@ internal sealed class SensorRepository : ISensorRepository
         if (organizationId.HasValue) query = query.Where(sensor => sensor.OrganizationId == organizationId.Value);
         var sensors = await query.OrderBy(sensor => sensor.Code).ThenBy(sensor => sensor.Id).Take(1001).ToListAsync(cancellationToken);
         if (sensors.Count > 1000)
-            throw new UrbanShade.Exceptions.SensorException(System.Net.HttpStatusCode.BadRequest, "Map exceeds 1000 sensors. Select a smaller city or organization scope.");
+            throw new UrbanShade.Exceptions.SensorException(UrbanShade.Exceptions.ErrorKind.Validation, "Map exceeds 1000 sensors. Select a smaller city or organization scope.");
         return sensors;
     }
 

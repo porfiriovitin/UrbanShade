@@ -44,7 +44,7 @@ public sealed class OpenMeteoServiceTests
     [InlineData(0, 0, 17)]
     [InlineData(double.NaN, 0, 3)]
     public void InvalidCoordinatesAndPeriod_AreRejected(double latitude, double longitude, int days) =>
-        Assert.Throws<OpenMeteoException>(() => OpenMeteoService.BuildQuery(latitude, longitude, days));
+        Assert.Throws<WeatherProviderException>(() => OpenMeteoService.BuildQuery(latitude, longitude, days));
 
     [Fact]
     public void MaximumForecastPeriod_RespectsProviderHourLimit() =>
@@ -70,7 +70,7 @@ public sealed class OpenMeteoServiceTests
             case "timezone": json["utc_offset_seconds"] = -10800; break;
         }
         using var document = JsonDocument.Parse(json.ToJsonString());
-        Assert.Throws<OpenMeteoException>(() => OpenMeteoResponseParser.Parse(document.RootElement, Now));
+        Assert.Throws<WeatherProviderException>(() => OpenMeteoResponseParser.Parse(document.RootElement, Now));
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public sealed class OpenMeteoServiceTests
             response.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.FromHours(2));
             return Task.FromResult(response);
         });
-        var error = await Assert.ThrowsAsync<OpenMeteoException>(() => Client(handler).GetWeather(0, 0, default));
+        var error = await Assert.ThrowsAsync<WeatherProviderException>(() => Client(handler).GetWeather(0, 0, default));
         Assert.Equal(Now.AddHours(2), error.RetryAt);
         Assert.Equal(1, handler.Calls);
     }
@@ -136,7 +136,7 @@ public sealed class OpenMeteoServiceTests
             "timeout" => throw new TaskCanceledException("Timeout."),
             _ => Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError))
         });
-        await Assert.ThrowsAsync<OpenMeteoException>(() => Client(handler).GetWeather(0, 0, default));
+        await Assert.ThrowsAsync<WeatherProviderException>(() => Client(handler).GetWeather(0, 0, default));
         Assert.Equal(4, handler.Calls);
     }
 
@@ -146,7 +146,7 @@ public sealed class OpenMeteoServiceTests
         foreach (var response in new[] { new HttpResponseMessage(HttpStatusCode.BadRequest), new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("invalid") } })
         {
             var handler = new Handler((_, _) => Task.FromResult(response));
-            await Assert.ThrowsAsync<OpenMeteoException>(() => Client(handler).GetWeather(0, 0, default));
+            await Assert.ThrowsAsync<WeatherProviderException>(() => Client(handler).GetWeather(0, 0, default));
             Assert.Equal(1, handler.Calls);
         }
     }

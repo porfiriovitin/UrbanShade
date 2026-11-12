@@ -1,4 +1,3 @@
-using System.Net;
 using System.Text.Json;
 using FluentValidation;
 using NetTopologySuite.Geometries;
@@ -30,12 +29,12 @@ public sealed class GeoRegionValidator : AbstractValidator<RegisterGeoRegionRequ
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or KeyNotFoundException or JsonException or FormatException)
         {
-            throw new GeoException(HttpStatusCode.BadRequest, "Boundary must be a valid GeoJSON polygon within geographic and complexity limits.");
+            throw new GeoException(ErrorKind.Validation, "Boundary must be a valid GeoJSON polygon within geographic and complexity limits.");
         }
     }
     public static void Page(int page, int pageSize)
     {
         if (page is < 1 or > 10000 || pageSize is < 1 or > 100)
-            throw new GeoException(HttpStatusCode.BadRequest, "Page must be between 1 and 10000; page size between 1 and 100.");
+            throw new GeoException(ErrorKind.Validation, "Page must be between 1 and 10000; page size between 1 and 100.");
     }
 }

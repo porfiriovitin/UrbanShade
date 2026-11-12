@@ -17,7 +17,7 @@ public sealed class RequestValidationTests
 
         var exception = await Assert.ThrowsAsync<AuthenticationException>(() => useCase.Execute(new RegisterRequest()));
 
-        Assert.Equal(HttpStatusCode.BadRequest, exception.GetStatusCode());
+        Assert.Equal(UrbanShade.Exceptions.ErrorKind.Validation, exception.GetErrorKind());
         Assert.Equal(new[]
         {
             "Name is required and must have at most 150 characters.",
@@ -33,7 +33,7 @@ public sealed class RequestValidationTests
 
         var exception = await Assert.ThrowsAsync<AuthenticationException>(() => useCase.Execute(new LoginRequest()));
 
-        Assert.Equal(HttpStatusCode.BadRequest, exception.GetStatusCode());
+        Assert.Equal(UrbanShade.Exceptions.ErrorKind.Validation, exception.GetErrorKind());
         Assert.Equal(new[]
         {
             "A valid email is required.",
@@ -48,7 +48,7 @@ public sealed class RequestValidationTests
 
         var exception = await Assert.ThrowsAsync<AuthenticationException>(() => useCase.Execute(new RefreshTokenRequest()));
 
-        Assert.Equal(HttpStatusCode.Unauthorized, exception.GetStatusCode());
+        Assert.Equal(UrbanShade.Exceptions.ErrorKind.Unauthenticated, exception.GetErrorKind());
         Assert.Equal(new[] { "Invalid refresh token." }, exception.GetErrorMessages());
     }
 
@@ -59,7 +59,7 @@ public sealed class RequestValidationTests
 
         var exception = await Assert.ThrowsAsync<AuthenticationException>(() => useCase.Execute(new RefreshTokenRequest()));
 
-        Assert.Equal(HttpStatusCode.Unauthorized, exception.GetStatusCode());
+        Assert.Equal(UrbanShade.Exceptions.ErrorKind.Unauthenticated, exception.GetErrorKind());
         Assert.Equal(new[] { "Invalid refresh token." }, exception.GetErrorMessages());
     }
 }

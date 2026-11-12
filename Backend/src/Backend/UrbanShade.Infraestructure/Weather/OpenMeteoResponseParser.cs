@@ -10,30 +10,30 @@ public static class OpenMeteoResponseParser
         try
         {
             if (fetchedAt.Kind != DateTimeKind.Utc || root.GetProperty("utc_offset_seconds").GetInt32() != 0)
-                throw new OpenMeteoException("Open-Meteo returned an invalid timezone.");
+                throw new WeatherProviderException("Open-Meteo returned an invalid timezone.");
             var current = root.GetProperty("current");
             var hourly = root.GetProperty("hourly");
             Units(root.GetProperty("current_units"), false);
             Units(root.GetProperty("hourly_units"), true);
             var observedAt = Time(current.GetProperty("time"));
-            if (observedAt > fetchedAt.AddHours(1)) throw new OpenMeteoException("Open-Meteo returned a future current reference time.");
+            if (observedAt > fetchedAt.AddHours(1)) throw new WeatherProviderException("Open-Meteo returned a future current reference time.");
             var conditions = new WeatherConditions(Value(current, "temperature_2m"), Value(current, "relative_humidity_2m", 0, 100),
                 Value(current, "apparent_temperature"), Value(current, "wind_speed_10m", 0), Value(current, "precipitation", 0),
                 Value(current, "cloud_cover", 0, 100), Code(current));
             if (conditions.Temperature is null && conditions.Humidity is null && conditions.ApparentTemperature is null)
-                throw new OpenMeteoException("Open-Meteo returned no usable current conditions.");
+                throw new WeatherProviderException("Open-Meteo returned no usable current conditions.");
             var times = hourly.GetProperty("time");
             if (times.ValueKind != JsonValueKind.Array || times.GetArrayLength() is < 1 or > 384)
-                throw new OpenMeteoException("Open-Meteo returned an invalid forecast length.");
+                throw new WeatherProviderException("Open-Meteo returned an invalid forecast length.");
             foreach (var property in hourly.EnumerateObject().Where(property => property.Name != "time"))
                 if (property.Value.ValueKind != JsonValueKind.Array || property.Value.GetArrayLength() != times.GetArrayLength())
-                    throw new OpenMeteoException("Open-Meteo returned misaligned forecast arrays.");
+                    throw new WeatherProviderException("Open-Meteo returned misaligned forecast arrays.");
             var predictions = new List<WeatherPrediction>();
             DateTime? previous = null;
             for (var index = 0; index < times.GetArrayLength(); index++)
             {
                 var at = Time(times[index]);
-                if (previous.HasValue && at != previous.Value.AddHours(1)) throw new OpenMeteoException("Open-Meteo returned unordered or non-hourly forecasts.");
+                if (previous.HasValue && at != previous.Value.AddHours(1)) throw new WeatherProviderException("Open-Meteo returned unordered or non-hourly forecasts.");
                 previous = at;
                 var prediction = new WeatherPrediction(at, Value(hourly, "temperature_2m", index: index), Value(hourly, "relative_humidity_2m", 0, 100, index),
                     Value(hourly, "apparent_temperature", index: index), Value(hourly, "precipitation_probability", 0, 100, index),
@@ -42,18 +42,18 @@ public static class OpenMeteoResponseParser
                 if (at > fetchedAt && (prediction.Temperature.HasValue || prediction.Humidity.HasValue || prediction.ApparentTemperature.HasValue))
                     predictions.Add(prediction);
             }
-            if (predictions.Count == 0) throw new OpenMeteoException("Open-Meteo returned no usable future forecasts.");
-            return new(observedAt, fetchedAt, conditions, predictions);
+            if (predictions.Count == 0) throw new WeatherProviderException("Open-Meteo returned no usable future forecasts.");
+            return new(observedAt, fetchedAt, conditions, predictions) { Source = "OPEN_METEO" };
         }
         catch (Exception exception) when (exception is KeyNotFoundException or InvalidOperationException or FormatException or OverflowException or ArgumentOutOfRangeException)
-        { throw new OpenMeteoException("Open-Meteo returned an invalid weather response."); }
+        { throw new WeatherProviderException("Open-Meteo returned an invalid weather response."); }
     }
 
     private static DateTime Time(JsonElement value) => DateTimeOffset.FromUnixTimeSeconds(value.GetInt64()).UtcDateTime;
     private static int? Code(JsonElement current)
     {
         var code = Value(current, "weather_code", 0, 99);
-        if (code.HasValue && decimal.Truncate(code.Value) != code.Value) throw new OpenMeteoException("Open-Meteo returned an invalid weather code.");
+        if (code.HasValue && decimal.Truncate(code.Value) != code.Value) throw new WeatherProviderException("Open-Meteo returned an invalid weather code.");
         return (int?)code;
     }
     private static decimal? Value(JsonElement parent, string name, decimal? minimum = null, decimal? maximum = null, int? index = null)
@@ -63,7 +63,7 @@ public static class OpenMeteoResponseParser
         if (value.ValueKind == JsonValueKind.Null) return null;
         var number = value.GetDecimal();
         if ((minimum.HasValue && number < minimum) || (maximum.HasValue && number > maximum))
-            throw new OpenMeteoException($"Open-Meteo returned an invalid {name} value.");
+            throw new WeatherProviderException($"Open-Meteo returned an invalid {name} value.");
         return number;
     }
     private static void Units(JsonElement units, bool hourly)
@@ -77,6 +77,6 @@ public static class OpenMeteoResponseParser
         else { expected["precipitation"] = "mm"; expected["weather_code"] = "wmo code"; }
         foreach (var unit in expected)
             if (units.TryGetProperty(unit.Key, out var value) && value.GetString() != unit.Value)
-                throw new OpenMeteoException($"Open-Meteo returned an unexpected unit for {unit.Key}.");
+                throw new WeatherProviderException($"Open-Meteo returned an unexpected unit for {unit.Key}.");
     }
 }

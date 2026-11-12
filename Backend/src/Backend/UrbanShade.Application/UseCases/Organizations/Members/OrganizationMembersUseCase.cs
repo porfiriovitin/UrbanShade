@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Net;
 using System.Security.Cryptography;
 using UrbanShade.Application.UseCases.Authentication;
 using UrbanShade.Communication.Requests.Organizations;
@@ -45,7 +44,7 @@ public sealed class OrganizationMembersUseCase : IOrganizationMembersUseCase
         await _access.GetActor(actorId, true, cancellationToken);
         var result = new OrganizationMemberValidator().Validate(request);
         if (!result.IsValid)
-            throw new OrganizationException(HttpStatusCode.BadRequest, [.. result.Errors.Select(error => error.ErrorMessage)]);
+            throw new OrganizationException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
 
         await using var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
         await RequireActiveOrganization(organizationId, cancellationToken);
@@ -65,7 +64,7 @@ public sealed class OrganizationMembersUseCase : IOrganizationMembersUseCase
         else
         {
             if (!user.Active)
-                throw new OrganizationException(HttpStatusCode.Conflict, "The existing account is inactive.");
+                throw new OrganizationException(ErrorKind.Conflict, "The existing account is inactive.");
             // Public registration does not prove identity. Promotion must replace the
             // credentials and sessions established before the administrative handoff.
             if (user.Role == UserRoles.Citizen)
@@ -78,7 +77,7 @@ public sealed class OrganizationMembersUseCase : IOrganizationMembersUseCase
 
         var member = await _organizations.FindMember(organizationId, user.Id, cancellationToken);
         if (member is not null && member.Active)
-            throw new OrganizationException(HttpStatusCode.Conflict, "User is already a member.");
+            throw new OrganizationException(ErrorKind.Conflict, "User is already a member.");
         if (member is null) _organizations.Add(new OrganizationMember(organizationId, user.Id));
         else member.Activate();
 
@@ -92,10 +91,10 @@ public sealed class OrganizationMembersUseCase : IOrganizationMembersUseCase
         await _access.GetActor(actorId, true, cancellationToken);
         await using var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
         if (await _organizations.FindForUpdate(organizationId, cancellationToken) is null)
-            throw new OrganizationException(HttpStatusCode.NotFound, "Organization is unavailable.");
+            throw new OrganizationException(ErrorKind.NotFound, "Organization is unavailable.");
         var member = await _organizations.FindMember(organizationId, userId, cancellationToken);
         if (member is null || !member.Active)
-            throw new OrganizationException(HttpStatusCode.NotFound, "Membership is unavailable.");
+            throw new OrganizationException(ErrorKind.NotFound, "Membership is unavailable.");
         member.Deactivate();
         await _unitOfWork.SaveChanges(cancellationToken);
         await transaction.Commit(cancellationToken);
@@ -109,9 +108,9 @@ public sealed class OrganizationMembersUseCase : IOrganizationMembersUseCase
         var member = await _organizations.FindMember(organizationId, userId, cancellationToken);
         var user = await _accounts.FindForUpdate(userId, cancellationToken);
         if (member is null || !member.Active || user is null || !user.Active)
-            throw new OrganizationException(HttpStatusCode.NotFound, "Membership is unavailable.");
+            throw new OrganizationException(ErrorKind.NotFound, "Membership is unavailable.");
         if (!user.MustChangePassword)
-            throw new OrganizationException(HttpStatusCode.Conflict, "Only pending first-access credentials can be regenerated.");
+            throw new OrganizationException(ErrorKind.Conflict, "Only pending first-access credentials can be regenerated.");
 
         var temporaryPassword = await SetTemporaryPassword(user);
         await _accounts.RevokeSessions(user.Id, DateTime.UtcNow, cancellationToken);
@@ -124,7 +123,7 @@ public sealed class OrganizationMembersUseCase : IOrganizationMembersUseCase
     {
         var organization = await _organizations.FindForUpdate(organizationId, cancellationToken);
         if (organization is null || !organization.Active)
-            throw new OrganizationException(HttpStatusCode.NotFound, "Active organization is unavailable.");
+            throw new OrganizationException(ErrorKind.NotFound, "Active organization is unavailable.");
     }
 
     private async Task<string> SetTemporaryPassword(User user)

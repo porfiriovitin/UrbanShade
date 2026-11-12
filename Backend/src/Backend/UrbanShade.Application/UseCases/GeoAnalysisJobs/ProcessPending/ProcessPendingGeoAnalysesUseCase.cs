@@ -52,11 +52,11 @@ public sealed class ProcessPendingGeoAnalysesUseCase : IProcessPendingGeoAnalyse
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
-        catch (Exception)
+        catch (Exception exception)
         {
             failed = true;
             outcomes.Add("Satellite processing could not be completed.");
-            _logger.LogWarning("Satellite processing interrupted for job {JobId}", job.Id);
+            _logger.LogWarning(exception, "Satellite processing interrupted for job {JobId}", job.Id);
         }
         /// :: Hold the lease row lock only while saving. No external calls inside this transaction.
         await using var transaction = await _unitOfWork.BeginTransaction(cancellationToken);

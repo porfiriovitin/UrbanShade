@@ -102,7 +102,7 @@ public sealed class SensorReadingUseCaseTests
         store.Sensors.Add(sensor);
         var useCase = new GetSensorReadingsUseCase(store, store);
         var error = await Assert.ThrowsAsync<SensorException>(() => useCase.Execute(sensor.Id, new GetSensorReadingsRequest(), false));
-        Assert.Equal(HttpStatusCode.NotFound, error.GetStatusCode());
+        Assert.Equal(UrbanShade.Exceptions.ErrorKind.NotFound, error.GetErrorKind());
         Assert.Empty((await useCase.Execute(sensor.Id, new GetSensorReadingsRequest(), true)).Items);
     }
 

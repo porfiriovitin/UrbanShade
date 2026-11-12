@@ -1,4 +1,3 @@
-using System.Net;
 using System.Text.Json;
 using UrbanShade.Application.UseCases.GeoAnalysisJobs.Refresh;
 using UrbanShade.Communication.Responses.Geo;
@@ -27,10 +26,10 @@ public sealed class RefreshOpenStreetMapUseCase : IRefreshOpenStreetMapUseCase
 
     public async Task<GeoJobResponse> Execute(Guid regionId, CancellationToken cancellationToken)
     {
-        if (!_settings.Enabled) throw new GeoException(HttpStatusCode.ServiceUnavailable, "OpenStreetMap import is disabled.");
-        var region = await _regions.FindById(regionId, cancellationToken) ?? throw new GeoException(HttpStatusCode.NotFound, "Region not found.");
+        if (!_settings.Enabled) throw new GeoException(ErrorKind.Unavailable, "OpenStreetMap import is disabled.");
+        var region = await _regions.FindById(regionId, cancellationToken) ?? throw new GeoException(ErrorKind.NotFound, "Region not found.");
         if (region.Boundary.EnvelopeInternal.Width > 1 || region.Boundary.EnvelopeInternal.Height > 1)
-            throw new GeoException(HttpStatusCode.BadRequest, "OpenStreetMap import supports regions within one degree per axis.");
+            throw new GeoException(ErrorKind.Validation, "OpenStreetMap import supports regions within one degree per axis.");
         /// :: Repeated requests on the same UTC day reuse one import, independently of satellite credentials.
         var day = _time.GetUtcNow().UtcDateTime.Date;
         var job = new GeoAnalysisJob(region, day, day.AddDays(1), "osm-v1", JsonSerializer.Serialize(_settings.Parameters()), GeoJobType.OpenStreetMap);

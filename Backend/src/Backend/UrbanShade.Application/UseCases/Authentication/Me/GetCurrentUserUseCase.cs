@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Responses.Authentication;
 using UrbanShade.Domain.Repositories;
 using UrbanShade.Exceptions;
@@ -21,7 +20,7 @@ public sealed class GetCurrentUserUseCase : IGetCurrentUserUseCase
 
         /// :: If the user is not found or is inactive, throw an authentication exception.
         if (user is null || !user.Active)
-            throw new AuthenticationException(HttpStatusCode.Unauthorized, "User is unavailable.");
+            throw new AuthenticationException(ErrorKind.Unauthenticated, "User is unavailable.");
 
         /// :: Convert the user entity to a UserResponse DTO and return it.
         return TokenIssuer.ToResponse(user);

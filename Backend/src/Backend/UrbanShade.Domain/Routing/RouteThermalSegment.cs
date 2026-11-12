@@ -5,7 +5,7 @@ namespace UrbanShade.Domain.Routing;
 
 public sealed record RouteThermalSegment(int RouteIndex, int EdgeIndex, double Position, LineString Geometry, double DistanceMeters,
     Guid? GeoRegionId, Guid? AnalysisId, decimal? ExposureIndex, ExposureLevel? ExposureLevel, RegionDataQuality? DataQuality,
-    ConfidenceLevel? ConfidenceLevel, string? DataOrigin, string? AlgorithmVersion, DateTime? AnalyzedAt, string? SourceMetadata);
+    ConfidenceLevel? ConfidenceLevel, string? DataOrigin, string? AlgorithmVersion, DateTime? AnalyzedAt, UrbanShade.Domain.RegionThermalAnalysis.AnalysisProvenance? Provenance);
 
 public sealed record EvaluatedRouteSegment(RouteThermalSegment Segment, bool IsValid, string? Composition, DateTime? SourceReferenceAt);
 

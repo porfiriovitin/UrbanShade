@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Net;
 using Microsoft.Extensions.Logging;
 using UrbanShade.Communication.Requests.InstitutionalDashboard;
 using UrbanShade.Communication.Responses.InstitutionalDashboard;
@@ -30,7 +29,7 @@ public sealed class GetInstitutionalRegionUseCase : IGetInstitutionalRegionUseCa
             /// :: Validate filters and authorize the selected institutional scope before reading indicators.
             var query = await _query.Prepare(actorId, request, regionId, false, cancellationToken);
             var data = await _dashboard.GetRegions(query with { Page = 1, PageSize = 1 }, false, cancellationToken);
-            var region = data.Items.SingleOrDefault() ?? throw new InstitutionalDashboardException(HttpStatusCode.NotFound, "Region is unavailable.");
+            var region = data.Items.SingleOrDefault() ?? throw new InstitutionalDashboardException(ErrorKind.NotFound, "Region is unavailable.");
             var sensors = await _dashboard.GetSensorsOverview(query, cancellationToken);
             return _query.ToResponse(region, true) with { AverageTemperature = new(sensors.AverageTemperature, sensors.TemperatureSampleCount) };
 

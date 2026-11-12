@@ -1,4 +1,3 @@
-using System.Net;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
@@ -44,15 +43,15 @@ public sealed class AnalyzeRegionThermalUseCase : IAnalyzeRegionThermalUseCase
     public async Task<RegionThermalAnalysisResponse> Execute(Guid id, CancellationToken cancellationToken = default)
     {
         var timer = Stopwatch.StartNew();
-        if (id == Guid.Empty) throw new RegionThermalAnalysisException(HttpStatusCode.BadRequest, "A region is required.");
-        if (!_settings.Enabled) throw new RegionThermalAnalysisException(HttpStatusCode.Conflict, "Regional thermal analysis is disabled.");
+        if (id == Guid.Empty) throw new RegionThermalAnalysisException(ErrorKind.Validation, "A region is required.");
+        if (!_settings.Enabled) throw new RegionThermalAnalysisException(ErrorKind.Conflict, "Regional thermal analysis is disabled.");
 
         /// :: Serialize processing across API requests and background workers.
         await using var transaction = await _analyses.Acquire(id, cancellationToken)
-            ?? throw new RegionThermalAnalysisException(HttpStatusCode.Conflict, "This region is already being analyzed.");
+            ?? throw new RegionThermalAnalysisException(ErrorKind.Conflict, "This region is already being analyzed.");
         var now = _time.GetUtcNow().UtcDateTime;
         var data = await _analyses.GetData(id, now, cancellationToken)
-            ?? throw new RegionThermalAnalysisException(HttpStatusCode.NotFound, "Active region not found.");
+            ?? throw new RegionThermalAnalysisException(ErrorKind.NotFound, "Active region not found.");
         var heatIndex = data.Sensors.Count > 0 ? data.Sensors.Average(item => item.Analysis.HeatIndex)
             : data.Weather is not null ? _heatIndex.Calculate(data.Weather.Temperature!.Value, data.Weather.Humidity!.Value) : (decimal?)null;
         var center = data.Region.Boundary.EnvelopeInternal.Centre;
@@ -79,17 +78,20 @@ public sealed class AnalyzeRegionThermalUseCase : IAnalyzeRegionThermalUseCase
             return RegionThermalAnalysisMapper.ToResponse(previous, data.Region.Name);
         }
 
-        var metadata = JsonSerializer.Serialize(new
+        var provenance = new AnalysisProvenance
         {
-            sensors = data.Sensors.Select(item => new { sensorId = item.Sensor.Id, readingId = item.Reading.Id, analysisId = item.Analysis.Id, item.Reading.MeasuredAt, item.Analysis.AlgorithmVersion, item.IsSimulated }),
-            weather = data.Weather is null ? null : new { data.Weather.Id, data.Weather.ObservedAt, data.Weather.Source, data.Weather.Model, algorithmVersion = _thermal.AlgorithmVersion },
-            vegetation = Satellite(data.Vegetation), surface = Satellite(data.Surface), referenceSurface = Satellite(data.ReferenceSurface),
-            referenceRegionId = data.ReferenceRegion?.Id, referenceBoundaryVersion = data.ReferenceRegion?.BoundaryVersion,
-            scores = result.Scores, appliedWeights = result.AppliedWeights,
-            missingComponents = new[] { "Thermal", "SurfaceTemperature", "Vegetation" }.Except(result.Scores.Keys),
-            occupiedQuadrants = quadrants, confidenceRules = _settings.Confidence, parameters = _settings,
-            experimental = true, satelliteContext = "HISTORICAL_ENVIRONMENTAL_CONTEXT"
-        });
+            SchemaVersion = 1,
+            Sensors = data.Sensors.Select(item => new SensorProvenance { SensorId = item.Sensor.Id, ReadingId = item.Reading.Id,
+                AnalysisId = item.Analysis.Id, MeasuredAt = item.Reading.MeasuredAt, AlgorithmVersion = item.Analysis.AlgorithmVersion, IsSimulated = item.IsSimulated }).ToList(),
+            Weather = data.Weather is null ? null : new WeatherProvenance { Id = data.Weather.Id, ObservedAt = data.Weather.ObservedAt,
+                Source = data.Weather.Source, Model = data.Weather.Model, AlgorithmVersion = _thermal.AlgorithmVersion },
+            Vegetation = Satellite(data.Vegetation), Surface = Satellite(data.Surface), ReferenceSurface = Satellite(data.ReferenceSurface),
+            ReferenceRegionId = data.ReferenceRegion?.Id, ReferenceBoundaryVersion = data.ReferenceRegion?.BoundaryVersion,
+            Scores = result.Scores, AppliedWeights = result.AppliedWeights,
+            MissingComponents = new[] { "Thermal", "SurfaceTemperature", "Vegetation" }.Except(result.Scores.Keys).ToArray(),
+            OccupiedQuadrants = quadrants, ConfidenceRules = _settings.Confidence, Parameters = _settings
+        };
+        var metadata = JsonSerializer.Serialize(provenance);
         var analysis = new RegionThermalAnalysis(data, input, result, _settings.AlgorithmVersion, signature, metadata, now);
         _analyses.Add(analysis);
         await _unitOfWork.SaveChanges(cancellationToken);
@@ -100,9 +102,10 @@ public sealed class AnalyzeRegionThermalUseCase : IAnalyzeRegionThermalUseCase
         return RegionThermalAnalysisMapper.ToResponse(analysis, data.Region.Name);
     }
 
-    private static object? Satellite(SatelliteAnalysis? item) => item is null ? null : new
+    private static SatelliteProvenance? Satellite(SatelliteAnalysis? item) => item is null ? null : new()
     {
-        item.Id, item.GeoRegionId, item.BoundaryVersion, source = item.DataSource.ToString(), item.ImageId, item.DatasetId,
-        item.ObservationStartAt, item.ObservationEndAt, item.ValidPixelPercent, item.AlgorithmVersion
+        Id = item.Id, GeoRegionId = item.GeoRegionId, BoundaryVersion = item.BoundaryVersion, Source = item.DataSource.ToString(),
+        ImageId = item.ImageId, DatasetId = item.DatasetId, ObservationStartAt = item.ObservationStartAt,
+        ObservationEndAt = item.ObservationEndAt, ValidPixelPercent = item.ValidPixelPercent, AlgorithmVersion = item.AlgorithmVersion
     };
 }

@@ -57,7 +57,7 @@ public sealed class OpenRouteServiceProvider : IRoutingProvider
     public async Task<IReadOnlyList<RouteCandidate>> GetRoutes(RoutePoint origin, RoutePoint destination, CancellationToken cancellationToken)
     {
         if (!_settings.Enabled || string.IsNullOrWhiteSpace(_credentials.ApiKey))
-            throw new RoutingException(HttpStatusCode.ServiceUnavailable, "Routing integration is unavailable.");
+            throw new RoutingException(UrbanShade.Exceptions.ErrorKind.Unavailable, "Routing integration is unavailable.");
         var identity = JsonSerializer.Serialize(new { origin, destination, _settings.Profile, _settings.MaxAlternativeRoutes, _settings.GreenRoutesEnabled, _settings.MaximumWalkingDistanceMeters, _settings.MaximumGeometryPoints });
         var key = "routing:" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity)));
         var cached = _cache.Get(key);
@@ -68,7 +68,7 @@ public sealed class OpenRouteServiceProvider : IRoutingProvider
         try
         {
             var routes = (await Request(origin, destination, "conventional", timeout.Token)).ToList();
-            if (routes.Count == 0) throw new RoutingException(HttpStatusCode.UnprocessableEntity, "No walking route was found between these points.");
+            if (routes.Count == 0) throw new RoutingException(UrbanShade.Exceptions.ErrorKind.Unprocessable, "No walking route was found between these points.");
             if (_settings.MaxAlternativeRoutes > 1)
             {
                 await AddOptional("alternatives");
@@ -83,11 +83,11 @@ public sealed class OpenRouteServiceProvider : IRoutingProvider
             {
                 try { routes.AddRange(await Request(origin, destination, mode, timeout.Token)); }
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) { _logger.LogWarning("Optional routing request exceeded its time budget"); }
-                catch (RoutingException exception) { _logger.LogWarning("Optional routing request failed with status {StatusCode}", (int)exception.GetStatusCode()); }
+                catch (RoutingException exception) { _logger.LogWarning("Optional routing request failed with status {StatusCode}", (int)exception.GetErrorKind()); }
             }
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        { throw new RoutingException(HttpStatusCode.ServiceUnavailable, "Routing provider timed out. Try again shortly."); }
+        { throw new RoutingException(UrbanShade.Exceptions.ErrorKind.Unavailable, "Routing provider timed out. Try again shortly."); }
     }
 
     private async Task<IReadOnlyList<RouteCandidate>> Request(RoutePoint origin, RoutePoint destination, string mode, CancellationToken cancellationToken)
@@ -111,12 +111,12 @@ public sealed class OpenRouteServiceProvider : IRoutingProvider
                 {
                     var delay = response.Headers.RetryAfter?.Delta ?? (response.Headers.RetryAfter?.Date - DateTimeOffset.UtcNow) ?? TimeSpan.FromSeconds(attempt + 1);
                     if (delay > TimeSpan.FromSeconds(_settings.TimeoutSeconds))
-                        throw new RoutingException(HttpStatusCode.ServiceUnavailable, "Routing provider request limit reached. Try again later.");
+                        throw new RoutingException(UrbanShade.Exceptions.ErrorKind.Unavailable, "Routing provider request limit reached. Try again later.");
                     await Task.Delay(delay < TimeSpan.Zero ? TimeSpan.Zero : delay, cancellationToken);
                     continue;
                 }
                 if (!response.IsSuccessStatusCode)
-                    throw new RoutingException(response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.NotFound ? HttpStatusCode.UnprocessableEntity : HttpStatusCode.ServiceUnavailable,
+                    throw new RoutingException(response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.NotFound ? ErrorKind.Unprocessable : ErrorKind.Unavailable,
                         response.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.NotFound ? "These points could not be served by the walking provider." : "Routing provider is temporarily unavailable.");
                 if (response.Content.Headers.ContentLength > _settings.MaximumResponseBytes) throw new FormatException("Routing response is too large.");
                 await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -132,9 +132,9 @@ public sealed class OpenRouteServiceProvider : IRoutingProvider
                 return _parser.Parse(json.RootElement, mode == "conventional");
             }
             catch (HttpRequestException) when (attempt < _settings.MaxRetryAttempts) { await Task.Delay(TimeSpan.FromSeconds(attempt + 1), cancellationToken); }
-            catch (HttpRequestException) { throw new RoutingException(HttpStatusCode.ServiceUnavailable, "Routing provider is temporarily unreachable."); }
+            catch (HttpRequestException) { throw new RoutingException(UrbanShade.Exceptions.ErrorKind.Unavailable, "Routing provider is temporarily unreachable."); }
             catch (Exception exception) when (exception is JsonException or FormatException or KeyNotFoundException or InvalidOperationException)
-            { throw new RoutingException(HttpStatusCode.BadGateway, "Routing provider returned an invalid response."); }
+            { throw new RoutingException(UrbanShade.Exceptions.ErrorKind.InvalidUpstreamResponse, "Routing provider returned an invalid response."); }
         }
     }
 }

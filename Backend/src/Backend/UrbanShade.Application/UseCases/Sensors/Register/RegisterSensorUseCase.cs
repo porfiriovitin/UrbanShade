@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Requests.Sensors;
 using UrbanShade.Communication.Responses.Sensors;
 using UrbanShade.Domain.Entities;
@@ -28,10 +27,10 @@ public sealed class RegisterSensorUseCase : IRegisterSensorUseCase
         Validate(request);
         var code = request.Code.Trim().ToUpperInvariant();
         if (await _sensors.CodeExists(code, null, cancellationToken))
-            throw new SensorException(HttpStatusCode.Conflict, "Sensor code already registered.");
+            throw new SensorException(ErrorKind.Conflict, "Sensor code already registered.");
 
         if (request.CityId.HasValue && await _cities.FindById(request.CityId.Value, cancellationToken) is null)
-            throw new CityException(HttpStatusCode.NotFound, "City is unavailable.");
+            throw new CityException(ErrorKind.NotFound, "City is unavailable.");
 
         var sensor = new Sensor(code, request.Name, request.Description, request.Latitude!.Value, request.Longitude!.Value, request.InstalledAt);
         if (request.CityId.HasValue) sensor.AssignCity(request.CityId);
@@ -45,6 +44,6 @@ public sealed class RegisterSensorUseCase : IRegisterSensorUseCase
     {
         var result = new RegisterSensorValidator().Validate(request);
         if (!result.IsValid)
-            throw new SensorException(HttpStatusCode.BadRequest, [.. result.Errors.Select(error => error.ErrorMessage)]);
+            throw new SensorException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
     }
 }

@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Requests.Authentication;
 using UrbanShade.Communication.Responses.Authentication;
 using UrbanShade.Domain.Entities;
@@ -49,6 +48,6 @@ public sealed class RegisterUseCase : IRegisterUseCase
     {
         var result = new RegisterValidator().Validate(request);
         if (!result.IsValid)
-            throw new AuthenticationException(HttpStatusCode.BadRequest, [.. result.Errors.Select(error => error.ErrorMessage)]);
+            throw new AuthenticationException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
     }
 }

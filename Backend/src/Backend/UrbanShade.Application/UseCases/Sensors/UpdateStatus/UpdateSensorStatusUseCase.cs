@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Requests.Sensors;
 using UrbanShade.Communication.Responses.Sensors;
 using UrbanShade.Domain.Entities;
@@ -25,7 +24,7 @@ public sealed class UpdateSensorStatusUseCase : IUpdateSensorStatusUseCase
         Validate(request);
         var sensor = await _sensors.FindById(id, cancellationToken);
         if (sensor is null)
-            throw new SensorException(HttpStatusCode.NotFound, "Sensor is unavailable.");
+            throw new SensorException(ErrorKind.NotFound, "Sensor is unavailable.");
 
         sensor.UpdateStatus(Enum.Parse<SensorStatus>(request.Status));
         await _unitOfWork.SaveChanges(cancellationToken);
@@ -37,6 +36,6 @@ public sealed class UpdateSensorStatusUseCase : IUpdateSensorStatusUseCase
     {
         var result = new UpdateSensorStatusValidator().Validate(request);
         if (!result.IsValid)
-            throw new SensorException(HttpStatusCode.BadRequest, [.. result.Errors.Select(error => error.ErrorMessage)]);
+            throw new SensorException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
     }
 }

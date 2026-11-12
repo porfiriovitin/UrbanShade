@@ -24,6 +24,23 @@ public sealed class RegionThermalAnalysisTests : BaseIntegrationTest
     public RegionThermalAnalysisTests(UrbanShadeApplicationFactory factory) : base(factory) { }
 
     [Fact]
+    public async Task Latest_LabelsOldAlgorithmWhileHistoryRemainsAvailable()
+    {
+        var region = await Seed();
+        await Authenticate(UserRoles.PlatformAdministrator);
+        await Analyze(region.Id);
+        var before = await Client.GetFromJsonAsync<PayloadResponse<RegionThermalAnalysisResponse>>($"/api/thermal/regions/{region.Id}/latest");
+        Assert.True(before!.Data!.IsCurrent);
+        await using (var scope = Factory.Services.CreateAsyncScope())
+            await scope.ServiceProvider.GetRequiredService<UrbanShadeDbContext>().RegionThermalAnalyses
+                .Where(item => item.GeoRegionId == region.Id).ExecuteUpdateAsync(update => update.SetProperty(item => item.AlgorithmVersion, "old"));
+        var after = await Client.GetFromJsonAsync<PayloadResponse<RegionThermalAnalysisResponse>>($"/api/thermal/regions/{region.Id}/latest");
+        Assert.False(after!.Data!.IsCurrent);
+        Assert.NotNull(after.Data.ExposureIndex);
+        Assert.Equal(HttpStatusCode.OK, (await Client.GetAsync($"/api/thermal/regions/{region.Id}/history")).StatusCode);
+    }
+
+    [Fact]
     public async Task Analysis_SelectsOneCurrentReadingPerCoveredSensor_PreservesMetadataAndHistory()
     {
         var region = await Seed();

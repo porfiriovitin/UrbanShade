@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Responses.InstitutionalDashboard;
 using UrbanShade.Domain.Entities;
 using UrbanShade.Domain.Repositories;
@@ -35,7 +34,7 @@ public sealed class OrganizationRegionsUseCase : IOrganizationRegionsUseCase
         var organization = await _organizations.FindForUpdate(organizationId, cancellationToken);
         var region = await _regions.FindById(regionId, cancellationToken);
         if (organization is null || !organization.Active || region is null || !region.Active)
-            throw new OrganizationException(HttpStatusCode.NotFound, "Organization or region is unavailable.");
+            throw new OrganizationException(ErrorKind.NotFound, "Organization or region is unavailable.");
         var link = await _organizations.FindRegion(organizationId, regionId, cancellationToken);
         if (link is null) _organizations.Add(new OrganizationRegion(organizationId, regionId));
         else link.Activate();
@@ -48,9 +47,9 @@ public sealed class OrganizationRegionsUseCase : IOrganizationRegionsUseCase
         await _access.GetActor(actorId, true, cancellationToken);
         await using var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
         if (await _organizations.FindForUpdate(organizationId, cancellationToken) is null)
-            throw new OrganizationException(HttpStatusCode.NotFound, "Organization is unavailable.");
+            throw new OrganizationException(ErrorKind.NotFound, "Organization is unavailable.");
         var link = await _organizations.FindRegion(organizationId, regionId, cancellationToken);
-        if (link is null) throw new OrganizationException(HttpStatusCode.NotFound, "Region association is unavailable.");
+        if (link is null) throw new OrganizationException(ErrorKind.NotFound, "Region association is unavailable.");
         link.Deactivate();
         await _unitOfWork.SaveChanges(cancellationToken);
         await transaction.Commit(cancellationToken);

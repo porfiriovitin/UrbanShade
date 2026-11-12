@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Requests.Sensors;
 using UrbanShade.Communication.Responses.Sensors;
 using UrbanShade.Domain.Entities;
@@ -24,7 +23,7 @@ public sealed class DeleteSensorUseCase : IDeleteSensorUseCase
     {
         var sensor = await _sensors.FindById(id, cancellationToken);
         if (sensor is null)
-            throw new SensorException(HttpStatusCode.NotFound, "Sensor is unavailable.");
+            throw new SensorException(ErrorKind.NotFound, "Sensor is unavailable.");
 
         /// :: Preserve the sensor record for historical queries.
         sensor.Delete();

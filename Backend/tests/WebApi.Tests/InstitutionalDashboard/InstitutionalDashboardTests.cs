@@ -27,6 +27,41 @@ public sealed class InstitutionalDashboardTests : BaseIntegrationTest
 {
     public InstitutionalDashboardTests(UrbanShadeApplicationFactory factory) : base(factory) { }
 
+    [Theory]
+    [InlineData("current", true)]
+    [InlineData("expired", false)]
+    [InlineData("future", false)]
+    [InlineData("algorithm", false)]
+    [InlineData("weights", false)]
+    [InlineData("schema", false)]
+    public async Task Eligibility_AgreesAcrossDomainPublicRankingAndInstitutionalSql(string change, bool expected)
+    {
+        var data = await Seed();
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<UrbanShadeDbContext>();
+        var analysis = await context.RegionThermalAnalyses.SingleAsync(item => item.GeoRegionId == data.Region.Id);
+        var json = System.Text.Json.Nodes.JsonNode.Parse(analysis.SourceMetadata)!;
+        if (change is "expired" or "future")
+            foreach (var sensor in json["sensors"]!.AsArray()) sensor!["MeasuredAt"] = DateTime.UtcNow.AddHours(change == "expired" ? -2 : 2);
+        if (change == "weights") json["parameters"]!["Weights"]!["Thermal"] = .8m;
+        if (change == "schema") json["schemaVersion"] = 99;
+        var version = change == "algorithm" ? "obsolete" : analysis.AlgorithmVersion;
+        var metadata = json.ToJsonString();
+        await context.RegionThermalAnalyses.Where(item => item.Id == analysis.Id).ExecuteUpdateAsync(update =>
+            update.SetProperty(item => item.SourceMetadata, metadata).SetProperty(item => item.AlgorithmVersion, version));
+        var regional = scope.ServiceProvider.GetRequiredService<IRegionThermalAnalysisRepository>();
+        var rows = await regional.GetLatestRegions([data.Region.Id], null, null, null, true, true, 1, default);
+        Assert.Equal(expected, rows.Count == 1);
+        var dashboard = scope.ServiceProvider.GetRequiredService<IInstitutionalDashboardRepository>();
+        var query = new InstitutionalQuery { ActorId = data.Manager.Id, OrganizationId = data.Organization.Id, RegionId = data.Region.Id };
+        var result = await dashboard.GetRegions(query, true, default);
+        Assert.Equal(expected, result.Items.Count == 1);
+        var policy = scope.ServiceProvider.GetRequiredService<RegionThermalAnalysisSettings>();
+        var thermal = scope.ServiceProvider.GetRequiredService<ThermalAnalysisSettings>();
+        Assert.Equal(expected, AnalysisEligibility.Evaluate(AnalysisProvenance.Read(metadata), version, analysis.AnalyzedAt,
+            DateTime.UtcNow, policy, thermal.StaleDataThresholdMinutes).IsCurrent);
+    }
+
     [Fact]
     public async Task Repository_ExecutesAllQueryShapesInPostgis()
     {

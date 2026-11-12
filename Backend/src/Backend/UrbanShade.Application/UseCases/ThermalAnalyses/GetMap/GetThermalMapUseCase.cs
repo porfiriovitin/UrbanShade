@@ -2,7 +2,6 @@ using UrbanShade.Application.UseCases.ThermalAnalyses.GetLatest;
 using UrbanShade.Communication.Responses.ThermalAnalyses;
 using UrbanShade.Domain.Repositories;
 using UrbanShade.Domain.ThermalAnalysis;
-using System.Net;
 using UrbanShade.Application.UseCases.Organizations;
 using UrbanShade.Exceptions;
 
@@ -33,11 +32,11 @@ public sealed class GetThermalMapUseCase : IGetThermalMapUseCase
     {
         if (organizationId.HasValue)
         {
-            if (!actorId.HasValue) throw new OrganizationException(HttpStatusCode.Unauthorized, "An authenticated account is required.");
+            if (!actorId.HasValue) throw new OrganizationException(ErrorKind.Unauthenticated, "An authenticated account is required.");
             await _access.Require(organizationId.Value, actorId.Value, cancellationToken);
         }
         if (cityId.HasValue && await _cities.FindById(cityId.Value, cancellationToken) is null)
-            throw new CityException(HttpStatusCode.NotFound, "City is unavailable.");
+            throw new CityException(ErrorKind.NotFound, "City is unavailable.");
 
         var sensors = await _sensors.GetActiveForThermalMap(cityId, organizationId, cancellationToken);
         if (sensors.Count == 0) return new ThermalMapResponse();

@@ -7,7 +7,7 @@ using UrbanShade.Exceptions.ExceptionsBase;
 
 namespace UrbanShade.API.Filters;
 
-public class ExceptionFilter : IExceptionFilter
+public class ExceptionFilter(ILogger<ExceptionFilter> logger) : IExceptionFilter
 {
     public void OnException(ExceptionContext context)
     {
@@ -21,11 +21,24 @@ public class ExceptionFilter : IExceptionFilter
         }
         else if (context.Exception is UrbanShadeBaseException baseException)
         {
-            statusCode = (int)baseException.GetStatusCode();
+            statusCode = baseException.GetErrorKind() switch
+            {
+                ErrorKind.Validation => (int)System.Net.HttpStatusCode.BadRequest,
+                ErrorKind.Unauthenticated => (int)System.Net.HttpStatusCode.Unauthorized,
+                ErrorKind.Forbidden => (int)System.Net.HttpStatusCode.Forbidden,
+                ErrorKind.NotFound => (int)System.Net.HttpStatusCode.NotFound,
+                ErrorKind.Conflict => (int)System.Net.HttpStatusCode.Conflict,
+                ErrorKind.Unavailable => (int)System.Net.HttpStatusCode.ServiceUnavailable,
+                ErrorKind.RateLimited => (int)System.Net.HttpStatusCode.TooManyRequests,
+                ErrorKind.InvalidUpstreamResponse => (int)System.Net.HttpStatusCode.BadGateway,
+                ErrorKind.Unprocessable => (int)System.Net.HttpStatusCode.UnprocessableEntity,
+                _ => StatusCodes.Status500InternalServerError
+            };
             errorMessages = baseException.GetErrorMessages();
         }
         else
         {
+            logger.LogError(context.Exception, "Unhandled request failure {TraceId} at {Path}", context.HttpContext.TraceIdentifier, context.HttpContext.Request.Path);
             statusCode = StatusCodes.Status500InternalServerError;
             errorMessages.Add("An unexpected error occurred.");
         }

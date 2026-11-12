@@ -162,7 +162,7 @@ public sealed class SensorTests : BaseIntegrationTest
         var exception = synchronous
             ? Assert.Throws<SensorException>(() => context.SaveChanges())
             : await Assert.ThrowsAsync<SensorException>(() => context.SaveChangesAsync());
-        Assert.Equal(HttpStatusCode.Conflict, exception.GetStatusCode());
+        Assert.Equal(UrbanShade.Exceptions.ErrorKind.Conflict, exception.GetErrorKind());
     }
 
     private void Authenticate(UserRoles role)

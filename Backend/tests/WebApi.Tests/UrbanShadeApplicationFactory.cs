@@ -20,7 +20,7 @@ public sealed class UrbanShadeApplicationFactory : WebApplicationFactory<Program
             services.AddControllers().AddApplicationPart(typeof(Resources.AdministrationProbeController).Assembly);
             services.AddSingleton<Weather.WeatherTestProvider>();
             services.AddSingleton<UrbanShade.Domain.Routing.IRoutingProvider, Routes.RouteTestProvider>();
-            services.AddSingleton<UrbanShade.Domain.Weather.IOpenMeteoService>(provider => provider.GetRequiredService<Weather.WeatherTestProvider>());
+            services.AddSingleton<UrbanShade.Domain.Weather.IWeatherProvider>(provider => provider.GetRequiredService<Weather.WeatherTestProvider>());
         });
         builder.UseSetting("ConnectionStrings:DbConnection", ConnectionString);
         builder.UseSetting("Jwt:SigningKey", SigningKey);

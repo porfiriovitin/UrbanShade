@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Requests.SensorReadings;
 using UrbanShade.Communication.Responses;
 using UrbanShade.Communication.Responses.SensorReadings;
@@ -25,7 +24,7 @@ public sealed class GetLatestSensorReadingUseCase : IGetLatestSensorReadingUseCa
     {
         var sensor = await _sensors.FindById(sensorId, cancellationToken);
         if (sensor is null || (!isAdministrator && (!sensor.Active || sensor.Status != SensorStatus.ACTIVE)))
-            throw new SensorException(HttpStatusCode.NotFound, "Sensor is unavailable.");
+            throw new SensorException(ErrorKind.NotFound, "Sensor is unavailable.");
 
         var reading = await _readings.GetLatest(sensorId, cancellationToken);
         return reading is null ? null : GetSensorReadingsUseCase.ToResponse(reading);

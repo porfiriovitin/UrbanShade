@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Responses.ThermalAnalyses;
 using UrbanShade.Domain.Entities;
 using UrbanShade.Domain.Enums;
@@ -27,7 +26,7 @@ public sealed class GetLatestThermalAnalysisUseCase : IGetLatestThermalAnalysisU
     {
         var sensor = await _sensors.FindById(sensorId, cancellationToken);
         if (sensor is null || (!isAdministrator && (!sensor.Active || sensor.Status != SensorStatus.ACTIVE)))
-            throw new SensorException(HttpStatusCode.NotFound, "Sensor is unavailable.");
+            throw new SensorException(ErrorKind.NotFound, "Sensor is unavailable.");
 
         var latest = await _analyses.GetLatest(sensorId, _settings.AlgorithmVersion, cancellationToken);
         return ToResponse(sensorId, latest, _time.GetUtcNow().UtcDateTime, _settings);

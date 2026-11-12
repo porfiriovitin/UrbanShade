@@ -44,7 +44,7 @@ public sealed class GeoAnalysisBackgroundService : BackgroundService
             catch (Exception exception)
             {
                 /// :: Log the exception type, never upstream response bodies or authentication details.
-                _logger.LogError("Geospatial worker failed with {ExceptionType}", exception.GetType().Name);
+                _logger.LogError(exception, "Geospatial worker failed");
             }
             try { await Task.Delay(TimeSpan.FromSeconds(5), _time, stoppingToken); }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }

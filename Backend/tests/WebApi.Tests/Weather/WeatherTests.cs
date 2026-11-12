@@ -23,6 +23,47 @@ public sealed class WeatherTests : BaseIntegrationTest
     public WeatherTests(UrbanShadeApplicationFactory factory) : base(factory) { Provider.Reset(); }
 
     [Fact]
+    public async Task Lease_ClosesConnection_RecoversAndFencesLateWriters()
+    {
+        var region = await Region();
+        await using var firstScope = Factory.Services.CreateAsyncScope();
+        await using var nextScope = Factory.Services.CreateAsyncScope();
+        var first = firstScope.ServiceProvider.GetRequiredService<IWeatherRepository>();
+        var next = nextScope.ServiceProvider.GetRequiredService<IWeatherRepository>();
+        var lease = await first.AcquireRefresh(region.Id, default);
+        Assert.NotNull(lease);
+        Assert.Equal(System.Data.ConnectionState.Closed, firstScope.ServiceProvider.GetRequiredService<UrbanShadeDbContext>().Database.GetDbConnection().State);
+        Assert.Null(await next.AcquireRefresh(region.Id, default));
+        var context = nextScope.ServiceProvider.GetRequiredService<UrbanShadeDbContext>();
+        await context.GeoRegions.Where(item => item.Id == region.Id)
+            .ExecuteUpdateAsync(update => update.SetProperty(item => item.WeatherLeaseExpiresAt, DateTime.UtcNow.AddMinutes(-1)));
+        await using var recovered = await next.AcquireRefresh(region.Id, default);
+        Assert.NotNull(recovered);
+        var now = DateTime.UtcNow;
+        var observation = new WeatherObservation(now, now, new(30,60,null,null,null,null,null), []) { Source = "TEST" };
+        Assert.False(await first.Save(region, lease!.Id, 0, 0, observation, default));
+        await lease.DisposeAsync();
+        Assert.Equal(recovered!.Id, await context.GeoRegions.Where(item => item.Id == region.Id).Select(item => item.WeatherLeaseId).SingleAsync());
+        Assert.True(await next.Save(region, recovered.Id, 0, 0, observation, default));
+    }
+
+    [Fact]
+    public async Task Overview_IsBoundedAndSupportsCityScopeWithoutTrackingRegions()
+    {
+        var region = await Region();
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<UrbanShadeDbContext>();
+        context.GeoRegions.AddRange(Enumerable.Range(0,1000).Select(index => new GeoRegion(region.CityId, "Region " + index, null, Boundary())));
+        await context.SaveChangesAsync();
+        context.ChangeTracker.Clear();
+        var repository = scope.ServiceProvider.GetRequiredService<IWeatherRepository>();
+        await Assert.ThrowsAsync<UrbanShade.Exceptions.WeatherException>(() => repository.GetOverview(default, region.CityId));
+        Assert.Empty(context.ChangeTracker.Entries());
+        Assert.Empty(await repository.GetOverview(default, Guid.NewGuid()));
+        await context.GeoRegions.Where(item => item.CityId == region.CityId && item.Id != region.Id).ExecuteDeleteAsync();
+    }
+
+    [Fact]
     public async Task Endpoints_RequireAuthentication_ValidateInputs_AndDescribeMissingData()
     {
         var region = await Region();
@@ -194,7 +235,7 @@ public sealed class WeatherTests : BaseIntegrationTest
         await using var scope = Factory.Services.CreateAsyncScope();
         var regions = scope.ServiceProvider.GetRequiredService<IGeoRegionRepository>();
         var weather = scope.ServiceProvider.GetRequiredService<IWeatherRepository>();
-        var settings = Options.Create(new OpenMeteoSettings());
+        var settings = Options.Create(new WeatherSettings());
         var current = new QueryWeatherUseCase(regions, weather, settings, new FixedTime(now));
         Assert.Equal("CURRENT", (await current.Current(region.Id, default)).DataStatus);
         Assert.Single((await current.Forecast(region.Id, null, default)).Hourly);
@@ -213,7 +254,9 @@ public sealed class WeatherTests : BaseIntegrationTest
         {
             var invalid = new WeatherObservation(now, now.AddMinutes(1), new(32, 60, 34, 8, 0, 20, 1),
                 [new(now.AddHours(1), 32, 60, 34, 15, 8, 20, 8, 780), new(now.AddHours(2), decimal.MaxValue, 60, 34, 15, 8, 20, 8, 780)]);
-            await Assert.ThrowsAsync<DbUpdateException>(() => scope.ServiceProvider.GetRequiredService<IWeatherRepository>().Save(region, -23.588, -46.655, invalid, default));
+            var repository = scope.ServiceProvider.GetRequiredService<IWeatherRepository>();
+            await using var lease = await repository.AcquireRefresh(region.Id, default);
+            await Assert.ThrowsAsync<DbUpdateException>(() => repository.Save(region, lease!.Id, -23.588, -46.655, invalid, default));
         }
         await using var verification = Factory.Services.CreateAsyncScope();
         var context = verification.ServiceProvider.GetRequiredService<UrbanShadeDbContext>();
@@ -250,7 +293,9 @@ public sealed class WeatherTests : BaseIntegrationTest
         await using var scope = Factory.Services.CreateAsyncScope();
         var observation = new WeatherObservation(fetchedAt.AddMinutes(-5), fetchedAt, new(temperature, 60, 34, 8, 0, 20, 1),
             [new(fetchedAt.AddHours(1), temperature, 60, 34, 10, 8, 20, 8, 780)]);
-        Assert.True(await scope.ServiceProvider.GetRequiredService<IWeatherRepository>().Save(region, -23.588, -46.655, observation, default));
+        var repository = scope.ServiceProvider.GetRequiredService<IWeatherRepository>();
+        await using var lease = await repository.AcquireRefresh(region.Id, default);
+        Assert.True(await repository.Save(region, lease!.Id, -23.588, -46.655, observation, default));
     }
     private async Task Authenticate(UserRoles role)
     {

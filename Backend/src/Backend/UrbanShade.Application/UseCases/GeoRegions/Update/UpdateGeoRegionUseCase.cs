@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Application.UseCases.GeoRegions.Register;
 using UrbanShade.Communication.Requests.Geo;
 using UrbanShade.Communication.Responses.Geo;
@@ -17,18 +16,18 @@ public sealed class UpdateGeoRegionUseCase : IUpdateGeoRegionUseCase
     { _regions = regions; _unitOfWork = unitOfWork; _settings = settings; }
     public async Task<GeoRegionResponse> Execute(Guid id, UpdateGeoRegionRequest request, CancellationToken cancellationToken)
     {
-        var region = await _regions.FindById(id, cancellationToken) ?? throw new GeoException(HttpStatusCode.NotFound, "Region not found.");
+        var region = await _regions.FindById(id, cancellationToken) ?? throw new GeoException(ErrorKind.NotFound, "Region not found.");
         var result = new GeoRegionValidator().Validate(new RegisterGeoRegionRequest { CityId = region.CityId, Name = request.Name ?? region.Name, Description = request.Description ?? region.Description });
-        if (!result.IsValid) throw new GeoException(HttpStatusCode.BadRequest, [.. result.Errors.Select(error => error.ErrorMessage)]);
+        if (!result.IsValid) throw new GeoException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
         var boundary = request.Boundary.HasValue ? GeoRegionValidator.ReadBoundary(request.Boundary.Value, _settings) : region.Boundary;
-        if (await _regions.GetArea(boundary, cancellationToken) > _settings.MaximumRegionAreaSquareMeters) throw new GeoException(HttpStatusCode.BadRequest, "Region exceeds the maximum allowed area.");
+        if (await _regions.GetArea(boundary, cancellationToken) > _settings.MaximumRegionAreaSquareMeters) throw new GeoException(ErrorKind.Validation, "Region exceeds the maximum allowed area.");
         region.Update(request.Name ?? region.Name, request.Description ?? region.Description, boundary);
         await _unitOfWork.SaveChanges(cancellationToken);
         return RegisterGeoRegionUseCase.ToResponse(region);
     }
     public async Task Deactivate(Guid id, CancellationToken cancellationToken)
     {
-        var region = await _regions.FindById(id, cancellationToken) ?? throw new GeoException(HttpStatusCode.NotFound, "Region not found.");
+        var region = await _regions.FindById(id, cancellationToken) ?? throw new GeoException(ErrorKind.NotFound, "Region not found.");
         region.Deactivate();
         await _unitOfWork.SaveChanges(cancellationToken);
     }

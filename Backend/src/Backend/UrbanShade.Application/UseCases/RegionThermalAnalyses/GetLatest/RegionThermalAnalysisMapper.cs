@@ -6,8 +6,9 @@ namespace UrbanShade.Application.UseCases.RegionThermalAnalyses.GetLatest;
 
 public static class RegionThermalAnalysisMapper
 {
-    public static RegionThermalAnalysisResponse ToResponse(RegionThermalAnalysis analysis, string name) => new()
+    public static RegionThermalAnalysisResponse ToResponse(RegionThermalAnalysis analysis, string name, UrbanShade.Domain.RegionThermalAnalysis.AnalysisValidity? validity = null) => new()
     {
+        IsCurrent = validity?.IsCurrent, ValidUntil = validity?.ValidUntil,
         Id = analysis.Id, RegionId = analysis.GeoRegionId, RegionName = name, BoundaryVersion = analysis.BoundaryVersion,
         ExposureIndex = analysis.ExposureIndex, ExposureLevel = analysis.ExposureLevel?.ToString(), AverageHeatIndex = analysis.AverageHeatIndex,
         SurfaceTemperature = analysis.SurfaceTemperature, SurfaceTemperatureAnomaly = analysis.SurfaceTemperatureAnomaly,
@@ -15,6 +16,6 @@ public static class RegionThermalAnalysisMapper
         IsHeatIslandCandidate = analysis.IsHeatIslandCandidate, DataQuality = analysis.DataQuality.ToString(), ConfidenceLevel = analysis.ConfidenceLevel.ToString(),
         DataOrigin = analysis.DataOrigin, AnalysisMode = analysis.DataOrigin == "SIMULATED_SENSORS" ? "DEMONSTRATION" : "EXPERIMENTAL",
         AlgorithmVersion = analysis.AlgorithmVersion, AnalyzedAt = analysis.AnalyzedAt,
-        SourceMetadata = UrbanShade.Application.UseCases.InstitutionalDashboard.InstitutionalDashboardQuery.PublicMetadata(analysis.SourceMetadata)
+        SourceMetadata = UrbanShade.Application.Mapping.ProvenanceMapper.PublicMetadata(analysis.SourceMetadata)
     };
 }

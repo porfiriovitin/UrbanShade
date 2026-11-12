@@ -1,4 +1,3 @@
-using System.Text.Json;
 using UrbanShade.Domain.Enums;
 using UrbanShade.Domain.RegionThermalAnalysis;
 
@@ -8,11 +7,13 @@ public sealed class RouteExposureCalculator
 {
     private readonly RoutingSettings _routing;
     private readonly RegionThermalAnalysisSettings _thermal;
+    private readonly UrbanShade.Domain.ThermalAnalysis.ThermalAnalysisSettings _sensor;
 
-    public RouteExposureCalculator(RoutingSettings routing, RegionThermalAnalysisSettings thermal)
+    public RouteExposureCalculator(RoutingSettings routing, RegionThermalAnalysisSettings thermal, UrbanShade.Domain.ThermalAnalysis.ThermalAnalysisSettings sensor)
     {
         _routing = routing;
         _thermal = thermal;
+        _sensor = sensor;
     }
 
     public RouteExposure Calculate(RouteCandidate route, IReadOnlyList<RouteThermalSegment> segments, DateTime now)
@@ -49,49 +50,13 @@ public sealed class RouteExposureCalculator
     private EvaluatedRouteSegment Evaluate(RouteThermalSegment segment, DateTime now)
     {
         if (!_thermal.Enabled || segment.ExposureIndex is null or < 0 or > 100 || segment.DataQuality is null or RegionDataQuality.INSUFFICIENT_DATA ||
-            segment.AlgorithmVersion != _thermal.AlgorithmVersion || segment.AnalyzedAt is null || segment.AnalyzedAt > now || segment.SourceMetadata is null)
+            segment.AlgorithmVersion != _thermal.AlgorithmVersion || segment.AnalyzedAt is null || segment.AnalyzedAt > now || segment.Provenance is null)
             return new(segment, false, null, null);
-        try
-        {
-            using var document = JsonDocument.Parse(segment.SourceMetadata);
-            var root = document.RootElement;
-            var scores = root.GetProperty("scores");
-            var weights = root.GetProperty("appliedWeights");
-            var parameters = JsonSerializer.Deserialize<RegionThermalAnalysisSettings>(root.GetProperty("parameters"));
-            if (parameters is null || JsonSerializer.Serialize(parameters.Weights) != JsonSerializer.Serialize(_thermal.Weights) ||
-                JsonSerializer.Serialize(parameters.RiskThresholds) != JsonSerializer.Serialize(_thermal.RiskThresholds)) return new(segment, false, null, null);
-            var dates = new List<DateTime>();
-            if (!scores.TryGetProperty("Thermal", out _)) return new(segment, false, null, null);
-            var sensors = root.GetProperty("sensors");
-            if (sensors.GetArrayLength() > 0)
-            {
-                foreach (var sensor in sensors.EnumerateArray())
-                    if (!Current(sensor.GetProperty("MeasuredAt").GetDateTime(), TimeSpan.FromMinutes(_thermal.SourceValidity.SensorMinutes))) return new(segment, false, null, null);
-            }
-            else if (!Current(root.GetProperty("weather").GetProperty("ObservedAt").GetDateTime(), TimeSpan.FromMinutes(_thermal.SourceValidity.WeatherMinutes))) return new(segment, false, null, null);
-            var environmental = false;
-            if (scores.TryGetProperty("Vegetation", out _))
-            {
-                environmental = true;
-                if (!Current(root.GetProperty("vegetation").GetProperty("ObservationEndAt").GetDateTime(), TimeSpan.FromDays(_thermal.SourceValidity.VegetationDays))) return new(segment, false, null, null);
-            }
-            if (scores.TryGetProperty("SurfaceTemperature", out _))
-            {
-                environmental = true;
-                if (!Current(root.GetProperty("surface").GetProperty("ObservationEndAt").GetDateTime(), TimeSpan.FromDays(_thermal.SourceValidity.SurfaceTemperatureDays)) ||
-                    !Current(root.GetProperty("referenceSurface").GetProperty("ObservationEndAt").GetDateTime(), TimeSpan.FromDays(_thermal.SourceValidity.SurfaceTemperatureDays))) return new(segment, false, null, null);
-            }
-            if (!environmental) return new(segment, false, null, null);
-            var composition = string.Join(",", weights.EnumerateObject().OrderBy(item => item.Name).Select(item => item.Name + ":" + item.Value.GetRawText()));
-            return new(segment, true, composition, dates.Min());
-
-            bool Current(DateTime date, TimeSpan validity)
-            {
-                dates.Add(date);
-                return date.Kind == DateTimeKind.Utc && date <= now && now - date <= validity;
-            }
-        }
-        catch (Exception exception) when (exception is JsonException or InvalidOperationException or KeyNotFoundException or FormatException)
-        { return new(segment, false, null, null); }
+        var provenance = segment.Provenance;
+        var validity = AnalysisEligibility.Evaluate(provenance, segment.AlgorithmVersion, segment.AnalyzedAt, now, _thermal, _sensor.StaleDataThresholdMinutes);
+        if (!validity.IsCurrent) return new(segment, false, null, null);
+        var composition = string.Join(",", provenance!.AppliedWeights.OrderBy(item => item.Key)
+            .Select(item => item.Key + ":" + item.Value.ToString("G29", System.Globalization.CultureInfo.InvariantCulture)));
+        return new(segment, true, composition, validity.SourceReferenceAt);
     }
 }

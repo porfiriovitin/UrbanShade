@@ -37,8 +37,8 @@ public sealed class WeatherController : ControllerBase
         Ok(Payload(await useCase.History(id, request, User.IsInRole(nameof(UserRoles.PlatformAdministrator)), cancellationToken)));
 
     [HttpGet("overview")]
-    public async Task<IActionResult> Overview([FromServices] IQueryWeatherUseCase useCase, CancellationToken cancellationToken) =>
-        Ok(Payload(await useCase.Overview(cancellationToken)));
+    public async Task<IActionResult> Overview([FromServices] IQueryWeatherUseCase useCase, CancellationToken cancellationToken, Guid? cityId = null) =>
+        Ok(Payload(await useCase.Overview(cancellationToken, cityId)));
 
     [HttpPost("regions/{id:guid}/refresh")]
     [Authorize(Policy = "PlatformAdministration")]

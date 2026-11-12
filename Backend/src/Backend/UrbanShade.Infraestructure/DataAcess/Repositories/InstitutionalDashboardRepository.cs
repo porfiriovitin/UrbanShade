@@ -54,7 +54,7 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
         )
         """;
 
-    private const string Regions = """
+    private static readonly string Regions = """
         , region_sources AS (
             SELECT r.*, a."Id" AS analysis_id, a."ExposureIndex", a."ExposureLevel", a."DataQuality", a."DataOrigin",
                 a."AlgorithmVersion", a."AnalyzedAt", a."AverageHeatIndex", a."SurfaceTemperature", a."SurfaceTemperatureAnomaly",
@@ -75,15 +75,16 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
                 AND (@start IS NULL OR a."AnalyzedAt" >= @start) AND (@end IS NULL OR a."AnalyzedAt" <= @end)
                 ORDER BY a."AnalyzedAt" DESC, a."Id" DESC LIMIT 1) a ON true
         ), region_current AS (
-            SELECT s.*, (analysis_id IS NOT NULL AND "ExposureIndex" IS NOT NULL AND "AlgorithmVersion" = @algorithm
+            SELECT s.*, COALESCE((analysis_id IS NOT NULL AND "ExposureIndex" IS NOT NULL AND "AlgorithmVersion" = @algorithm
                 AND expires > @now AND "DataQuality" = 'COMPLETE'
+                AND (__ELIGIBILITY__)
                 AND (NOT ("SourceMetadata"->'scores' ? 'SurfaceTemperature') OR EXISTS (
                     SELECT 1 FROM "GeoRegions" ref WHERE ref."Id" = s."ReferenceGeoRegionId" AND ref."Active"
                     AND ref."Id"::text = s."SourceMetadata"->>'referenceRegionId'
-                    AND ref."BoundaryVersion" = (s."SourceMetadata"->>'referenceBoundaryVersion')::int))) AS current
+                    AND ref."BoundaryVersion" = (s."SourceMetadata"->>'referenceBoundaryVersion')::int))), false) AS current
             FROM region_sources s
         )
-        """;
+        """.Replace("__ELIGIBILITY__", AnalysisEligibilitySql.Predicate("s"));
 
     private const string Sensors = """
         , selected_sensors AS (
@@ -103,6 +104,9 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
 
     private object[] Parameters(InstitutionalQuery query) =>
     [
+        new NpgsqlParameter("enabled", _regional.Enabled),
+        new NpgsqlParameter("policyWeights", NpgsqlDbType.Jsonb) { Value = JsonSerializer.Serialize(_regional.Weights) },
+        new NpgsqlParameter("policyThresholds", NpgsqlDbType.Jsonb) { Value = JsonSerializer.Serialize(_regional.RiskThresholds) },
         new NpgsqlParameter("organization", query.OrganizationId), new NpgsqlParameter("actor", query.ActorId),
         new NpgsqlParameter("region", NpgsqlDbType.Uuid) { Value = (object?)query.RegionId ?? DBNull.Value },
         new NpgsqlParameter("ids", NpgsqlDbType.Array | NpgsqlDbType.Uuid) { Value = query.RegionIds },
@@ -136,7 +140,7 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
         return _context.Database.SqlQueryRaw<T>(commandText, Parameters(query)).ToListAsync(cancellationToken);
     }
 
-    public async Task<string> GetScopeVersion(InstitutionalQuery query, CancellationToken cancellationToken)
+    private async Task<string> GetScopeVersion(InstitutionalQuery query, CancellationToken cancellationToken)
     {
         var values = await Query<string>(query, """
             SELECT COALESCE(string_agg(r."Id"::text || ':' || r."BoundaryVersion"::text || ':' || COALESCE(ref."Id"::text,'') || ':' || COALESCE(ref."BoundaryVersion"::text,'') || ':' || COALESCE(ref."Active"::text,''), ',' ORDER BY r."Id"), '') AS "Value" FROM selected_regions r LEFT JOIN "GeoRegions" ref ON ref."Id" = r."ReferenceGeoRegionId"

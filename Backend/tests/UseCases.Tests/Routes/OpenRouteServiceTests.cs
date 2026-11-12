@@ -56,7 +56,7 @@ public sealed class OpenRouteServiceTests
         Assert.Single(routes);
         Assert.Equal(2, count);
         var exception = await Assert.ThrowsAsync<RoutingException>(() => Provider(new Handler((_, _) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.Unauthorized)))).GetRoutes(new(0,0),new(0,.01),default));
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, exception.GetStatusCode());
+        Assert.Equal(UrbanShade.Exceptions.ErrorKind.Unavailable, exception.GetErrorKind());
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public sealed class OpenRouteServiceTests
     {
         var handler = new Handler(async (_, token) => { await Task.Delay(Timeout.Infinite,token); return Response(); });
         var exception = await Assert.ThrowsAsync<RoutingException>(() => Provider(handler,new RoutingSettings { TimeoutSeconds = 1 }).GetRoutes(new(0,0),new(0,.01),default));
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, exception.GetStatusCode());
+        Assert.Equal(UrbanShade.Exceptions.ErrorKind.Unavailable, exception.GetErrorKind());
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Provider(handler).GetRoutes(new(0,0),new(0,.01),cancellation.Token));

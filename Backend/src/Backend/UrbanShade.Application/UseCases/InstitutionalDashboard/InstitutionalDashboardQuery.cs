@@ -1,4 +1,3 @@
-using System.Net;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using UrbanShade.Application.UseCases.Organizations;
@@ -29,22 +28,22 @@ public sealed class InstitutionalDashboardQuery
     {
         Validate(request);
         if (!_settings.Enabled)
-            throw new InstitutionalDashboardException(HttpStatusCode.Conflict, "Institutional dashboard is disabled.");
+            throw new InstitutionalDashboardException(ErrorKind.Conflict, "Institutional dashboard is disabled.");
         if (regionId == Guid.Empty || regionId.HasValue && request.RegionId.HasValue && regionId != request.RegionId)
-            throw new InstitutionalDashboardException(HttpStatusCode.BadRequest, "Conflicting region IDs.");
+            throw new InstitutionalDashboardException(ErrorKind.Validation, "Conflicting region IDs.");
         if (history && !request.StartDate.HasValue)
-            throw new InstitutionalDashboardException(HttpStatusCode.BadRequest, "A history period is required.");
+            throw new InstitutionalDashboardException(ErrorKind.Validation, "A history period is required.");
 
         /// :: Recheck live permissions before any repository cache lookup.
         UrbanShade.Domain.Entities.Organization organization;
         try { organization = await _access.Require(request.OrganizationId, actorId, cancellationToken); }
-        catch (OrganizationException exception) when (exception.GetStatusCode() is HttpStatusCode.NotFound or HttpStatusCode.Forbidden or HttpStatusCode.Unauthorized)
+        catch (OrganizationException exception) when (exception.GetErrorKind() is ErrorKind.NotFound or ErrorKind.Forbidden or ErrorKind.Unauthenticated)
         {
             _logger.LogWarning("Institutional access denied for organization {OrganizationId}", request.OrganizationId);
             throw;
         }
         if (!organization.Active)
-            throw new InstitutionalDashboardException(HttpStatusCode.NotFound, "Organization is unavailable.");
+            throw new InstitutionalDashboardException(ErrorKind.NotFound, "Organization is unavailable.");
         var query = new InstitutionalQuery
         {
             ActorId = actorId, OrganizationId = organization.Id, TimeZoneId = organization.TimeZoneId,
@@ -57,14 +56,14 @@ public sealed class InstitutionalDashboardQuery
             IncludeSensors = request.IncludeSensors, IncludeGreenAreas = request.IncludeGreenAreas
         };
         if (query.RegionId.HasValue && query.RegionIds.Length > 0)
-            throw new InstitutionalDashboardException(HttpStatusCode.BadRequest, "Use regionId or regionIds, not both.");
+            throw new InstitutionalDashboardException(ErrorKind.Validation, "Use regionId or regionIds, not both.");
         if (query.RegionId.HasValue || query.RegionIds.Length > 0)
         {
             var access = await _dashboard.GetRegions(query with { ExposureLevel = null, MinExposureIndex = null, Bounds = null, StartDate = null, EndDate = null, Page = 1, PageSize = 1 }, false, cancellationToken);
             if (access.Total != (query.RegionId.HasValue ? 1 : query.RegionIds.Length))
             {
                 _logger.LogWarning("Institutional region access denied for organization {OrganizationId}", query.OrganizationId);
-                throw new InstitutionalDashboardException(HttpStatusCode.NotFound, "Region is unavailable.");
+                throw new InstitutionalDashboardException(ErrorKind.NotFound, "Region is unavailable.");
             }
         }
         return query;
@@ -74,7 +73,7 @@ public sealed class InstitutionalDashboardQuery
     {
         var result = new InstitutionalDashboardValidator(_settings).Validate(request);
         if (!result.IsValid)
-            throw new InstitutionalDashboardException(HttpStatusCode.BadRequest, [.. result.Errors.Select(error => error.ErrorMessage)]);
+            throw new InstitutionalDashboardException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
     }
 
     public InstitutionalRegionResponse ToResponse(InstitutionalRegionData region, bool includeGeometry = false) => new()
@@ -89,27 +88,9 @@ public sealed class InstitutionalDashboardQuery
         IsHeatIslandCandidate = region.IsHeatIslandCandidate, DataOrigin = region.DataOrigin,
         AnalysisMode = region.DataOrigin == "SIMULATED_SENSORS" ? "DEMONSTRATION" : "EXPERIMENTAL",
         AlgorithmVersion = region.AlgorithmVersion, AnalyzedAt = region.AnalyzedAt, ValidUntil = region.ValidUntil,
-        SourceMetadata = PublicMetadata(region.SourceMetadata), Priority = Priority(region)
+        SourceMetadata = UrbanShade.Application.Mapping.ProvenanceMapper.PublicMetadata(region.SourceMetadata), Priority = UrbanShade.Domain.InstitutionalDashboard.InterventionPriority.Calculate(region.IsCurrent, region.ExposureLevel, region.VegetationCoveragePercent, region.SurfaceTemperatureAnomaly, region.IsHeatIslandCandidate, _settings)
     };
 
-    private string Priority(InstitutionalRegionData region)
-    {
-        if (!region.IsCurrent) return "UNDETERMINED";
-        var adverse = region.VegetationCoveragePercent < _settings.LowVegetationCoveragePercent ||
-            region.SurfaceTemperatureAnomaly >= _settings.PrioritySurfaceAnomaly || region.IsHeatIslandCandidate == true;
-        if (region.ExposureLevel == "CRITICAL" && adverse) return "HIGH";
-        return region.ExposureLevel is "CRITICAL" or "HIGH" || adverse ? "MEDIUM" : "LOW";
-    }
 
-    public static JsonElement PublicMetadata(string json)
-    {
-        /// :: Regional access exposes provenance without disclosing third-party sensor identifiers.
-        var metadata = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json) ?? [];
-        if (metadata.TryGetValue("sensors", out var sensors) && sensors.ValueKind == JsonValueKind.Array)
-            metadata["sensorObservations"] = JsonSerializer.SerializeToElement(sensors.EnumerateArray().Select(sensor =>
-                sensor.EnumerateObject().Where(property => property.Name is "MeasuredAt" or "AlgorithmVersion" or "IsSimulated")
-                    .ToDictionary(property => property.Name, property => property.Value)));
-        metadata.Remove("sensors");
-        return JsonSerializer.SerializeToElement(metadata);
-    }
+
 }

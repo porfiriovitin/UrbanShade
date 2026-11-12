@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Requests.Organizations;
 using UrbanShade.Communication.Responses.Organizations;
 using UrbanShade.Domain.Entities;
@@ -28,7 +27,7 @@ public sealed class RegisterOrganizationUseCase : IRegisterOrganizationUseCase
         Validate(request);
         var document = request.Document.Trim().ToUpperInvariant();
         if (await _organizations.DocumentExists(document, null, cancellationToken))
-            throw new OrganizationException(HttpStatusCode.Conflict, "Organization document already registered.");
+            throw new OrganizationException(ErrorKind.Conflict, "Organization document already registered.");
 
         var organization = new Organization(request.Name, Enum.Parse<OrganizationType>(request.Type), document, request.ContactEmail, request.ContactPhone);
         organization.UpdateTimeZone(request.TimeZoneId);
@@ -41,6 +40,6 @@ public sealed class RegisterOrganizationUseCase : IRegisterOrganizationUseCase
     {
         var result = new OrganizationValidator().Validate(request);
         if (!result.IsValid)
-            throw new OrganizationException(HttpStatusCode.BadRequest, [.. result.Errors.Select(error => error.ErrorMessage)]);
+            throw new OrganizationException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
     }
 }

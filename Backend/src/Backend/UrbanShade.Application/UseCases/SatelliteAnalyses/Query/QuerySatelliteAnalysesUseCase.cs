@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Application.UseCases.GeoRegions;
 using UrbanShade.Communication.Responses.Geo;
 using UrbanShade.Domain.Entities;
@@ -17,7 +16,7 @@ public sealed class QuerySatelliteAnalysesUseCase : IQuerySatelliteAnalysesUseCa
     private readonly TimeProvider _time;
     public QuerySatelliteAnalysesUseCase(IGeoRegionRepository regions, ISatelliteAnalysisRepository analyses, GeoAnalysisSettings settings, TimeProvider time)
     { _regions = regions; _analyses = analyses; _settings = settings; _time = time; }
-    private async Task<GeoRegion> Region(Guid id, CancellationToken cancellationToken) => await _regions.FindById(id, cancellationToken) ?? throw new GeoException(HttpStatusCode.NotFound, "Region not found.");
+    private async Task<GeoRegion> Region(Guid id, CancellationToken cancellationToken) => await _regions.FindById(id, cancellationToken) ?? throw new GeoException(ErrorKind.NotFound, "Region not found.");
     private string Status(SatelliteAnalysis? analysis) => analysis is null ? "UNAVAILABLE" : analysis.ObservationEndAt < _time.GetUtcNow().UtcDateTime.AddDays(-_settings.OutdatedAfterDays) ? "OUTDATED" : "AVAILABLE";
     public static string Source(SatelliteDataSource source) => source switch { SatelliteDataSource.Sentinel2 => "SENTINEL2", SatelliteDataSource.Landsat8 => "LANDSAT8", _ => "LANDSAT9" };
     public async Task<VegetationResponse> Vegetation(Guid regionId, CancellationToken cancellationToken)
@@ -38,7 +37,7 @@ public sealed class QuerySatelliteAnalysesUseCase : IQuerySatelliteAnalysesUseCa
         await Region(regionId, cancellationToken);
         GeoRegionValidator.Page(page, pageSize);
         if ((start.HasValue && start.Value.Kind != DateTimeKind.Utc) || (end.HasValue && end.Value.Kind != DateTimeKind.Utc) || (start.HasValue && end.HasValue && start >= end))
-            throw new GeoException(HttpStatusCode.BadRequest, "Provide a valid UTC history period.");
+            throw new GeoException(ErrorKind.Validation, "Provide a valid UTC history period.");
         return (await _analyses.GetHistory(regionId, start, end, page, pageSize, cancellationToken)).Select(analysis => new SatelliteAnalysisResponse(analysis.Id, regionId, Source(analysis.DataSource),
             analysis.AnalysisType == GeoAnalysisType.Vegetation ? "VEGETATION" : "SURFACE_TEMPERATURE", analysis.MeanValue, analysis.MinValue, analysis.MaxValue,
             analysis.VegetationCoveragePercent, analysis.VegetationAreaSquareMeters, analysis.ValidPixelPercent, analysis.ObservationStartAt, analysis.ObservationEndAt,

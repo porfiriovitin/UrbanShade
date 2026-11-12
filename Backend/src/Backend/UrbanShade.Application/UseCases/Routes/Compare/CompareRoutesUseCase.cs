@@ -1,6 +1,5 @@
 using System.Data.Common;
 using System.Diagnostics;
-using System.Net;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NetTopologySuite.Geometries;
@@ -37,15 +36,15 @@ public sealed class CompareRoutesUseCase : ICompareRoutesUseCase
     public async Task<RouteComparisonResponse> Execute(CompareRoutesRequest request, CancellationToken cancellationToken = default)
     {
         Validate(request);
-        if (!_settings.Enabled) throw new RoutingException(HttpStatusCode.ServiceUnavailable, "Routing integration is disabled.");
+        if (!_settings.Enabled) throw new RoutingException(ErrorKind.Unavailable, "Routing integration is disabled.");
         var timer = Stopwatch.StartNew();
 
         /// :: Only the backend obtains routes and authenticates with the external provider.
         var candidates = await _provider.GetRoutes(new(request.Origin.Latitude, request.Origin.Longitude), new(request.Destination.Latitude, request.Destination.Longitude), cancellationToken);
         var conventional = candidates.SingleOrDefault(item => item.IsConventional)
-            ?? throw new RoutingException(HttpStatusCode.BadGateway, "The provider did not return a conventional walking route.");
+            ?? throw new RoutingException(ErrorKind.InvalidUpstreamResponse, "The provider did not return a conventional walking route.");
         var ordered = new[] { conventional }.Concat(candidates.Where(item => !item.IsConventional)).Where(item => ValidRoute(item, request)).ToList();
-        if (!ordered.Contains(conventional)) throw new RoutingException(HttpStatusCode.UnprocessableEntity, "The conventional route exceeds walking or geometry limits.");
+        if (!ordered.Contains(conventional)) throw new RoutingException(ErrorKind.Unprocessable, "The conventional route exceeds walking or geometry limits.");
         IReadOnlyList<RouteCandidate> routes;
         IReadOnlyList<RouteThermalSegment> segments;
         try
@@ -98,7 +97,7 @@ public sealed class CompareRoutesUseCase : ICompareRoutesUseCase
     private void Validate(CompareRoutesRequest request)
     {
         var result = new CompareRoutesValidator(_settings).Validate(request);
-        if (!result.IsValid) throw new RoutingException(HttpStatusCode.BadRequest, [.. result.Errors.Select(error => error.ErrorMessage)]);
+        if (!result.IsValid) throw new RoutingException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
     }
 
     private bool ValidRoute(RouteCandidate route, CompareRoutesRequest request)

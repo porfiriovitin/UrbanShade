@@ -17,6 +17,32 @@ public sealed class SecurityControlTests
     }).Build();
 
     [Fact]
+    public void ExceptionFilter_LogsUnexpectedFailureAndKeepsResponseGeneric()
+    {
+        var logger = new ExceptionLogger();
+        var http = new Microsoft.AspNetCore.Http.DefaultHttpContext { TraceIdentifier = "audit-test" };
+        var action = new Microsoft.AspNetCore.Mvc.ActionContext(http, new Microsoft.AspNetCore.Routing.RouteData(), new Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor());
+        var context = new Microsoft.AspNetCore.Mvc.Filters.ExceptionContext(action, []) { Exception = new InvalidOperationException("internal detail") };
+        new UrbanShade.API.Filters.ExceptionFilter(logger).OnException(context);
+        Assert.Same(context.Exception, logger.Error);
+        Assert.Contains("audit-test", logger.Message);
+        var response = Assert.IsType<Microsoft.AspNetCore.Mvc.ObjectResult>(context.Result);
+        Assert.Equal(500, response.StatusCode);
+        var payload = Assert.IsType<UrbanShade.Communication.Responses.PayloadResponse>(response.Value);
+        Assert.DoesNotContain("internal detail", string.Join(" ", payload.Messages));
+    }
+
+    private sealed class ExceptionLogger : Microsoft.Extensions.Logging.ILogger<UrbanShade.API.Filters.ExceptionFilter>
+    {
+        public Exception? Error { get; private set; }
+        public string Message { get; private set; } = "";
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel level) => true;
+        public void Log<TState>(Microsoft.Extensions.Logging.LogLevel level, Microsoft.Extensions.Logging.EventId id, TState state, Exception? error, Func<TState, Exception?, string> formatter)
+        { Error = error; Message = formatter(state, error); }
+    }
+
+    [Fact]
     public void Admission_BoundsConcurrentWork_AndReleasesCapacity()
     {
         using var admission = new RequestAdmission(Configuration());
@@ -57,7 +83,7 @@ public sealed class SecurityControlTests
     public void PublicMetadata_RemovesIdentifiersFromHistoricalSensors()
     {
         var json = JsonSerializer.Serialize(new { sensors = new[] { new { sensorId = Guid.NewGuid(), readingId = Guid.NewGuid(), analysisId = Guid.NewGuid(), MeasuredAt = DateTime.UtcNow, AlgorithmVersion = "1.0", IsSimulated = true } } });
-        var metadata = InstitutionalDashboardQuery.PublicMetadata(json);
+        var metadata = UrbanShade.Application.Mapping.ProvenanceMapper.PublicMetadata(json);
         Assert.False(metadata.TryGetProperty("sensors", out _));
         var observation = Assert.Single(metadata.GetProperty("sensorObservations").EnumerateArray());
         Assert.False(observation.TryGetProperty("sensorId", out _));

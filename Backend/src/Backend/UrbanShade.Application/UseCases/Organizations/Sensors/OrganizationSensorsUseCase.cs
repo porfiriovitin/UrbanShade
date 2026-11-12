@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Application.UseCases.SensorReadings.GetHistory;
 using UrbanShade.Application.UseCases.Sensors.GetById;
 using UrbanShade.Communication.Requests.SensorReadings;
@@ -33,12 +32,12 @@ public sealed class OrganizationSensorsUseCase : IOrganizationSensorsUseCase
         await using var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
         var organization = await _organizations.FindForUpdate(organizationId, cancellationToken);
         if (organization is null || !organization.Active)
-            throw new OrganizationException(HttpStatusCode.NotFound, "Active organization is unavailable.");
+            throw new OrganizationException(ErrorKind.NotFound, "Active organization is unavailable.");
         var sensor = await _organizations.FindSensorForUpdate(sensorId, cancellationToken);
         if (sensor is null)
-            throw new OrganizationException(HttpStatusCode.NotFound, "Sensor is unavailable.");
+            throw new OrganizationException(ErrorKind.NotFound, "Sensor is unavailable.");
         if (sensor.OrganizationId.HasValue && sensor.OrganizationId != organizationId)
-            throw new OrganizationException(HttpStatusCode.Conflict, "Sensor already belongs to another organization.");
+            throw new OrganizationException(ErrorKind.Conflict, "Sensor already belongs to another organization.");
 
         sensor.AssignOrganization(organizationId);
         await _unitOfWork.SaveChanges(cancellationToken);
@@ -56,7 +55,7 @@ public sealed class OrganizationSensorsUseCase : IOrganizationSensorsUseCase
         await RequireSensor(actorId, organizationId, sensorId, cancellationToken);
         var result = new GetSensorReadingsValidator().Validate(request);
         if (!result.IsValid)
-            throw new OrganizationException(HttpStatusCode.BadRequest, [.. result.Errors.Select(error => error.ErrorMessage)]);
+            throw new OrganizationException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
         var history = await _readings.GetHistory(sensorId, request.StartDate?.UtcDateTime, request.EndDate?.UtcDateTime, request.Page, request.PageSize, cancellationToken);
         return new PagedResponse<SensorReadingResponse>
         {
@@ -79,6 +78,6 @@ public sealed class OrganizationSensorsUseCase : IOrganizationSensorsUseCase
         await _access.Require(organizationId, actorId, cancellationToken);
         var sensor = await _sensors.FindById(sensorId, cancellationToken);
         if (sensor is null || sensor.OrganizationId != organizationId)
-            throw new OrganizationException(HttpStatusCode.NotFound, "Organization sensor is unavailable.");
+            throw new OrganizationException(ErrorKind.NotFound, "Organization sensor is unavailable.");
     }
 }

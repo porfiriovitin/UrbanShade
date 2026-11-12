@@ -11,5 +11,4 @@ public interface IInstitutionalDashboardRepository
     Task<List<InstitutionalTrendData>> GetTrends(InstitutionalQuery query, CancellationToken cancellationToken);
     Task<List<InstitutionalFeatureData>> GetMap(InstitutionalQuery query, CancellationToken cancellationToken);
     Task<List<InstitutionalReportData>> GetReport(InstitutionalQuery query, CancellationToken cancellationToken);
-    Task<string> GetScopeVersion(InstitutionalQuery query, CancellationToken cancellationToken);
 }

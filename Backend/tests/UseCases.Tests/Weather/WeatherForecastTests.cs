@@ -13,7 +13,7 @@ public sealed class WeatherForecastTests
     {
         var now = DateTime.UtcNow;
         var prediction = new WeatherPrediction(now.AddHours(1), 30, 60, 34, 15, 8, 20, 8, 780);
-        var forecast = new WeatherForecast(Guid.NewGuid(), 1, -23, -46, prediction, now);
+        var forecast = new WeatherForecast(Guid.NewGuid(), 1, -23, -46, prediction, now, "TEST_PROVIDER");
         forecast.Update(1, -23, -46, prediction with { Temperature = 32, Humidity = null, UvIndex = null }, now.AddMinutes(1));
         Assert.Equal(32, forecast.Temperature);
         Assert.Equal(60, forecast.Humidity);
@@ -28,7 +28,7 @@ public sealed class WeatherForecastTests
     {
         var now = DateTime.UtcNow;
         var prediction = new WeatherPrediction(now.AddHours(1), 30, 60, 34, 15, 8, 20, 8, 780);
-        var forecast = new WeatherForecast(Guid.NewGuid(), 1, -23, -46, prediction, now);
+        var forecast = new WeatherForecast(Guid.NewGuid(), 1, -23, -46, prediction, now, "TEST_PROVIDER");
         forecast.Update(2, -24, -47, prediction with { Temperature = 32, Humidity = null, UvIndex = null }, now.AddMinutes(1));
         Assert.Equal(2, forecast.BoundaryVersion);
         Assert.Equal(-24, forecast.Latitude);

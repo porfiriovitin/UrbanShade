@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Requests.Authentication;
 using UrbanShade.Domain.Repositories;
 using UrbanShade.Domain.Security;
@@ -42,6 +41,6 @@ public sealed class LogoutUseCase : ILogoutUseCase
     {
         var result = new LogoutValidator().Validate(request);
         if (!result.IsValid)
-            throw new AuthenticationException(HttpStatusCode.Unauthorized, [.. result.Errors.Select(error => error.ErrorMessage)]);
+            throw new AuthenticationException(ErrorKind.Unauthenticated, [.. result.Errors.Select(error => error.ErrorMessage)]);
     }
 }

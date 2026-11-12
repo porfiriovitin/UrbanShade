@@ -41,6 +41,8 @@ public static class DependencyInjectionExtension
         services.AddSingleton(regional);
         services.AddScoped<IRegionThermalAnalysisRepository, RegionThermalAnalysisRepository>();
         services.AddHostedService<RegionThermalAnalysisBackgroundService>();
+        services.AddOptions<WeatherSettings>().Bind(configuration.GetSection("OpenMeteo"))
+            .Validate(settings => { settings.Validate(); return true; }).ValidateOnStart();
         services.AddOptions<OpenMeteoSettings>()
             .Bind(configuration.GetSection("OpenMeteo"))
             .Validate(settings => { settings.Validate(); return true; })
@@ -48,7 +50,7 @@ public static class DependencyInjectionExtension
         services.AddMemoryCache();
         services.AddSingleton<InstitutionalDashboardCache>();
         services.AddScoped<IWeatherRepository, WeatherRepository>();
-        services.AddHttpClient<IOpenMeteoService, OpenMeteoService>((provider, client) =>
+        services.AddHttpClient<IWeatherProvider, OpenMeteoService>((provider, client) =>
         {
             var settings = provider.GetRequiredService<IOptions<OpenMeteoSettings>>().Value;
             client.BaseAddress = new Uri(settings.BaseUrl.TrimEnd('/') + "/");

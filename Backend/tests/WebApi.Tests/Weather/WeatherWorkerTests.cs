@@ -37,7 +37,7 @@ public sealed class WeatherWorkerTests : BaseIntegrationTest
             await context.SaveChangesAsync();
         }
         using var worker = new WeatherBackgroundService(Factory.Services.GetRequiredService<IServiceScopeFactory>(),
-            Options.Create(new OpenMeteoSettings()), TimeProvider.System, NullLogger<WeatherBackgroundService>.Instance);
+            Options.Create(new WeatherSettings()), TimeProvider.System, NullLogger<WeatherBackgroundService>.Instance);
         await worker.RefreshDueRegions(default);
         Assert.Equal(2, provider.Calls);
         await using (var scope = Factory.Services.CreateAsyncScope())

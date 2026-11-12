@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Requests.Sensors;
 using UrbanShade.Communication.Responses.Sensors;
 using UrbanShade.Domain.Entities;
@@ -27,14 +26,14 @@ public sealed class UpdateSensorUseCase : IUpdateSensorUseCase
         Validate(request);
         var sensor = await _sensors.FindById(id, cancellationToken);
         if (sensor is null)
-            throw new SensorException(HttpStatusCode.NotFound, "Sensor is unavailable.");
+            throw new SensorException(ErrorKind.NotFound, "Sensor is unavailable.");
 
         var code = request.HasCode ? request.Code!.Trim().ToUpperInvariant() : sensor.Code;
         if (await _sensors.CodeExists(code, id, cancellationToken))
-            throw new SensorException(HttpStatusCode.Conflict, "Sensor code already registered.");
+            throw new SensorException(ErrorKind.Conflict, "Sensor code already registered.");
 
         if (request.HasCityId && request.CityId.HasValue && await _cities.FindById(request.CityId.Value, cancellationToken) is null)
-            throw new CityException(HttpStatusCode.NotFound, "City is unavailable.");
+            throw new CityException(ErrorKind.NotFound, "City is unavailable.");
 
         /// :: Preserve omitted fields and allow clearing optional values.
         if (request.HasCityId) sensor.AssignCity(request.CityId);
@@ -52,6 +51,6 @@ public sealed class UpdateSensorUseCase : IUpdateSensorUseCase
     {
         var result = new UpdateSensorValidator().Validate(request);
         if (!result.IsValid)
-            throw new SensorException(HttpStatusCode.BadRequest, [.. result.Errors.Select(error => error.ErrorMessage)]);
+            throw new SensorException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
     }
 }

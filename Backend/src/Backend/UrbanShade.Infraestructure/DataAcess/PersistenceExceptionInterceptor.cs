@@ -19,12 +19,12 @@ internal sealed class PersistenceExceptionInterceptor : SaveChangesInterceptor
     private static void TranslateException(Exception exception)
     {
         if (exception is DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.UniqueViolation, ConstraintName: "IX_Cities_IbgeCode" } })
-            throw new CityException(System.Net.HttpStatusCode.Conflict, "City IBGE code already registered.");
+            throw new CityException(UrbanShade.Exceptions.ErrorKind.Conflict, "City IBGE code already registered.");
 
         if (exception is DbUpdateException { InnerException: PostgresException { SqlState: PostgresErrorCodes.UniqueViolation } postgres } &&
             postgres.ConstraintName is "IX_Organizations_Document" or "IX_OrganizationMembers_OrganizationId_UserId")
         {
-            throw new OrganizationException(System.Net.HttpStatusCode.Conflict, "Organization document or membership already registered.");
+            throw new OrganizationException(UrbanShade.Exceptions.ErrorKind.Conflict, "Organization document or membership already registered.");
         }
 
         if (exception is DbUpdateException
@@ -36,7 +36,7 @@ internal sealed class PersistenceExceptionInterceptor : SaveChangesInterceptor
                 }
             })
         {
-            throw new SensorException(System.Net.HttpStatusCode.Conflict, "Sensor code already registered.");
+            throw new SensorException(UrbanShade.Exceptions.ErrorKind.Conflict, "Sensor code already registered.");
         }
 
         if (exception is DbUpdateException

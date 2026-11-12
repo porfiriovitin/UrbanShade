@@ -37,12 +37,12 @@ public sealed class CityUseCaseTests
         {
             Name = "São Paulo", State = "SP", IbgeCode = " 3550308 "
         }));
-        Assert.Equal(HttpStatusCode.Conflict, duplicate.GetStatusCode());
+        Assert.Equal(UrbanShade.Exceptions.ErrorKind.Conflict, duplicate.GetErrorKind());
         var invalid = await Assert.ThrowsAsync<CityException>(() => useCase.Execute(new RegisterCityRequest
         {
             Name = "São Paulo", State = "RJ", IbgeCode = "3550308"
         }));
-        Assert.Equal(HttpStatusCode.BadRequest, invalid.GetStatusCode());
+        Assert.Equal(UrbanShade.Exceptions.ErrorKind.Validation, invalid.GetErrorKind());
         Assert.False(store.Saved);
         Assert.Single(store.Cities);
     }
@@ -51,7 +51,7 @@ public sealed class CityUseCaseTests
     public async Task GetById_RejectsUnknownCity()
     {
         var error = await Assert.ThrowsAsync<CityException>(() => new GetCityByIdUseCase(new TestStore()).Execute(Guid.NewGuid()));
-        Assert.Equal(HttpStatusCode.NotFound, error.GetStatusCode());
+        Assert.Equal(UrbanShade.Exceptions.ErrorKind.NotFound, error.GetErrorKind());
     }
 
     private sealed class TestStore : ICityRepository, IUnitOfWork

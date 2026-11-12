@@ -5,8 +5,10 @@ namespace UrbanShade.Domain.Entities;
 public sealed class WeatherForecast : EntityBase
 {
     private WeatherForecast() { }
-    public WeatherForecast(Guid geoRegionId, int boundaryVersion, double latitude, double longitude, WeatherPrediction prediction, DateTime fetchedAt)
+    public WeatherForecast(Guid geoRegionId, int boundaryVersion, double latitude, double longitude, WeatherPrediction prediction, DateTime fetchedAt, string source)
     {
+        if (string.IsNullOrWhiteSpace(source) || source.Length > 32) throw new ArgumentException("A weather source is required.", nameof(source));
+        Source = source;
         GeoRegionId = geoRegionId;
         ForecastAt = prediction.ForecastAt;
         Update(boundaryVersion, latitude, longitude, prediction, fetchedAt);
@@ -25,7 +27,7 @@ public sealed class WeatherForecast : EntityBase
     public decimal? SolarRadiation { get; private set; }
     public DateTime ForecastAt { get; private set; }
     public DateTime FetchedAt { get; private set; }
-    public string Source { get; private set; } = "OPEN_METEO";
+    public string Source { get; private set; } = string.Empty;
     public void Update(int boundaryVersion, double latitude, double longitude, WeatherPrediction prediction, DateTime fetchedAt)
     {
         if (prediction.ForecastAt != ForecastAt || fetchedAt < FetchedAt) return;

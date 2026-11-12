@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Requests.Geo;
 using UrbanShade.Communication.Responses.Geo;
 using UrbanShade.Domain.Entities;
@@ -19,11 +18,11 @@ public sealed class RegisterGeoRegionUseCase : IRegisterGeoRegionUseCase
     public async Task<GeoRegionResponse> Execute(RegisterGeoRegionRequest request, CancellationToken cancellationToken)
     {
         var result = new GeoRegionValidator().Validate(request);
-        if (!result.IsValid) throw new GeoException(HttpStatusCode.BadRequest, [.. result.Errors.Select(error => error.ErrorMessage)]);
-        if (await _cities.FindById(request.CityId, cancellationToken) is null) throw new GeoException(HttpStatusCode.NotFound, "City not found.");
+        if (!result.IsValid) throw new GeoException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
+        if (await _cities.FindById(request.CityId, cancellationToken) is null) throw new GeoException(ErrorKind.NotFound, "City not found.");
         var boundary = GeoRegionValidator.ReadBoundary(request.Boundary, _settings);
         if (await _regions.GetArea(boundary, cancellationToken) > _settings.MaximumRegionAreaSquareMeters)
-            throw new GeoException(HttpStatusCode.BadRequest, "Region exceeds the maximum allowed area.");
+            throw new GeoException(ErrorKind.Validation, "Region exceeds the maximum allowed area.");
         var region = new GeoRegion(request.CityId, request.Name, request.Description, boundary);
         _regions.Add(region);
         await _unitOfWork.SaveChanges(cancellationToken);

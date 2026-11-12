@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Requests.Authentication;
 using UrbanShade.Communication.Responses.Authentication;
 using UrbanShade.Domain.Repositories;
@@ -71,8 +70,8 @@ public sealed class RefreshUseCase : IRefreshUseCase
     {
         var result = new RefreshValidator().Validate(request);
         if (!result.IsValid)
-            throw new AuthenticationException(HttpStatusCode.Unauthorized, [.. result.Errors.Select(error => error.ErrorMessage)]);
+            throw new AuthenticationException(ErrorKind.Unauthenticated, [.. result.Errors.Select(error => error.ErrorMessage)]);
     }
 
-    private static AuthenticationException InvalidToken() => new(HttpStatusCode.Unauthorized, "Invalid or expired refresh token.");
+    private static AuthenticationException InvalidToken() => new(ErrorKind.Unauthenticated, "Invalid or expired refresh token.");
 }

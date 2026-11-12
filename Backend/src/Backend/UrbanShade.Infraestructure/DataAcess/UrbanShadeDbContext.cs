@@ -32,7 +32,7 @@ internal class UrbanShadeDbContext : DbContext
         try { return await base.SaveChangesAsync(cancellationToken); }
         catch (DbUpdateConcurrencyException exception) when (exception.Entries.Any(entry => entry.Entity is GeoRegion))
         {
-            throw new UrbanShade.Exceptions.GeoException(System.Net.HttpStatusCode.Conflict, "The region changed during this request. Reload it and try again.");
+            throw new UrbanShade.Exceptions.GeoException(UrbanShade.Exceptions.ErrorKind.Conflict, "The region changed during this request. Reload it and try again.");
         }
     }
 

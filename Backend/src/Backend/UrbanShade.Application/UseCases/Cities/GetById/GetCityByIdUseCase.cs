@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Responses.Cities;
 using UrbanShade.Domain.Entities;
 using UrbanShade.Domain.Repositories;
@@ -18,7 +17,7 @@ public sealed class GetCityByIdUseCase : IGetCityByIdUseCase
     public async Task<CityResponse> Execute(Guid id, CancellationToken cancellationToken = default)
     {
         var city = await _cities.FindById(id, cancellationToken);
-        if (city is null) throw new CityException(HttpStatusCode.NotFound, "City is unavailable.");
+        if (city is null) throw new CityException(ErrorKind.NotFound, "City is unavailable.");
         return ToResponse(city);
     }
 

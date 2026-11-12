@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Globalization;
-using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using UrbanShade.Communication.Requests.InstitutionalDashboard;
@@ -36,14 +35,14 @@ public sealed class ExportInstitutionalReportUseCase : IExportInstitutionalRepor
             var query = await _query.Prepare(actorId, request, null, true, cancellationToken);
             var rows = await _dashboard.GetReport(query, cancellationToken);
             if (rows.Count > _settings.MaxExportRows)
-                throw new InstitutionalDashboardException(HttpStatusCode.BadRequest, "Export is too large. Reduce the period or select a region.");
+                throw new InstitutionalDashboardException(ErrorKind.Validation, "Export is too large. Reduce the period or select a region.");
             var csv = new StringBuilder("regionId,regionName,analyzedAt,exposureIndex,exposureLevel,heatIndex,surfaceTemperature,vegetationCoveragePercent,algorithmVersion,boundaryVersion,dataQuality,dataOrigin,sourceMetadata\r\n");
             foreach (var row in rows)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 csv.Append(string.Join(",", new object?[] { row.RegionId, row.RegionName, row.AnalyzedAt.ToString("O"), row.ExposureIndex,
                     row.ExposureLevel, row.HeatIndex, row.SurfaceTemperature, row.VegetationCoveragePercent, row.AlgorithmVersion,
-                    row.BoundaryVersion, row.DataQuality, row.DataOrigin, InstitutionalDashboardQuery.PublicMetadata(row.SourceMetadata).GetRawText() }.Select(CsvCell))).Append("\r\n");
+                    row.BoundaryVersion, row.DataQuality, row.DataOrigin, UrbanShade.Application.Mapping.ProvenanceMapper.PublicMetadata(row.SourceMetadata).GetRawText() }.Select(CsvCell))).Append("\r\n");
             }
             _logger.LogInformation("Exported {RowCount} institutional analyses for {OrganizationId}", rows.Count, query.OrganizationId);
             return new(Encoding.UTF8.GetPreamble().Concat(Encoding.UTF8.GetBytes(csv.ToString())).ToArray(), "text/csv; charset=utf-8", $"institutional-{query.OrganizationId:N}.csv");

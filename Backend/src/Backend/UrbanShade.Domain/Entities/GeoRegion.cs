@@ -28,6 +28,8 @@ public class GeoRegion : EntityBase
     public DateTime? OpenStreetMapRequestedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
     public DateTime? WeatherRequestedAt { get; private set; }
+    public Guid? WeatherLeaseId { get; private set; }
+    public DateTime? WeatherLeaseExpiresAt { get; private set; }
     public DateTime? WeatherRetryAfter { get; private set; }
     public void Update(string name, string? description, Geometry boundary)
     {

@@ -16,13 +16,15 @@ internal sealed class RegionThermalAnalysisRepository : IRegionThermalAnalysisRe
     private readonly RegionThermalAnalysisSettings _settings;
     private readonly GeoAnalysisSettings _geo;
     private readonly ThermalAnalysisSettings _thermal;
+    private readonly TimeProvider _time;
 
-    public RegionThermalAnalysisRepository(UrbanShadeDbContext context, RegionThermalAnalysisSettings settings, GeoAnalysisSettings geo, ThermalAnalysisSettings thermal)
+    public RegionThermalAnalysisRepository(UrbanShadeDbContext context, RegionThermalAnalysisSettings settings, GeoAnalysisSettings geo, ThermalAnalysisSettings thermal, TimeProvider time)
     {
         _context = context;
         _settings = settings;
         _geo = geo;
         _thermal = thermal;
+        _time = time;
     }
 
     public async Task<IRegionAnalysisTransaction?> Acquire(Guid regionId, CancellationToken cancellationToken)
@@ -85,7 +87,7 @@ internal sealed class RegionThermalAnalysisRepository : IRegionThermalAnalysisRe
 
     private IQueryable<SatelliteAnalysis> ValidSatellite(GeoRegion region, GeoAnalysisType type, DateTime cutoff, DateTime now) =>
         _context.SatelliteAnalyses.AsNoTracking().Where(item => item.Active && item.GeoRegionId == region.Id && item.BoundaryVersion == region.BoundaryVersion && item.AnalysisType == type &&
-            item.ObservationEndAt >= cutoff && item.ObservationEndAt <= now && item.MeanValue != null && item.ValidPixelPercent >= (decimal)_geo.MinimumValidPixelPercent && item.ValidPixelPercent <= 100);
+            item.AlgorithmVersion == _geo.AlgorithmVersion && item.ObservationEndAt >= cutoff && item.ObservationEndAt <= now && item.MeanValue != null && item.ValidPixelPercent >= (decimal)_geo.MinimumValidPixelPercent && item.ValidPixelPercent <= 100);
 
     public void Add(RegionThermalAnalysis analysis) => _context.RegionThermalAnalyses.Add(analysis);
 
@@ -103,9 +105,21 @@ internal sealed class RegionThermalAnalysisRepository : IRegionThermalAnalysisRe
 
     public async Task<List<(GeoRegion Region, RegionThermalAnalysis Analysis)>> GetLatestRegions(List<Guid>? ids, Geometry? bounds, decimal? minIndex, ExposureLevel? level, bool includePartial, bool ranking, int take, CancellationToken cancellationToken)
     {
+        var sql = """
+            SELECT a.* FROM "RegionThermalAnalyses" a JOIN "GeoRegions" r ON r."Id" = a."GeoRegionId"
+            WHERE a."BoundaryVersion" = r."BoundaryVersion"
+            AND NOT EXISTS (SELECT 1 FROM "RegionThermalAnalyses" newer WHERE newer."GeoRegionId" = a."GeoRegionId"
+                AND newer."BoundaryVersion" = a."BoundaryVersion" AND (newer."AnalyzedAt", newer."Id") > (a."AnalyzedAt", a."Id"))
+            AND (NOT (a."SourceMetadata"->'scores' ? 'SurfaceTemperature') OR EXISTS (
+                SELECT 1 FROM "GeoRegions" ref WHERE ref."Id" = r."ReferenceGeoRegionId" AND ref."Active"
+                AND ref."Id"::text = a."SourceMetadata"->>'referenceRegionId'
+                AND ref."BoundaryVersion"::text = a."SourceMetadata"->>'referenceBoundaryVersion'))
+            AND
+            """ + " " + AnalysisEligibilitySql.Predicate("a");
+        var eligible = _context.RegionThermalAnalyses.FromSqlRaw(sql.Replace("{", "{{").Replace("}", "}}"), AnalysisEligibilitySql.Parameters(_settings, _thermal, _time.GetUtcNow().UtcDateTime));
         var query = from region in _context.GeoRegions.AsNoTracking()
             where region.Active && (ids == null || ids.Contains(region.Id)) && (bounds == null || region.Boundary.Intersects(bounds))
-            from analysis in _context.RegionThermalAnalyses.Where(item => item.GeoRegionId == region.Id && item.BoundaryVersion == region.BoundaryVersion).OrderByDescending(item => item.AnalyzedAt).ThenByDescending(item => item.Id).Take(1)
+            from analysis in eligible.Where(item => item.GeoRegionId == region.Id && item.BoundaryVersion == region.BoundaryVersion).OrderByDescending(item => item.AnalyzedAt).ThenByDescending(item => item.Id).Take(1)
             select new { Region = region, Analysis = analysis };
         query = query.Where(item => (!ranking || item.Analysis.ExposureIndex != null) && (!minIndex.HasValue || item.Analysis.ExposureIndex >= minIndex) && (!level.HasValue || item.Analysis.ExposureLevel == level) && (includePartial || item.Analysis.DataQuality == RegionDataQuality.COMPLETE));
         var ordered = ranking ? query.OrderByDescending(item => item.Analysis.ExposureIndex).ThenBy(item => item.Region.Id) : query.OrderBy(item => item.Region.Id);

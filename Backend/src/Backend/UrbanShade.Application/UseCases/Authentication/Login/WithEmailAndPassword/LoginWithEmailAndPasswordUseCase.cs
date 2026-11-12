@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Requests.Authentication;
 using UrbanShade.Communication.Responses.Authentication;
 using UrbanShade.Domain.Repositories;
@@ -44,7 +43,7 @@ public sealed class LoginWithEmailAndPasswordUseCase : ILoginWithEmailAndPasswor
         var valid = await _passwords.Verify(request.Password, hash);
 
         if (user is null || !valid || !user.Active || (user.MustChangePassword && (!user.TemporaryPasswordExpiresAt.HasValue || user.TemporaryPasswordExpiresAt <= DateTime.UtcNow)))
-            throw new AuthenticationException(HttpStatusCode.Unauthorized, "Invalid email or password.");
+            throw new AuthenticationException(ErrorKind.Unauthenticated, "Invalid email or password.");
 
         /// :: Issue tokens for the authenticated user.
         var organizationIds = _organizations is null ? [] : await _organizations.GetActiveIdsForUser(user.Id, cancellationToken);
@@ -60,6 +59,6 @@ public sealed class LoginWithEmailAndPasswordUseCase : ILoginWithEmailAndPasswor
     {
         var result = new LoginValidator().Validate(request);
         if (!result.IsValid)
-            throw new AuthenticationException(HttpStatusCode.BadRequest, [.. result.Errors.Select(error => error.ErrorMessage)]);
+            throw new AuthenticationException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
     }
 }

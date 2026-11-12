@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Net;
 using System.Text.Json;
 using NetTopologySuite.Geometries;
 using UrbanShade.Application.UseCases.GeoRegions;
@@ -21,7 +20,7 @@ public sealed class QueryGreenAreasUseCase : IQueryGreenAreasUseCase
         var bounds = new double[4];
         if (values?.Length != 4 || values.Where((value, index) => !double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out bounds[index]) || !double.IsFinite(bounds[index])).Any() ||
             bounds[0] < -180 || bounds[2] > 180 || bounds[1] < -90 || bounds[3] > 90 || bounds[0] >= bounds[2] || bounds[1] >= bounds[3] || bounds[2] - bounds[0] > 1 || bounds[3] - bounds[1] > 1)
-            throw new GeoException(HttpStatusCode.BadRequest, "Provide bbox=minLon,minLat,maxLon,maxLat within a maximum one-degree extent per axis.");
+            throw new GeoException(ErrorKind.Validation, "Provide bbox=minLon,minLat,maxLon,maxLat within a maximum one-degree extent per axis.");
         var geometry = new GeometryFactory(new PrecisionModel(), 4326).ToGeometry(new Envelope(bounds[0], bounds[2], bounds[1], bounds[3]));
         var areas = await _areas.GetByBounds(geometry, page, pageSize, cancellationToken);
         return JsonSerializer.SerializeToElement(new

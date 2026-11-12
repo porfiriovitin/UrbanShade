@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Net;
 using FluentValidation;
 using NetTopologySuite.Geometries;
 using UrbanShade.Communication.Requests.RegionThermalAnalyses;
@@ -29,7 +28,7 @@ public sealed class RegionThermalQueryValidator : AbstractValidator<RegionTherma
     public static void ValidateRequest(RegionThermalQueryRequest request)
     {
         var result = new RegionThermalQueryValidator().Validate(request);
-        if (!result.IsValid) throw new RegionThermalAnalysisException(HttpStatusCode.BadRequest, [.. result.Errors.Select(error => error.ErrorMessage)]);
+        if (!result.IsValid) throw new RegionThermalAnalysisException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
     }
 
     public static Geometry? ReadBounds(string? value)
@@ -64,7 +63,7 @@ public sealed class RegionThermalQueryValidator : AbstractValidator<RegionTherma
     public static async Task<GeoRegion> FindRegion(IGeoRegionRepository regions, Guid id, bool includeInactive, CancellationToken cancellationToken)
     {
         var region = includeInactive ? await regions.FindIncludingInactive(id, cancellationToken) : await regions.FindById(id, cancellationToken);
-        return region ?? throw new RegionThermalAnalysisException(HttpStatusCode.NotFound, "Region not found.");
+        return region ?? throw new RegionThermalAnalysisException(ErrorKind.NotFound, "Region not found.");
     }
 }
 

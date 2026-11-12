@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Application.UseCases.ThermalAnalyses.GetLatest;
 using UrbanShade.Communication.Requests.ThermalAnalyses;
 using UrbanShade.Communication.Responses;
@@ -29,11 +28,11 @@ public sealed class GetThermalAnalysesUseCase : IGetThermalAnalysesUseCase
     {
         var result = new GetThermalAnalysesValidator().Validate(request);
         if (!result.IsValid)
-            throw new SensorException(HttpStatusCode.BadRequest, [.. result.Errors.Select(error => error.ErrorMessage)]);
+            throw new SensorException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
 
         var sensor = await _sensors.FindForReadingHistory(sensorId, cancellationToken);
         if (sensor is null || (!isAdministrator && (!sensor.Active || sensor.DeletedAt.HasValue || sensor.Status != SensorStatus.ACTIVE)))
-            throw new SensorException(HttpStatusCode.NotFound, "Sensor is unavailable.");
+            throw new SensorException(ErrorKind.NotFound, "Sensor is unavailable.");
 
         ThermalRiskLevel? risk = request.RiskLevel is null ? null : Enum.Parse<ThermalRiskLevel>(request.RiskLevel, true);
         var history = await _analyses.GetHistory(sensorId, request.AlgorithmVersion ?? _settings.AlgorithmVersion,

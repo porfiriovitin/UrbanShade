@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Application.UseCases.GeoRegions.Register;
 using UrbanShade.Communication.Responses.Geo;
 using UrbanShade.Domain.Repositories;
@@ -16,5 +15,5 @@ public sealed class QueryGeoRegionsUseCase : IQueryGeoRegionsUseCase
         return (await _regions.GetAll(cityId, page, pageSize, cancellationToken)).Select(RegisterGeoRegionUseCase.ToResponse).ToList();
     }
     public async Task<GeoRegionResponse> GetById(Guid id, CancellationToken cancellationToken) =>
-        RegisterGeoRegionUseCase.ToResponse(await _regions.FindById(id, cancellationToken) ?? throw new GeoException(HttpStatusCode.NotFound, "Region not found."));
+        RegisterGeoRegionUseCase.ToResponse(await _regions.FindById(id, cancellationToken) ?? throw new GeoException(ErrorKind.NotFound, "Region not found."));
 }

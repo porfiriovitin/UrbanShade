@@ -35,7 +35,7 @@ public sealed class SensorUseCaseTests
         var store = new TestStore { Duplicate = true };
         var exception = await Assert.ThrowsAsync<SensorException>(() => new RegisterSensorUseCase(store, store, store).Execute(
             new RegisterSensorRequest { Code = "URB-001", Name = "Sensor", Latitude = 0, Longitude = 0 }));
-        Assert.Equal(HttpStatusCode.Conflict, exception.GetStatusCode());
+        Assert.Equal(UrbanShade.Exceptions.ErrorKind.Conflict, exception.GetErrorKind());
         Assert.False(store.Saved);
     }
 
@@ -64,7 +64,7 @@ public sealed class SensorUseCaseTests
         await new UpdateSensorStatusUseCase(store, store).Execute(store.Sensor.Id, new UpdateSensorStatusRequest { Status = status.ToString() });
         var useCase = new GetSensorByIdUseCase(store);
         var exception = await Assert.ThrowsAsync<SensorException>(() => useCase.Execute(store.Sensor.Id, false));
-        Assert.Equal(HttpStatusCode.NotFound, exception.GetStatusCode());
+        Assert.Equal(UrbanShade.Exceptions.ErrorKind.NotFound, exception.GetErrorKind());
         Assert.Equal(status.ToString(), (await useCase.Execute(store.Sensor.Id, true)).Status);
         Assert.True(store.Sensor.Active);
     }
@@ -79,7 +79,7 @@ public sealed class SensorUseCaseTests
         Assert.NotNull(store.Sensor.DeletedAt);
         Assert.Equal(store.Sensor.DeletedAt, store.Sensor.UpdatedAt);
         var exception = await Assert.ThrowsAsync<SensorException>(() => new UpdateSensorUseCase(store, store, store).Execute(id, new UpdateSensorRequest { Name = "New" }));
-        Assert.Equal(HttpStatusCode.NotFound, exception.GetStatusCode());
+        Assert.Equal(UrbanShade.Exceptions.ErrorKind.NotFound, exception.GetErrorKind());
     }
 
     [Fact]

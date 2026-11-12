@@ -184,6 +184,12 @@ namespace UrbanShade.Infraestructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("WeatherLeaseExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("WeatherLeaseId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("WeatherRequestedAt")
                         .HasColumnType("timestamp with time zone");
 

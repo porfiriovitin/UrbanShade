@@ -1,4 +1,3 @@
-using System.Net;
 using UrbanShade.Communication.Requests.Sensors;
 using UrbanShade.Communication.Responses.Sensors;
 using UrbanShade.Domain.Entities;
@@ -31,6 +30,6 @@ public sealed class GetSensorsUseCase : IGetSensorsUseCase
     {
         var result = new GetSensorsValidator().Validate(request);
         if (!result.IsValid)
-            throw new SensorException(HttpStatusCode.BadRequest, [.. result.Errors.Select(error => error.ErrorMessage)]);
+            throw new SensorException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
     }
 }

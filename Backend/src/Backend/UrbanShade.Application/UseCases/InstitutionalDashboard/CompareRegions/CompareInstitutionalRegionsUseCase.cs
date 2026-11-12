@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Net;
 using Microsoft.Extensions.Logging;
 using UrbanShade.Communication.Requests.InstitutionalDashboard;
 using UrbanShade.Communication.Responses.InstitutionalDashboard;
@@ -30,7 +29,7 @@ public sealed class CompareInstitutionalRegionsUseCase : ICompareInstitutionalRe
             /// :: Validate filters and authorize the selected institutional scope before reading indicators.
             var query = await _query.Prepare(actorId, request, null, false, cancellationToken);
             if (query.RegionIds.Length < 2)
-                throw new InstitutionalDashboardException(HttpStatusCode.BadRequest, "Provide between two and ten regionIds for comparison.");
+                throw new InstitutionalDashboardException(ErrorKind.Validation, "Provide between two and ten regionIds for comparison.");
             var data = await _dashboard.GetRegions(query with { Page = 1, PageSize = 10 }, false, cancellationToken);
             return data.Items.Select(region => _query.ToResponse(region)).ToList();
 

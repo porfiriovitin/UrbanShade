@@ -85,7 +85,7 @@ internal sealed class RouteGeometryRepository : IRouteGeometryRepository
         return rows.Where(row => row.DistanceMeters > 0).Select(row => new RouteThermalSegment(row.RouteIndex, row.EdgeIndex, row.Position,
             ReadLine(row.Geometry), row.DistanceMeters, row.GeoRegionId, row.AnalysisId, row.ExposureIndex,
             Parse<ExposureLevel>(row.ExposureLevel), Parse<RegionDataQuality>(row.DataQuality), Parse<ConfidenceLevel>(row.ConfidenceLevel),
-            row.DataOrigin, row.AlgorithmVersion, row.AnalyzedAt, row.SourceMetadata)).ToList();
+            row.DataOrigin, row.AlgorithmVersion, row.AnalyzedAt, UrbanShade.Domain.RegionThermalAnalysis.AnalysisProvenance.Read(row.SourceMetadata))).ToList();
     }
 
     private static T? Parse<T>(string? value) where T : struct, Enum => Enum.TryParse<T>(value, out var parsed) && Enum.IsDefined(parsed) ? parsed : null;

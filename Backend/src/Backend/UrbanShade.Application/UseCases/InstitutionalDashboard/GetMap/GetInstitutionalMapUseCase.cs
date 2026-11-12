@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Net;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using UrbanShade.Communication.Requests.InstitutionalDashboard;
@@ -35,7 +34,7 @@ public sealed class GetInstitutionalMapUseCase : IGetInstitutionalMapUseCase
             var query = await _query.Prepare(actorId, request, null, false, cancellationToken);
             var data = await _dashboard.GetMap(query, cancellationToken);
             if (data.Count > _settings.MaxMapFeatures || data.Sum(feature => (long)feature.CoordinateCount) > _settings.MaxMapCoordinates)
-                throw new InstitutionalDashboardException(HttpStatusCode.BadRequest, "Map is too large. Reduce bbox or filters.");
+                throw new InstitutionalDashboardException(ErrorKind.Validation, "Map is too large. Reduce bbox or filters.");
             return new("FeatureCollection", data.Select(feature => new InstitutionalFeatureResponse("Feature", feature.Id,
                 JsonSerializer.Deserialize<JsonElement>(feature.Geometry), JsonSerializer.Deserialize<JsonElement>(feature.Properties))).ToList());
 
