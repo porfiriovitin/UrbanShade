@@ -19,7 +19,8 @@ public class GeoAnalysisJob : EntityBase
     }
     public GeoJobType JobType { get; private set; }
     public Guid GeoRegionId { get; private set; }
-    public Geometry Boundary { get; private set; } = null!;
+    private Geometry _boundary = null!;
+    public Geometry Boundary { get => (Geometry)_boundary.Copy(); private set => _boundary = (Geometry)value.Copy(); }
     public int BoundaryVersion { get; private set; }
     public DateTime ObservationStartAt { get; private set; }
     public DateTime ObservationEndAt { get; private set; }

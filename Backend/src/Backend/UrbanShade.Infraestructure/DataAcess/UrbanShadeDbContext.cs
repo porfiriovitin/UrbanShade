@@ -40,6 +40,8 @@ internal class UrbanShadeDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.HasPostgresExtension("postgis");
+        modelBuilder.Entity<GeoRegion>().Property(item => item.Boundary).HasField("_boundary").UsePropertyAccessMode(PropertyAccessMode.Field);
+        modelBuilder.Entity<GeoAnalysisJob>().Property(item => item.Boundary).HasField("_boundary").UsePropertyAccessMode(PropertyAccessMode.Field);
         modelBuilder.Entity<GeoRegion>().HasOne<GeoRegion>().WithMany().HasForeignKey(item => item.ReferenceGeoRegionId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<GeoRegion>().Property(item => item.ReferenceGeoRegionId).IsConcurrencyToken();
         modelBuilder.Entity<RegionThermalAnalysis>().HasOne<GeoRegion>().WithMany().HasForeignKey(item => item.GeoRegionId).OnDelete(DeleteBehavior.Restrict);

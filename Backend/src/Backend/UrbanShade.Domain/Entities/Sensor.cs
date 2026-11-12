@@ -8,6 +8,7 @@ public class Sensor : EntityBase
 
     public Sensor(string code, string name, string? description, double latitude, double longitude, DateTime? installedAt)
     {
+        Validate(code, name, description, latitude, longitude, installedAt);
         Code = code.Trim().ToUpperInvariant();
         Name = name.Trim();
         Description = description?.Trim();
@@ -30,6 +31,7 @@ public class Sensor : EntityBase
 
     public void Update(string code, string name, string? description, double latitude, double longitude, DateTime? installedAt)
     {
+        Validate(code, name, description, latitude, longitude, installedAt);
         Code = code.Trim().ToUpperInvariant();
         Name = name.Trim();
         Description = description?.Trim();
@@ -67,5 +69,14 @@ public class Sensor : EntityBase
         if (cityId == Guid.Empty) throw new ArgumentException("A valid city is required.", nameof(cityId));
         CityId = cityId;
         UpdatedAt = DateTime.UtcNow;
+    }
+    private static void Validate(string code, string name, string? description, double latitude, double longitude, DateTime? installedAt)
+    {
+        if (string.IsNullOrWhiteSpace(code) || code.Trim().Length > 50 || string.IsNullOrWhiteSpace(name) || name.Trim().Length > 150 || description?.Trim().Length > 500)
+            throw new ArgumentException("Invalid sensor code, name or description.");
+        if (!double.IsFinite(latitude) || latitude is < -90 or > 90 || !double.IsFinite(longitude) || longitude is < -180 or > 180)
+            throw new ArgumentOutOfRangeException(nameof(latitude), "Valid geographic coordinates are required.");
+        if (installedAt.HasValue && installedAt.Value.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("InstalledAt must be UTC.", nameof(installedAt));
     }
 }

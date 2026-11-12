@@ -8,6 +8,10 @@ public class Organization : EntityBase
 
     public Organization(string name, OrganizationType type, string document, string contactEmail, string? contactPhone)
     {
+        if (string.IsNullOrWhiteSpace(name) || name.Trim().Length > 150 || !Enum.IsDefined(type) || string.IsNullOrWhiteSpace(document) || document.Trim().Length > 30 || contactPhone?.Length > 30)
+            throw new ArgumentException("Invalid organization details.");
+        if (string.IsNullOrWhiteSpace(contactEmail) || contactEmail.Trim().Length > 254 || !System.Net.Mail.MailAddress.TryCreate(contactEmail.Trim(), out var address) || address.Address != contactEmail.Trim())
+            throw new ArgumentException("A valid contact email is required.", nameof(contactEmail));
         Name = name.Trim();
         Type = type;
         Document = document.Trim().ToUpperInvariant();
@@ -32,6 +36,10 @@ public class Organization : EntityBase
 
     public void Update(string name, OrganizationType type, string document, string contactEmail, string? contactPhone, bool active)
     {
+        if (string.IsNullOrWhiteSpace(name) || name.Trim().Length > 150 || !Enum.IsDefined(type) || string.IsNullOrWhiteSpace(document) || document.Trim().Length > 30 || contactPhone?.Length > 30)
+            throw new ArgumentException("Invalid organization details.");
+        if (string.IsNullOrWhiteSpace(contactEmail) || contactEmail.Trim().Length > 254 || !System.Net.Mail.MailAddress.TryCreate(contactEmail.Trim(), out var address) || address.Address != contactEmail.Trim())
+            throw new ArgumentException("A valid contact email is required.", nameof(contactEmail));
         Name = name.Trim();
         Type = type;
         Document = document.Trim().ToUpperInvariant();

@@ -21,7 +21,8 @@ public class GeoRegion : EntityBase
     }
     public string Name { get; private set; } = string.Empty;
     public string? Description { get; private set; }
-    public Geometry Boundary { get; private set; } = null!;
+    private Geometry _boundary = null!;
+    public Geometry Boundary { get => (Geometry)_boundary.Copy(); private set => _boundary = (Geometry)value.Copy(); }
     public int BoundaryVersion { get; private set; }
     public DateTime? OpenStreetMapReferenceDate { get; private set; }
     public DateTime? OpenStreetMapRequestedAt { get; private set; }
@@ -34,7 +35,7 @@ public class GeoRegion : EntityBase
             throw new ArgumentException("Invalid region name or description.");
         if (boundary.IsEmpty || !boundary.IsValid || boundary.SRID != 4326 || boundary is not (Polygon or MultiPolygon))
             throw new ArgumentException("A valid polygon in SRID 4326 is required.");
-        if (Boundary is null || !Boundary.EqualsExact(boundary)) BoundaryVersion++;
+        if (_boundary is null || !_boundary.EqualsExact(boundary)) BoundaryVersion++;
         Name = name.Trim();
         Description = description?.Trim();
         Boundary = boundary;

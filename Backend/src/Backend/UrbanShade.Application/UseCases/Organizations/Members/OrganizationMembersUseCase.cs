@@ -55,9 +55,11 @@ public sealed class OrganizationMembersUseCase : IOrganizationMembersUseCase
 
         if (user is null)
         {
-            user = new User(request.Name, email, string.Empty);
+            temporaryPassword = Convert.ToBase64String(RandomNumberGenerator.GetBytes(24));
+            var hash = await _passwords.Hash(temporaryPassword);
+            user = new User(request.Name, email, hash);
             user.UpdateRole(UserRoles.Manager);
-            temporaryPassword = await SetTemporaryPassword(user);
+            user.SetTemporaryPassword(hash, DateTime.UtcNow.AddHours(_settings.TemporaryPasswordHours));
             _users.Add(user);
         }
         else
