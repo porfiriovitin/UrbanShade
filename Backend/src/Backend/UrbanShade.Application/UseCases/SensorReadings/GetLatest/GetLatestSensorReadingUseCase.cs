@@ -27,6 +27,7 @@ public sealed class GetLatestSensorReadingUseCase : IGetLatestSensorReadingUseCa
             throw new SensorException(ErrorKind.NotFound, "Sensor is unavailable.");
 
         var reading = await _readings.GetLatest(sensorId, cancellationToken);
+
         return reading is null ? null : GetSensorReadingsUseCase.ToResponse(reading);
     }
 }

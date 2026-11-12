@@ -22,6 +22,7 @@ public sealed class UpdateSensorStatusUseCase : IUpdateSensorStatusUseCase
     public async Task<SensorResponse> Execute(Guid id, UpdateSensorStatusRequest request, CancellationToken cancellationToken = default)
     {
         Validate(request);
+
         var sensor = await _sensors.FindById(id, cancellationToken);
         if (sensor is null)
             throw new SensorException(ErrorKind.NotFound, "Sensor is unavailable.");

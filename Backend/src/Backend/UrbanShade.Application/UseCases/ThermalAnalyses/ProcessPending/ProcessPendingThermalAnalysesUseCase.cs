@@ -27,6 +27,7 @@ public sealed class ProcessPendingThermalAnalysesUseCase : IProcessPendingTherma
         if (!_settings.Enabled) return;
 
         List<Guid> failedReadings = [];
+
         while (!cancellationToken.IsCancellationRequested)
         {
             var readings = await _analyses.GetPending(_settings.AlgorithmVersion, 100, failedReadings, cancellationToken);
@@ -35,6 +36,7 @@ public sealed class ProcessPendingThermalAnalysesUseCase : IProcessPendingTherma
             foreach (var reading in readings)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+
                 try
                 {
                     var heatIndex = _calculator.Calculate(reading.Temperature, reading.Humidity);
@@ -47,7 +49,7 @@ public sealed class ProcessPendingThermalAnalysesUseCase : IProcessPendingTherma
                 }
                 catch (Exception exception)
                 {
-                    /// :: Retry failed readings in the next cycle without blocking later batches.
+                    /// :: Retry failures next cycle; continue later batches.
                     failedReadings.Add(reading.Id);
                     _logger.LogError(exception, "Failed to analyze reading {SensorReadingId} from sensor {SensorId} using algorithm {AlgorithmVersion}.", reading.Id, reading.SensorId, _settings.AlgorithmVersion);
                 }

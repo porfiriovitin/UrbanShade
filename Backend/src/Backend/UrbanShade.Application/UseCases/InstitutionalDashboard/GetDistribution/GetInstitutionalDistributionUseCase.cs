@@ -12,8 +12,7 @@ public sealed class GetInstitutionalDistributionUseCase : IGetInstitutionalDistr
     private readonly IInstitutionalDashboardRepository _dashboard;
     private readonly ILogger<GetInstitutionalDistributionUseCase> _logger;
 
-    public GetInstitutionalDistributionUseCase(InstitutionalDashboardQuery query, IInstitutionalDashboardRepository dashboard,
-        ILogger<GetInstitutionalDistributionUseCase> logger)
+    public GetInstitutionalDistributionUseCase(InstitutionalDashboardQuery query, IInstitutionalDashboardRepository dashboard, ILogger<GetInstitutionalDistributionUseCase> logger)
     {
         _query = query;
         _dashboard = dashboard;
@@ -23,13 +22,14 @@ public sealed class GetInstitutionalDistributionUseCase : IGetInstitutionalDistr
     public async Task<InstitutionalDistributionResponse> Execute(Guid actorId, InstitutionalDashboardRequest request, CancellationToken cancellationToken = default)
     {
         var timer = Stopwatch.StartNew();
+
         try
         {
-            /// :: Validate filters and authorize the selected institutional scope before reading indicators.
+            /// :: Validate filters and access.
             var query = await _query.Prepare(actorId, request, null, false, cancellationToken);
             var data = await _dashboard.GetOverview(query, cancellationToken);
-            return new(data.TotalRegions, data.Low, data.Moderate, data.High, data.Critical, data.InsufficientData);
 
+            return new(data.TotalRegions, data.Low, data.Moderate, data.High, data.Critical, data.InsufficientData);
         }
         finally
         {

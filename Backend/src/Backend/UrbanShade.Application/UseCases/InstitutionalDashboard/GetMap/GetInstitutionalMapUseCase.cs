@@ -16,8 +16,7 @@ public sealed class GetInstitutionalMapUseCase : IGetInstitutionalMapUseCase
     private readonly InstitutionalDashboardSettings _settings;
     private readonly ILogger<GetInstitutionalMapUseCase> _logger;
 
-    public GetInstitutionalMapUseCase(InstitutionalDashboardQuery query, IInstitutionalDashboardRepository dashboard,
-        InstitutionalDashboardSettings settings, ILogger<GetInstitutionalMapUseCase> logger)
+    public GetInstitutionalMapUseCase(InstitutionalDashboardQuery query, IInstitutionalDashboardRepository dashboard, InstitutionalDashboardSettings settings, ILogger<GetInstitutionalMapUseCase> logger)
     {
         _query = query;
         _dashboard = dashboard;
@@ -28,16 +27,16 @@ public sealed class GetInstitutionalMapUseCase : IGetInstitutionalMapUseCase
     public async Task<InstitutionalMapResponse> Execute(Guid actorId, InstitutionalDashboardRequest request, CancellationToken cancellationToken = default)
     {
         var timer = Stopwatch.StartNew();
+
         try
         {
-            /// :: Validate filters and authorize the selected institutional scope before reading indicators.
+            /// :: Validate filters and access.
             var query = await _query.Prepare(actorId, request, null, false, cancellationToken);
             var data = await _dashboard.GetMap(query, cancellationToken);
             if (data.Count > _settings.MaxMapFeatures || data.Sum(feature => (long)feature.CoordinateCount) > _settings.MaxMapCoordinates)
                 throw new InstitutionalDashboardException(ErrorKind.Validation, "Map is too large. Reduce bbox or filters.");
-            return new("FeatureCollection", data.Select(feature => new InstitutionalFeatureResponse("Feature", feature.Id,
-                JsonSerializer.Deserialize<JsonElement>(feature.Geometry), JsonSerializer.Deserialize<JsonElement>(feature.Properties))).ToList());
 
+            return new("FeatureCollection", data.Select(feature => new InstitutionalFeatureResponse("Feature", feature.Id, JsonSerializer.Deserialize<JsonElement>(feature.Geometry), JsonSerializer.Deserialize<JsonElement>(feature.Properties))).ToList());
         }
         finally
         {

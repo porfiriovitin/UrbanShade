@@ -13,6 +13,7 @@ public sealed class RoutePointRequest
 {
     [JsonRequired]
     public double Latitude { get; set; }
+
     [JsonRequired]
     public double Longitude { get; set; }
 }

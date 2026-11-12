@@ -9,6 +9,7 @@ public sealed class RefreshWeatherUseCase(WeatherService service, IQueryWeatherU
     public async Task<WeatherCurrentResponse> Execute(Guid regionId, CancellationToken cancellationToken)
     {
         await service.Refresh(regionId, cancellationToken);
+
         return await query.Current(regionId, cancellationToken);
     }
 }

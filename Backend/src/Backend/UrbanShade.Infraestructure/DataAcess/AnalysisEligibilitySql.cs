@@ -6,10 +6,11 @@ using UrbanShade.Domain.ThermalAnalysis;
 
 namespace UrbanShade.Infraestructure.DataAcess;
 
-/// <summary>SQL projection of AnalysisEligibility, shared by operational queries.</summary>
+/// :: Share eligibility rules across SQL queries.
 internal static class AnalysisEligibilitySql
 {
     public static string Predicate(string alias) => Template.Replace("a.", alias + ".");
+
     private const string Template = """
         a."Active" AND @enabled AND a."AlgorithmVersion" = @algorithm AND a."AnalyzedAt" <= @now
         AND a."ExposureIndex" BETWEEN 0 AND 100
@@ -36,13 +37,13 @@ internal static class AnalysisEligibilitySql
             AND (a."SourceMetadata"->'referenceSurface'->>'ObservationEndAt')::timestamptz + @surfaceDays * interval '1 day' > @now, false))
         """;
 
-    public static object[] Parameters(RegionThermalAnalysisSettings settings, ThermalAnalysisSettings thermal, DateTime now) =>
-    [
-        new NpgsqlParameter("enabled", settings.Enabled), new NpgsqlParameter("algorithm", settings.AlgorithmVersion), new NpgsqlParameter("now", now),
-        new NpgsqlParameter("sensorMinutes", Math.Min(settings.SourceValidity.SensorMinutes, thermal.StaleDataThresholdMinutes)),
-        new NpgsqlParameter("weatherMinutes", settings.SourceValidity.WeatherMinutes), new NpgsqlParameter("vegetationDays", settings.SourceValidity.VegetationDays),
-        new NpgsqlParameter("surfaceDays", settings.SourceValidity.SurfaceTemperatureDays),
-        new NpgsqlParameter("policyWeights", NpgsqlDbType.Jsonb) { Value = JsonSerializer.Serialize(settings.Weights) },
-        new NpgsqlParameter("policyThresholds", NpgsqlDbType.Jsonb) { Value = JsonSerializer.Serialize(settings.RiskThresholds) }
+    public static object[] Parameters(RegionThermalAnalysisSettings settings, ThermalAnalysisSettings thermal, DateTime now) => [new NpgsqlParameter("enabled", settings.Enabled), new NpgsqlParameter("algorithm", settings.AlgorithmVersion), new NpgsqlParameter("now", now), new NpgsqlParameter("sensorMinutes", Math.Min(settings.SourceValidity.SensorMinutes, thermal.StaleDataThresholdMinutes)), new NpgsqlParameter("weatherMinutes", settings.SourceValidity.WeatherMinutes), new NpgsqlParameter("vegetationDays", settings.SourceValidity.VegetationDays), new NpgsqlParameter("surfaceDays", settings.SourceValidity.SurfaceTemperatureDays), new NpgsqlParameter("policyWeights", NpgsqlDbType.Jsonb)
+    {
+        Value = JsonSerializer.Serialize(settings.Weights)
+    }, new NpgsqlParameter("policyThresholds", NpgsqlDbType.Jsonb)
+    {
+        Value = JsonSerializer.Serialize(settings.RiskThresholds)
+    }
+
     ];
 }

@@ -32,9 +32,7 @@ public sealed class GenerateSensorReadingsUseCase : IGenerateSensorReadingsUseCa
         var sensors = await _sensors.GetActiveForReadingGeneration(cancellationToken);
         if (sensors.Count == 0) return;
 
-        var previous = (await _readings.GetLatestBySensors(sensors.Select(sensor => sensor.Id).ToList(), cancellationToken))
-            .ToDictionary(reading => reading.SensorId);
-
+        var previous = (await _readings.GetLatestBySensors(sensors.Select(sensor => sensor.Id).ToList(), cancellationToken)).ToDictionary(reading => reading.SensorId);
         var cutoff = _time.GetUtcNow().UtcDateTime.AddMinutes(-_settings.IntervalMinutes);
         var readings = sensors.Where(sensor => !previous.TryGetValue(sensor.Id, out var latest) || latest.MeasuredAt <= cutoff).Select(sensor => _generator.Generate(sensor.Id, previous.GetValueOrDefault(sensor.Id))).ToList();
         _readings.AddRange(readings);

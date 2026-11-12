@@ -36,6 +36,7 @@ public sealed class OrganizationsController : ControllerBase
     public async Task<IActionResult> GetThermalMap(Guid id, [FromQuery] Guid? cityId, [FromServices] IGetThermalMapUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.Execute(cityId, id, ActorId, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<ThermalMapResponse>
         {
             Status = nameof(ResponseStatus.Success),
@@ -47,6 +48,7 @@ public sealed class OrganizationsController : ControllerBase
     public async Task<IActionResult> GetThermalOverview(Guid id, [FromQuery] Guid? cityId, [FromServices] IGetThermalOverviewUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.Execute(cityId, id, ActorId, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<ThermalOverviewResponse>
         {
             Status = nameof(ResponseStatus.Success),
@@ -58,6 +60,7 @@ public sealed class OrganizationsController : ControllerBase
     public async Task<IActionResult> GetRegions(Guid id, [FromServices] IOrganizationRegionsUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.GetAll(ActorId, id, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<List<InstitutionalRegionLinkResponse>>
         {
             Status = nameof(ResponseStatus.Success),
@@ -70,6 +73,7 @@ public sealed class OrganizationsController : ControllerBase
     public async Task<IActionResult> AssignRegion(Guid id, Guid regionId, [FromServices] IOrganizationRegionsUseCase useCase, CancellationToken cancellationToken)
     {
         await useCase.Assign(ActorId, id, regionId, cancellationToken);
+
         return NoContent();
     }
 
@@ -78,6 +82,7 @@ public sealed class OrganizationsController : ControllerBase
     public async Task<IActionResult> RemoveRegion(Guid id, Guid regionId, [FromServices] IOrganizationRegionsUseCase useCase, CancellationToken cancellationToken)
     {
         await useCase.Remove(ActorId, id, regionId, cancellationToken);
+
         return NoContent();
     }
 
@@ -86,6 +91,7 @@ public sealed class OrganizationsController : ControllerBase
     public async Task<IActionResult> Register(OrganizationRequest request, [FromServices] IRegisterOrganizationUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.Execute(ActorId, request, cancellationToken);
+
         return CreatedAtAction(nameof(GetById), new { id = response.Id }, new PayloadResponse<OrganizationResponse>
         {
             Status = nameof(ResponseStatus.Success),
@@ -97,6 +103,7 @@ public sealed class OrganizationsController : ControllerBase
     public async Task<IActionResult> GetAll([FromServices] IGetOrganizationsUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.Execute(ActorId, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<List<OrganizationResponse>>
         {
             Status = nameof(ResponseStatus.Success),
@@ -108,6 +115,7 @@ public sealed class OrganizationsController : ControllerBase
     public async Task<IActionResult> GetById(Guid id, [FromServices] IGetOrganizationByIdUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.Execute(ActorId, id, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<OrganizationResponse>
         {
             Status = nameof(ResponseStatus.Success),
@@ -120,6 +128,7 @@ public sealed class OrganizationsController : ControllerBase
     public async Task<IActionResult> Update(Guid id, UpdateOrganizationRequest request, [FromServices] IUpdateOrganizationUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.Execute(ActorId, id, request, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<OrganizationResponse>
         {
             Status = nameof(ResponseStatus.Success),
@@ -131,6 +140,7 @@ public sealed class OrganizationsController : ControllerBase
     public async Task<IActionResult> GetMembers(Guid id, [FromServices] IOrganizationMembersUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.GetAll(ActorId, id, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<List<UserResponse>>
         {
             Status = nameof(ResponseStatus.Success),
@@ -143,6 +153,7 @@ public sealed class OrganizationsController : ControllerBase
     public async Task<IActionResult> AddMember(Guid id, AddOrganizationMemberRequest request, [FromServices] IOrganizationMembersUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.Add(ActorId, id, request, cancellationToken);
+
         return StatusCode(StatusCodes.Status201Created, new PayloadResponse<OrganizationMemberResponse>
         {
             Status = nameof(ResponseStatus.Success),
@@ -155,6 +166,7 @@ public sealed class OrganizationsController : ControllerBase
     public async Task<IActionResult> RemoveMember(Guid id, Guid userId, [FromServices] IOrganizationMembersUseCase useCase, CancellationToken cancellationToken)
     {
         await useCase.Remove(ActorId, id, userId, cancellationToken);
+
         return NoContent();
     }
 
@@ -163,6 +175,7 @@ public sealed class OrganizationsController : ControllerBase
     public async Task<IActionResult> RegeneratePassword(Guid id, Guid userId, [FromServices] IOrganizationMembersUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.RegeneratePassword(ActorId, id, userId, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<OrganizationMemberResponse>
         {
             Status = nameof(ResponseStatus.Success),
@@ -175,6 +188,7 @@ public sealed class OrganizationsController : ControllerBase
     public async Task<IActionResult> AssignSensor(Guid id, Guid sensorId, [FromServices] IOrganizationSensorsUseCase useCase, CancellationToken cancellationToken)
     {
         await useCase.Assign(ActorId, id, sensorId, cancellationToken);
+
         return NoContent();
     }
 
@@ -182,6 +196,7 @@ public sealed class OrganizationsController : ControllerBase
     public async Task<IActionResult> GetSensors(Guid id, [FromServices] IOrganizationSensorsUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.GetAll(ActorId, id, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<List<SensorResponse>>
         {
             Status = nameof(ResponseStatus.Success),
@@ -193,6 +208,7 @@ public sealed class OrganizationsController : ControllerBase
     public async Task<IActionResult> GetReadings(Guid id, Guid sensorId, [FromQuery] GetSensorReadingsRequest request, [FromServices] IOrganizationSensorsUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.GetHistory(ActorId, id, sensorId, request, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<PagedResponse<SensorReadingResponse>>
         {
             Status = nameof(ResponseStatus.Success),
@@ -205,6 +221,7 @@ public sealed class OrganizationsController : ControllerBase
     {
         var response = await useCase.GetLatest(ActorId, id, sensorId, cancellationToken);
         if (response is null) return NoContent();
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<SensorReadingResponse>
         {
             Status = nameof(ResponseStatus.Success),

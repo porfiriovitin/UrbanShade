@@ -14,22 +14,40 @@ public sealed class RefreshGeoRegionUseCase : IRefreshGeoRegionUseCase
     private readonly IGeoAnalysisJobRepository _jobs;
     private readonly GeoAnalysisSettings _settings;
     private readonly TimeProvider _time;
+
     public RefreshGeoRegionUseCase(IGeoRegionRepository regions, IGeoAnalysisJobRepository jobs, GeoAnalysisSettings settings, TimeProvider time)
-    { _regions = regions; _jobs = jobs; _settings = settings; _time = time; }
+    {
+        _regions = regions;
+        _jobs = jobs;
+        _settings = settings;
+        _time = time;
+    }
+
     public async Task<GeoJobResponse> Execute(Guid regionId, RefreshGeoRegionRequest request, CancellationToken cancellationToken)
     {
-        if (!_settings.Enabled) throw new GeoException(ErrorKind.Unavailable, "Satellite processing is disabled.");
+        if (!_settings.Enabled)
+            throw new GeoException(ErrorKind.Unavailable, "Satellite processing is disabled.");
+
         var region = await _regions.FindById(regionId, cancellationToken) ?? throw new GeoException(ErrorKind.NotFound, "Region not found.");
-        /// :: Default windows end at midnight so repeated requests share the same processing identity.
+
+        /// :: Reuse requests with the same UTC window.
         var now = _time.GetUtcNow().UtcDateTime;
         var end = request.EndAt ?? DateTime.SpecifyKind(now.Date, DateTimeKind.Utc);
         var start = request.StartAt ?? end.AddDays(-_settings.ObservationWindowDays);
         if (start.Kind != DateTimeKind.Utc || end.Kind != DateTimeKind.Utc || start >= end || end > now || (end - start).TotalDays > _settings.MaximumPeriodDays)
             throw new GeoException(ErrorKind.Validation, "Provide a valid UTC observation period within the allowed range; end is exclusive.");
+
         var job = new GeoAnalysisJob(region, start, end, _settings.AlgorithmVersion, JsonSerializer.Serialize(_settings.Parameters()));
+
         return ToResponse(await _jobs.Enqueue(job, cancellationToken));
     }
-    public async Task<GeoJobResponse> GetJob(Guid id, CancellationToken cancellationToken) =>
-        ToResponse(await _jobs.FindById(id, cancellationToken) ?? throw new GeoException(ErrorKind.NotFound, "Job not found."));
+
+    public async Task<GeoJobResponse> GetJob(Guid id, CancellationToken cancellationToken)
+    {
+        var job = await _jobs.FindById(id, cancellationToken);
+
+        return ToResponse(job ?? throw new GeoException(ErrorKind.NotFound, "Job not found."));
+    }
+
     public static GeoJobResponse ToResponse(GeoAnalysisJob job) => new(job.Id, job.GeoRegionId, job.Status.ToString().ToUpperInvariant(), job.CreatedAt, job.StartedAt, job.FinishedAt, job.ErrorMessage, job.ResultSummary, job.Attempts, job.JobType == UrbanShade.Domain.Enums.GeoJobType.OpenStreetMap ? "OPENSTREETMAP" : "SATELLITE");
 }

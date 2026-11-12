@@ -21,6 +21,7 @@ public sealed class RoutesController : ControllerBase
     public async Task<IActionResult> Compare(CompareRoutesRequest request, [FromServices] ICompareRoutesUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.Execute(request, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<RouteComparisonResponse>
         {
             Status = nameof(ResponseStatus.Success),

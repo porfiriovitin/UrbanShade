@@ -25,7 +25,7 @@ public sealed class DeleteSensorUseCase : IDeleteSensorUseCase
         if (sensor is null)
             throw new SensorException(ErrorKind.NotFound, "Sensor is unavailable.");
 
-        /// :: Preserve the sensor record for historical queries.
+        /// :: Preserve sensors for historical queries.
         sensor.Delete();
         await _unitOfWork.SaveChanges(cancellationToken);
     }

@@ -25,10 +25,12 @@ public sealed class UpdateOrganizationUseCase : IUpdateOrganizationUseCase
     {
         await _access.GetActor(actorId, true, cancellationToken);
         Validate(request);
+
         await using var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
         var organization = await _organizations.FindForUpdate(id, cancellationToken);
         if (organization is null)
             throw new OrganizationException(ErrorKind.NotFound, "Organization is unavailable.");
+
         var document = request.Document.Trim().ToUpperInvariant();
         if (await _organizations.DocumentExists(document, id, cancellationToken))
             throw new OrganizationException(ErrorKind.Conflict, "Organization document already registered.");
@@ -37,6 +39,7 @@ public sealed class UpdateOrganizationUseCase : IUpdateOrganizationUseCase
         organization.UpdateTimeZone(request.TimeZoneId);
         await _unitOfWork.SaveChanges(cancellationToken);
         await transaction.Commit(cancellationToken);
+
         return GetOrganizationByIdUseCase.ToResponse(organization);
     }
 

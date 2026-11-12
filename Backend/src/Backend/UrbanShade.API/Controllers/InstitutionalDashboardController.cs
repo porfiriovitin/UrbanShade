@@ -30,7 +30,9 @@ public sealed class InstitutionalDashboardController : ControllerBase
     public async Task<IActionResult> GetOverview([FromQuery] InstitutionalDashboardRequest request, [FromServices] IGetInstitutionalOverviewUseCase useCase, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(User.FindFirst("sub")?.Value, out var actorId)) return Unauthorized();
+
         var response = await useCase.Execute(actorId, request, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<InstitutionalOverviewResponse>
         {
             Status = nameof(ResponseStatus.Success),
@@ -42,7 +44,9 @@ public sealed class InstitutionalDashboardController : ControllerBase
     public async Task<IActionResult> GetDistribution([FromQuery] InstitutionalDashboardRequest request, [FromServices] IGetInstitutionalDistributionUseCase useCase, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(User.FindFirst("sub")?.Value, out var actorId)) return Unauthorized();
+
         var response = await useCase.Execute(actorId, request, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<InstitutionalDistributionResponse>
         {
             Status = nameof(ResponseStatus.Success),
@@ -54,7 +58,9 @@ public sealed class InstitutionalDashboardController : ControllerBase
     public async Task<IActionResult> GetRegions([FromQuery] InstitutionalDashboardRequest request, [FromServices] IGetInstitutionalRegionsUseCase useCase, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(User.FindFirst("sub")?.Value, out var actorId)) return Unauthorized();
+
         var response = await useCase.Execute(actorId, request, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<PagedResponse<InstitutionalRegionResponse>>
         {
             Status = nameof(ResponseStatus.Success),
@@ -66,7 +72,9 @@ public sealed class InstitutionalDashboardController : ControllerBase
     public async Task<IActionResult> GetRanking([FromQuery] InstitutionalDashboardRequest request, [FromServices] IGetInstitutionalRankingUseCase useCase, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(User.FindFirst("sub")?.Value, out var actorId)) return Unauthorized();
+
         var response = await useCase.Execute(actorId, request, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<List<InstitutionalRegionResponse>>
         {
             Status = nameof(ResponseStatus.Success),
@@ -78,7 +86,9 @@ public sealed class InstitutionalDashboardController : ControllerBase
     public async Task<IActionResult> GetRegion(Guid id, [FromQuery] InstitutionalDashboardRequest request, [FromServices] IGetInstitutionalRegionUseCase useCase, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(User.FindFirst("sub")?.Value, out var actorId)) return Unauthorized();
+
         var response = await useCase.Execute(actorId, id, request, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<InstitutionalRegionResponse>
         {
             Status = nameof(ResponseStatus.Success),
@@ -90,7 +100,9 @@ public sealed class InstitutionalDashboardController : ControllerBase
     public async Task<IActionResult> CompareRegions([FromQuery] InstitutionalDashboardRequest request, [FromServices] ICompareInstitutionalRegionsUseCase useCase, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(User.FindFirst("sub")?.Value, out var actorId)) return Unauthorized();
+
         var response = await useCase.Execute(actorId, request, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<List<InstitutionalRegionResponse>>
         {
             Status = nameof(ResponseStatus.Success),
@@ -102,7 +114,9 @@ public sealed class InstitutionalDashboardController : ControllerBase
     public async Task<IActionResult> GetTrends(Guid id, [FromQuery] InstitutionalDashboardRequest request, [FromServices] IGetInstitutionalTrendsUseCase useCase, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(User.FindFirst("sub")?.Value, out var actorId)) return Unauthorized();
+
         var response = await useCase.Execute(actorId, id, request, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<InstitutionalTrendsResponse>
         {
             Status = nameof(ResponseStatus.Success),
@@ -114,7 +128,9 @@ public sealed class InstitutionalDashboardController : ControllerBase
     public async Task<IActionResult> GetSensorsOverview([FromQuery] InstitutionalDashboardRequest request, [FromServices] IGetInstitutionalSensorsOverviewUseCase useCase, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(User.FindFirst("sub")?.Value, out var actorId)) return Unauthorized();
+
         var response = await useCase.Execute(actorId, request, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<InstitutionalSensorsResponse>
         {
             Status = nameof(ResponseStatus.Success),
@@ -126,7 +142,9 @@ public sealed class InstitutionalDashboardController : ControllerBase
     public async Task<IActionResult> GetEnvironment([FromQuery] InstitutionalDashboardRequest request, [FromServices] IGetInstitutionalEnvironmentUseCase useCase, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(User.FindFirst("sub")?.Value, out var actorId)) return Unauthorized();
+
         var response = await useCase.Execute(actorId, request, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<InstitutionalEnvironmentResponse>
         {
             Status = nameof(ResponseStatus.Success),
@@ -138,7 +156,9 @@ public sealed class InstitutionalDashboardController : ControllerBase
     public async Task<IActionResult> GetMap([FromQuery] InstitutionalDashboardRequest request, [FromServices] IGetInstitutionalMapUseCase useCase, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(User.FindFirst("sub")?.Value, out var actorId)) return Unauthorized();
+
         var response = await useCase.Execute(actorId, request, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<InstitutionalMapResponse>
         {
             Status = nameof(ResponseStatus.Success),
@@ -150,8 +170,9 @@ public sealed class InstitutionalDashboardController : ControllerBase
     public async Task<IActionResult> ExportReport([FromQuery] InstitutionalDashboardRequest request, [FromServices] IExportInstitutionalReportUseCase useCase, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(User.FindFirst("sub")?.Value, out var actorId)) return Unauthorized();
+
         var response = await useCase.Execute(actorId, request, cancellationToken);
+
         return File(response.Content, response.ContentType, response.FileName);
     }
-
 }

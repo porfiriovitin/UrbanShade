@@ -4,7 +4,9 @@ namespace UrbanShade.Domain.Entities;
 
 public class Organization : EntityBase
 {
-    private Organization() { }
+    private Organization()
+    {
+    }
 
     public Organization(string name, OrganizationType type, string document, string contactEmail, string? contactPhone)
     {
@@ -12,6 +14,7 @@ public class Organization : EntityBase
             throw new ArgumentException("Invalid organization details.");
         if (string.IsNullOrWhiteSpace(contactEmail) || contactEmail.Trim().Length > 254 || !System.Net.Mail.MailAddress.TryCreate(contactEmail.Trim(), out var address) || address.Address != contactEmail.Trim())
             throw new ArgumentException("A valid contact email is required.", nameof(contactEmail));
+
         Name = name.Trim();
         Type = type;
         Document = document.Trim().ToUpperInvariant();
@@ -40,6 +43,7 @@ public class Organization : EntityBase
             throw new ArgumentException("Invalid organization details.");
         if (string.IsNullOrWhiteSpace(contactEmail) || contactEmail.Trim().Length > 254 || !System.Net.Mail.MailAddress.TryCreate(contactEmail.Trim(), out var address) || address.Address != contactEmail.Trim())
             throw new ArgumentException("A valid contact email is required.", nameof(contactEmail));
+
         Name = name.Trim();
         Type = type;
         Document = document.Trim().ToUpperInvariant();

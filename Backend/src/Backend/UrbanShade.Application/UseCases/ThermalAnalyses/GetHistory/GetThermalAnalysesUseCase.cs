@@ -35,8 +35,7 @@ public sealed class GetThermalAnalysesUseCase : IGetThermalAnalysesUseCase
             throw new SensorException(ErrorKind.NotFound, "Sensor is unavailable.");
 
         ThermalRiskLevel? risk = request.RiskLevel is null ? null : Enum.Parse<ThermalRiskLevel>(request.RiskLevel, true);
-        var history = await _analyses.GetHistory(sensorId, request.AlgorithmVersion ?? _settings.AlgorithmVersion,
-            request.StartDate?.UtcDateTime, request.EndDate?.UtcDateTime, risk, request.Page, request.PageSize, cancellationToken);
+        var history = await _analyses.GetHistory(sensorId, request.AlgorithmVersion ?? _settings.AlgorithmVersion, request.StartDate?.UtcDateTime, request.EndDate?.UtcDateTime, risk, request.Page, request.PageSize, cancellationToken);
         var now = _time.GetUtcNow().UtcDateTime;
 
         return new PagedResponse<ThermalAnalysisResponse>

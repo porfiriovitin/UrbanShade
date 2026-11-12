@@ -22,31 +22,38 @@ public static class DependencyInjectionExtension
     public static void AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         AddDbContext(services, configuration);
+
         var dashboard = configuration.GetSection("InstitutionalDashboard").Get<UrbanShade.Domain.InstitutionalDashboard.InstitutionalDashboardSettings>() ?? new();
         dashboard.Validate();
         services.AddSingleton(dashboard);
         services.AddScoped<IInstitutionalDashboardRepository, InstitutionalDashboardRepository>();
+
         var routing = configuration.GetSection("Routing").Get<UrbanShade.Domain.Routing.RoutingSettings>() ?? new();
         routing.Validate();
         services.AddSingleton(routing);
-        services.AddOptions<UrbanShade.Infraestructure.Routing.OpenRouteServiceOptions>().Bind(configuration.GetSection("OpenRouteService"))
-            .Validate(options => !routing.Enabled || !string.IsNullOrWhiteSpace(options.ApiKey), "OpenRouteService:Api_Key is required when routing is enabled.").ValidateOnStart();
+        services.AddOptions<UrbanShade.Infraestructure.Routing.OpenRouteServiceOptions>().Bind(configuration.GetSection("OpenRouteService")).Validate(options => !routing.Enabled || !string.IsNullOrWhiteSpace(options.ApiKey), "OpenRouteService:Api_Key is required when routing is enabled.").ValidateOnStart();
         services.AddSingleton<UrbanShade.Infraestructure.Routing.OpenRouteServiceResponseParser>();
         services.AddSingleton<UrbanShade.Infraestructure.Routing.RoutingGeometryCache>();
-        services.AddHttpClient<UrbanShade.Domain.Routing.IRoutingProvider, UrbanShade.Infraestructure.Routing.OpenRouteServiceProvider>(client => client.Timeout = Timeout.InfiniteTimeSpan)
-            .RedactLoggedHeaders(["Authorization"]);
+        services.AddHttpClient<UrbanShade.Domain.Routing.IRoutingProvider, UrbanShade.Infraestructure.Routing.OpenRouteServiceProvider>(client => client.Timeout = Timeout.InfiniteTimeSpan).RedactLoggedHeaders(["Authorization"]);
         services.AddScoped<IRouteGeometryRepository, RouteGeometryRepository>();
+
         var regional = configuration.GetSection("RegionThermalAnalysis").Get<UrbanShade.Domain.RegionThermalAnalysis.RegionThermalAnalysisSettings>() ?? new();
         regional.Validate();
         services.AddSingleton(regional);
         services.AddScoped<IRegionThermalAnalysisRepository, RegionThermalAnalysisRepository>();
         services.AddHostedService<RegionThermalAnalysisBackgroundService>();
-        services.AddOptions<WeatherSettings>().Bind(configuration.GetSection("OpenMeteo"))
-            .Validate(settings => { settings.Validate(); return true; }).ValidateOnStart();
-        services.AddOptions<OpenMeteoSettings>()
-            .Bind(configuration.GetSection("OpenMeteo"))
-            .Validate(settings => { settings.Validate(); return true; })
-            .ValidateOnStart();
+        services.AddOptions<WeatherSettings>().Bind(configuration.GetSection("OpenMeteo")).Validate(settings =>
+        {
+            settings.Validate();
+
+            return true;
+        }).ValidateOnStart();
+        services.AddOptions<OpenMeteoSettings>().Bind(configuration.GetSection("OpenMeteo")).Validate(settings =>
+        {
+            settings.Validate();
+
+            return true;
+        }).ValidateOnStart();
         services.AddMemoryCache();
         services.AddSingleton<InstitutionalDashboardCache>();
         services.AddScoped<IWeatherRepository, WeatherRepository>();
@@ -58,11 +65,13 @@ public static class DependencyInjectionExtension
             client.DefaultRequestHeaders.UserAgent.ParseAdd("UrbanShade/1.0");
         });
         services.AddHostedService<WeatherBackgroundService>();
+
         var openStreetMap = configuration.GetSection("OpenStreetMap").Get<OpenStreetMapSettings>() ?? new OpenStreetMapSettings();
         openStreetMap.Validate();
         services.AddSingleton(openStreetMap);
         services.AddHttpClient<IOpenStreetMapService, OverpassService>();
         services.AddHostedService<OpenStreetMapBackgroundService>();
+
         var geo = configuration.GetSection("GoogleEarthEngine").Get<GeoAnalysisSettings>() ?? new GeoAnalysisSettings();
         geo.Validate();
         services.AddSingleton(geo);
@@ -73,9 +82,11 @@ public static class DependencyInjectionExtension
         services.AddScoped<IGeoAnalysisJobRepository, GeoAnalysisJobRepository>();
         services.AddScoped<IGreenAreaRepository, GreenAreaRepository>();
         services.AddHostedService<GeoAnalysisBackgroundService>();
+
         var jwt = configuration.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();
         jwt.Validate();
         services.AddSingleton(jwt);
+
         var firstAccess = configuration.GetSection("FirstAccess").Get<FirstAccessSettings>() ?? new FirstAccessSettings();
         firstAccess.Validate();
         services.AddSingleton(firstAccess);
@@ -91,10 +102,11 @@ public static class DependencyInjectionExtension
         services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-        /// :: Set up sensor simulation settings and validate them.
+        /// :: Configure and validate sensor simulation.
         var simulation = configuration.GetSection("SensorSimulation").Get<SensorSimulationSettings>() ?? new SensorSimulationSettings();
         simulation.Validate();
         services.AddSingleton(simulation);
+
         var thermal = configuration.GetSection("ThermalAnalysis").Get<ThermalAnalysisSettings>() ?? new ThermalAnalysisSettings();
         thermal.Validate();
         services.AddSingleton(thermal);
@@ -112,5 +124,4 @@ public static class DependencyInjectionExtension
             options.AddInterceptors(new PersistenceExceptionInterceptor());
         });
     }
-
 }

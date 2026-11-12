@@ -33,7 +33,7 @@ public sealed class SensorSimulationBackgroundService : BackgroundService
         {
             try
             {
-                /// :: Resolve a fresh context for every cycle, including retries after failures.
+                /// :: Use a fresh context for each cycle.
                 if (_settings.Enabled)
                 {
                     await using var scope = _scopes.CreateAsyncScope();
@@ -54,7 +54,7 @@ public sealed class SensorSimulationBackgroundService : BackgroundService
             {
                 if (_thermal.Enabled)
                 {
-                    /// :: Process committed readings in a separate context, including pending retries.
+                    /// :: Process committed readings in a separate context.
                     await using var scope = _scopes.CreateAsyncScope();
                     var useCase = scope.ServiceProvider.GetRequiredService<IProcessPendingThermalAnalysesUseCase>();
                     await useCase.Execute(stoppingToken);

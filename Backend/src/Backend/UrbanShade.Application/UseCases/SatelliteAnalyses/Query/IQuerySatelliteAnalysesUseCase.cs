@@ -12,6 +12,8 @@ namespace UrbanShade.Application.UseCases.SatelliteAnalyses.Query;
 public interface IQuerySatelliteAnalysesUseCase
 {
     Task<VegetationResponse> Vegetation(Guid regionId, CancellationToken cancellationToken);
+
     Task<SurfaceTemperatureResponse> Temperature(Guid regionId, CancellationToken cancellationToken);
+
     Task<List<SatelliteAnalysisResponse>> History(Guid regionId, DateTime? start, DateTime? end, int page, int pageSize, CancellationToken cancellationToken);
 }

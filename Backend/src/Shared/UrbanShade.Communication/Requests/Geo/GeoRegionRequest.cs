@@ -9,12 +9,14 @@ public sealed class RegisterGeoRegionRequest
     public string? Description { get; set; }
     public JsonElement Boundary { get; set; }
 }
+
 public sealed class UpdateGeoRegionRequest
 {
     public string? Name { get; set; }
     public string? Description { get; set; }
     public JsonElement? Boundary { get; set; }
 }
+
 public sealed class RefreshGeoRegionRequest
 {
     public DateTime? StartAt { get; set; }

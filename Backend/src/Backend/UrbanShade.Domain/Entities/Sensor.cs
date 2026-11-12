@@ -4,7 +4,9 @@ namespace UrbanShade.Domain.Entities;
 
 public class Sensor : EntityBase
 {
-    private Sensor() { }
+    private Sensor()
+    {
+    }
 
     public Sensor(string code, string name, string? description, double latitude, double longitude, DateTime? installedAt)
     {
@@ -43,7 +45,9 @@ public class Sensor : EntityBase
 
     public void UpdateStatus(SensorStatus status)
     {
-        if (!Enum.IsDefined(status)) throw new ArgumentOutOfRangeException(nameof(status));
+        if (!Enum.IsDefined(status))
+            throw new ArgumentOutOfRangeException(nameof(status));
+
         Status = status;
         UpdatedAt = DateTime.UtcNow;
     }
@@ -57,19 +61,24 @@ public class Sensor : EntityBase
 
     public void AssignOrganization(Guid organizationId)
     {
-        if (organizationId == Guid.Empty) throw new ArgumentException("An organization is required.", nameof(organizationId));
+        if (organizationId == Guid.Empty)
+            throw new ArgumentException("An organization is required.", nameof(organizationId));
         if (OrganizationId.HasValue && OrganizationId.Value != organizationId)
             throw new InvalidOperationException("Sensor transfers between organizations are not supported.");
+
         OrganizationId = organizationId;
         UpdatedAt = DateTime.UtcNow;
     }
 
     public void AssignCity(Guid? cityId)
     {
-        if (cityId == Guid.Empty) throw new ArgumentException("A valid city is required.", nameof(cityId));
+        if (cityId == Guid.Empty)
+            throw new ArgumentException("A valid city is required.", nameof(cityId));
+
         CityId = cityId;
         UpdatedAt = DateTime.UtcNow;
     }
+
     private static void Validate(string code, string name, string? description, double latitude, double longitude, DateTime? installedAt)
     {
         if (string.IsNullOrWhiteSpace(code) || code.Trim().Length > 50 || string.IsNullOrWhiteSpace(name) || name.Trim().Length > 150 || description?.Trim().Length > 500)

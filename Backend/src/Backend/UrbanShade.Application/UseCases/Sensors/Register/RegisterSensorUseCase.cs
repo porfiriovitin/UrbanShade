@@ -23,17 +23,19 @@ public sealed class RegisterSensorUseCase : IRegisterSensorUseCase
 
     public async Task<SensorResponse> Execute(RegisterSensorRequest request, CancellationToken cancellationToken = default)
     {
-        /// :: Validate and normalize the sensor code before checking uniqueness.
+        /// :: Validate and normalize the sensor code.
         Validate(request);
+
         var code = request.Code.Trim().ToUpperInvariant();
         if (await _sensors.CodeExists(code, null, cancellationToken))
             throw new SensorException(ErrorKind.Conflict, "Sensor code already registered.");
-
         if (request.CityId.HasValue && await _cities.FindById(request.CityId.Value, cancellationToken) is null)
             throw new CityException(ErrorKind.NotFound, "City is unavailable.");
 
         var sensor = new Sensor(code, request.Name, request.Description, request.Latitude!.Value, request.Longitude!.Value, request.InstalledAt);
-        if (request.CityId.HasValue) sensor.AssignCity(request.CityId);
+        if (request.CityId.HasValue)
+            sensor.AssignCity(request.CityId);
+
         _sensors.Add(sensor);
         await _unitOfWork.SaveChanges(cancellationToken);
 

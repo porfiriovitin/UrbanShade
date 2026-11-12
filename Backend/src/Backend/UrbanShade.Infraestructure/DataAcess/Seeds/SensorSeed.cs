@@ -6,7 +6,7 @@ internal static class SensorSeed
 {
     public static async Task Execute(UrbanShadeDbContext context, CancellationToken cancellationToken = default)
     {
-        /// :: Insert demonstration sensors without replacing administrative changes or deleted records.
+        /// :: Seed sensors without replacing changes or deleted records.
         await context.Database.ExecuteSqlRawAsync("""
             INSERT INTO "Sensors" ("Id", "Active", "CreatedAt", "Code", "Name", "Description", "Latitude", "Longitude", "Status", "InstalledAt", "UpdatedAt", "DeletedAt")
             VALUES

@@ -24,9 +24,11 @@ public sealed class RegionThermalAnalysisBackgroundService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!_settings.Enabled || !_settings.AutomaticRefreshEnabled) return;
+
         try
         {
             await Task.Delay(TimeSpan.FromSeconds(15), _time, stoppingToken);
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
@@ -34,11 +36,20 @@ public sealed class RegionThermalAnalysisBackgroundService : BackgroundService
                     await using var scope = _scopes.CreateAsyncScope();
                     await scope.ServiceProvider.GetRequiredService<IProcessPendingRegionThermalAnalysesUseCase>().Execute(stoppingToken);
                 }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { throw; }
-                catch (Exception exception) { _logger.LogError(exception, "Regional thermal analysis scheduling failed"); }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, "Regional thermal analysis scheduling failed");
+                }
+
                 await Task.Delay(TimeSpan.FromMinutes(_settings.RefreshIntervalMinutes), _time, stoppingToken);
             }
         }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+        }
     }
 }

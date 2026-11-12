@@ -14,8 +14,7 @@ public sealed class ImportOpenStreetMapUseCase : IImportOpenStreetMapUseCase
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<ImportOpenStreetMapUseCase> _logger;
 
-    public ImportOpenStreetMapUseCase(IGeoAnalysisJobRepository jobs, IGreenAreaRepository areas, IOpenStreetMapService openStreetMap,
-        IUnitOfWork unitOfWork, ILogger<ImportOpenStreetMapUseCase> logger)
+    public ImportOpenStreetMapUseCase(IGeoAnalysisJobRepository jobs, IGreenAreaRepository areas, IOpenStreetMapService openStreetMap, IUnitOfWork unitOfWork, ILogger<ImportOpenStreetMapUseCase> logger)
     {
         _jobs = jobs;
         _areas = areas;
@@ -28,17 +27,25 @@ public sealed class ImportOpenStreetMapUseCase : IImportOpenStreetMapUseCase
     {
         var job = await _jobs.Claim(cancellationToken, GeoJobType.OpenStreetMap);
         if (job is null) return false;
+
         OpenStreetMapSnapshot? snapshot = null;
         string? error = null;
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromMinutes(10));
+
         try
         {
             var parameters = JsonSerializer.Deserialize<OpenStreetMapParameters>(job.Parameters)!;
             snapshot = await _openStreetMap.GetGreenAreas(job.Boundary, parameters, timeout.Token);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
-        catch (OpenStreetMapException exception) { error = exception.Message; }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OpenStreetMapException exception)
+        {
+            error = exception.Message;
+        }
         catch (Exception exception)
         {
             error = "OpenStreetMap import could not be completed. Previous data was preserved.";
@@ -47,14 +54,17 @@ public sealed class ImportOpenStreetMapUseCase : IImportOpenStreetMapUseCase
 
         await using var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
         if (!await _jobs.LockLease(job, cancellationToken)) return true;
-        if (error is not null) job.Fail(error[..Math.Min(500, error.Length)]);
+        if (error is not null)
+            job.Fail(error[..Math.Min(500, error.Length)]);
         else
         {
             var imported = await _areas.ImportOpenStreetMap(job, snapshot!, cancellationToken);
             job.Complete(imported ? $"OPENSTREETMAP: imported snapshot with {snapshot!.Areas.Count} candidate areas." : "OPENSTREETMAP: skipped superseded import or inactive region.");
         }
+
         await _unitOfWork.SaveChanges(cancellationToken);
         await transaction.Commit(cancellationToken);
+
         return true;
     }
 }

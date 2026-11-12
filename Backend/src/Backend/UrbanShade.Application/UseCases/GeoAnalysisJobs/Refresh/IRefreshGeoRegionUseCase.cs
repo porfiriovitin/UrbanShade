@@ -12,5 +12,6 @@ namespace UrbanShade.Application.UseCases.GeoAnalysisJobs.Refresh;
 public interface IRefreshGeoRegionUseCase
 {
     Task<GeoJobResponse> Execute(Guid regionId, RefreshGeoRegionRequest request, CancellationToken cancellationToken);
+
     Task<GeoJobResponse> GetJob(Guid id, CancellationToken cancellationToken);
 }

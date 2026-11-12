@@ -5,12 +5,15 @@ namespace UrbanShade.Domain.Entities;
 
 public sealed class RegionThermalAnalysis : EntityBase
 {
-    private RegionThermalAnalysis() { }
-
-    public RegionThermalAnalysis(RegionAnalysisData data, ExposureInput input, ExposureResult result,
-        string algorithmVersion, string inputSignature, string sourceMetadata, DateTime analyzedAt)
+    private RegionThermalAnalysis()
     {
-        if (analyzedAt.Kind != DateTimeKind.Utc) throw new ArgumentException("AnalyzedAt must be UTC.", nameof(analyzedAt));
+    }
+
+    public RegionThermalAnalysis(RegionAnalysisData data, ExposureInput input, ExposureResult result, string algorithmVersion, string inputSignature, string sourceMetadata, DateTime analyzedAt)
+    {
+        if (analyzedAt.Kind != DateTimeKind.Utc)
+            throw new ArgumentException("AnalyzedAt must be UTC.", nameof(analyzedAt));
+
         GeoRegionId = data.Region.Id;
         BoundaryVersion = data.Region.BoundaryVersion;
         ExposureIndex = result.Index;

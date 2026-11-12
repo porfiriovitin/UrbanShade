@@ -23,14 +23,13 @@ public sealed class GeoController : ControllerBase
     [HttpPut("regions/{id:guid}/reference")]
     [Authorize(Policy = "PlatformAdministration")]
     [EnableRateLimiting("GeoAdministration")]
-    public async Task<IActionResult> UpdateReference(Guid id, UpdateReferenceRegionRequest request,
-        [FromServices] UrbanShade.Application.UseCases.GeoRegions.UpdateReference.IUpdateReferenceRegionUseCase useCase, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateReference(Guid id, UpdateReferenceRegionRequest request, [FromServices] UrbanShade.Application.UseCases.GeoRegions.UpdateReference.IUpdateReferenceRegionUseCase useCase, CancellationToken cancellationToken)
     {
         await useCase.Execute(id, request, cancellationToken);
+
         return NoContent();
     }
 
-    private static PayloadResponse<T> Payload<T>(T data) => new() { Status = nameof(ResponseStatus.Success), Data = data };
     [HttpPost("regions")]
     [Authorize(Policy = "PlatformAdministration")]
     [EnableRateLimiting("GeoAdministration")]
@@ -38,58 +37,114 @@ public sealed class GeoController : ControllerBase
     public async Task<IActionResult> Register(RegisterGeoRegionRequest request, [FromServices] IRegisterGeoRegionUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.Execute(request, cancellationToken);
+
         return CreatedAtAction(nameof(GetById), new { id = response.Id }, Payload(response));
     }
+
     [HttpGet("regions")]
-    public async Task<IActionResult> GetAll([FromServices] IQueryGeoRegionsUseCase useCase, CancellationToken cancellationToken, Guid? cityId = null, int page = 1, int pageSize = 20) =>
-        Ok(Payload(await useCase.GetAll(cityId, page, pageSize, cancellationToken)));
+    public async Task<IActionResult> GetAll([FromServices] IQueryGeoRegionsUseCase useCase, CancellationToken cancellationToken, Guid? cityId = null, int page = 1, int pageSize = 20)
+    {
+        var response = await useCase.GetAll(cityId, page, pageSize, cancellationToken);
+
+        return StatusCode(StatusCodes.Status200OK, Payload(response));
+    }
+
     [HttpGet("regions/{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id, [FromServices] IQueryGeoRegionsUseCase useCase, CancellationToken cancellationToken) =>
-        Ok(Payload(await useCase.GetById(id, cancellationToken)));
+    public async Task<IActionResult> GetById(Guid id, [FromServices] IQueryGeoRegionsUseCase useCase, CancellationToken cancellationToken)
+    {
+        var response = await useCase.GetById(id, cancellationToken);
+
+        return StatusCode(StatusCodes.Status200OK, Payload(response));
+    }
+
     [HttpPatch("regions/{id:guid}")]
     [Authorize(Policy = "PlatformAdministration")]
     [EnableRateLimiting("GeoAdministration")]
     [RequestSizeLimit(250_000)]
-    public async Task<IActionResult> Update(Guid id, UpdateGeoRegionRequest request, [FromServices] IUpdateGeoRegionUseCase useCase, CancellationToken cancellationToken) =>
-        Ok(Payload(await useCase.Execute(id, request, cancellationToken)));
+    public async Task<IActionResult> Update(Guid id, UpdateGeoRegionRequest request, [FromServices] IUpdateGeoRegionUseCase useCase, CancellationToken cancellationToken)
+    {
+        var response = await useCase.Execute(id, request, cancellationToken);
+
+        return StatusCode(StatusCodes.Status200OK, Payload(response));
+    }
+
     [HttpDelete("regions/{id:guid}")]
     [Authorize(Policy = "PlatformAdministration")]
     [EnableRateLimiting("GeoAdministration")]
     public async Task<IActionResult> Deactivate(Guid id, [FromServices] IUpdateGeoRegionUseCase useCase, CancellationToken cancellationToken)
     {
         await useCase.Deactivate(id, cancellationToken);
+
         return NoContent();
     }
+
     [HttpGet("regions/{id:guid}/vegetation")]
-    public async Task<IActionResult> Vegetation(Guid id, [FromServices] IQuerySatelliteAnalysesUseCase useCase, CancellationToken cancellationToken) =>
-        Ok(Payload(await useCase.Vegetation(id, cancellationToken)));
+    public async Task<IActionResult> Vegetation(Guid id, [FromServices] IQuerySatelliteAnalysesUseCase useCase, CancellationToken cancellationToken)
+    {
+        var response = await useCase.Vegetation(id, cancellationToken);
+
+        return StatusCode(StatusCodes.Status200OK, Payload(response));
+    }
+
     [HttpGet("regions/{id:guid}/surface-temperature")]
-    public async Task<IActionResult> SurfaceTemperature(Guid id, [FromServices] IQuerySatelliteAnalysesUseCase useCase, CancellationToken cancellationToken) =>
-        Ok(Payload(await useCase.Temperature(id, cancellationToken)));
+    public async Task<IActionResult> SurfaceTemperature(Guid id, [FromServices] IQuerySatelliteAnalysesUseCase useCase, CancellationToken cancellationToken)
+    {
+        var response = await useCase.Temperature(id, cancellationToken);
+
+        return StatusCode(StatusCodes.Status200OK, Payload(response));
+    }
+
     [HttpGet("regions/{id:guid}/analyses")]
-    public async Task<IActionResult> History(Guid id, [FromServices] IQuerySatelliteAnalysesUseCase useCase, CancellationToken cancellationToken, DateTime? startAt = null, DateTime? endAt = null, int page = 1, int pageSize = 20) =>
-        Ok(Payload(await useCase.History(id, startAt, endAt, page, pageSize, cancellationToken)));
+    public async Task<IActionResult> History(Guid id, [FromServices] IQuerySatelliteAnalysesUseCase useCase, CancellationToken cancellationToken, DateTime? startAt = null, DateTime? endAt = null, int page = 1, int pageSize = 20)
+    {
+        var response = await useCase.History(id, startAt, endAt, page, pageSize, cancellationToken);
+
+        return StatusCode(StatusCodes.Status200OK, Payload(response));
+    }
+
     [HttpPost("regions/{id:guid}/refresh")]
     [Authorize(Policy = "PlatformAdministration")]
     [EnableRateLimiting("GeoAdministration")]
     public async Task<IActionResult> Refresh(Guid id, [FromServices] IRefreshGeoRegionUseCase useCase, CancellationToken cancellationToken, [FromBody] RefreshGeoRegionRequest? request = null)
     {
         var response = await useCase.Execute(id, request ?? new RefreshGeoRegionRequest(), cancellationToken);
+
         return AcceptedAtAction(nameof(GetJob), new { id = response.Id }, Payload(response));
     }
+
     [HttpPost("regions/{id:guid}/refresh-green-areas")]
     [Authorize(Policy = "PlatformAdministration")]
     [EnableRateLimiting("GeoAdministration")]
     public async Task<IActionResult> RefreshGreenAreas(Guid id, [FromServices] IRefreshOpenStreetMapUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.Execute(id, cancellationToken);
+
         return AcceptedAtAction(nameof(GetJob), new { id = response.Id }, Payload(response));
     }
+
     [HttpGet("jobs/{id:guid}")]
     [Authorize(Policy = "PlatformAdministration")]
-    public async Task<IActionResult> GetJob(Guid id, [FromServices] IRefreshGeoRegionUseCase useCase, CancellationToken cancellationToken) =>
-        Ok(Payload(await useCase.GetJob(id, cancellationToken)));
+    public async Task<IActionResult> GetJob(Guid id, [FromServices] IRefreshGeoRegionUseCase useCase, CancellationToken cancellationToken)
+    {
+        var response = await useCase.GetJob(id, cancellationToken);
+
+        return StatusCode(StatusCodes.Status200OK, Payload(response));
+    }
+
     [HttpGet("green-areas")]
-    public async Task<IActionResult> GreenAreas([FromQuery] string bbox, [FromServices] IQueryGreenAreasUseCase useCase, CancellationToken cancellationToken, int page = 1, int pageSize = 20) =>
-        new JsonResult(await useCase.Execute(bbox, page, pageSize, cancellationToken)) { ContentType = "application/geo+json" };
+    public async Task<IActionResult> GreenAreas([FromQuery] string bbox, [FromServices] IQueryGreenAreasUseCase useCase, CancellationToken cancellationToken, int page = 1, int pageSize = 20)
+    {
+        var response = await useCase.Execute(bbox, page, pageSize, cancellationToken);
+
+        return new JsonResult(response)
+        {
+            ContentType = "application/geo+json"
+        };
+    }
+
+    private static PayloadResponse<T> Payload<T>(T data) => new()
+    {
+        Status = nameof(ResponseStatus.Success),
+        Data = data
+    };
 }

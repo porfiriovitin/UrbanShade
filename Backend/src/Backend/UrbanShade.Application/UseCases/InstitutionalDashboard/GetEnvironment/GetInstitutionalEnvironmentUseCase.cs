@@ -12,8 +12,7 @@ public sealed class GetInstitutionalEnvironmentUseCase : IGetInstitutionalEnviro
     private readonly IInstitutionalDashboardRepository _dashboard;
     private readonly ILogger<GetInstitutionalEnvironmentUseCase> _logger;
 
-    public GetInstitutionalEnvironmentUseCase(InstitutionalDashboardQuery query, IInstitutionalDashboardRepository dashboard,
-        ILogger<GetInstitutionalEnvironmentUseCase> logger)
+    public GetInstitutionalEnvironmentUseCase(InstitutionalDashboardQuery query, IInstitutionalDashboardRepository dashboard, ILogger<GetInstitutionalEnvironmentUseCase> logger)
     {
         _query = query;
         _dashboard = dashboard;
@@ -23,22 +22,31 @@ public sealed class GetInstitutionalEnvironmentUseCase : IGetInstitutionalEnviro
     public async Task<InstitutionalEnvironmentResponse> Execute(Guid actorId, InstitutionalDashboardRequest request, CancellationToken cancellationToken = default)
     {
         var timer = Stopwatch.StartNew();
+
         try
         {
-            /// :: Validate filters and authorize the selected institutional scope before reading indicators.
+            /// :: Validate filters and access.
             var query = await _query.Prepare(actorId, request, null, false, cancellationToken);
             var data = await _dashboard.GetEnvironment(query, cancellationToken);
+
             return new InstitutionalEnvironmentResponse
             {
-                TotalAreaSquareMeters = data.TotalAreaSquareMeters, VegetationSampleAreaSquareMeters = data.VegetationSampleAreaSquareMeters,
-                SurfaceSampleAreaSquareMeters = data.SurfaceSampleAreaSquareMeters, AverageVegetationCoveragePercent = data.AverageVegetationCoveragePercent,
-                AverageNdvi = data.AverageNdvi, AverageSurfaceTemperature = data.AverageSurfaceTemperature,
-                MaximumSurfaceTemperature = data.MaximumSurfaceTemperature, AverageSurfaceTemperatureAnomaly = data.AverageSurfaceTemperatureAnomaly,
-                VegetationSampleCount = data.VegetationSampleCount, SurfaceSampleCount = data.SurfaceSampleCount, AnomalySampleCount = data.AnomalySampleCount,
-                LowVegetationRegions = data.LowVegetationRegions, HeatIslandCandidates = data.HeatIslandCandidates,
-                FirstObservationAt = data.FirstObservationAt, LastObservationAt = data.LastObservationAt
+                TotalAreaSquareMeters = data.TotalAreaSquareMeters,
+                VegetationSampleAreaSquareMeters = data.VegetationSampleAreaSquareMeters,
+                SurfaceSampleAreaSquareMeters = data.SurfaceSampleAreaSquareMeters,
+                AverageVegetationCoveragePercent = data.AverageVegetationCoveragePercent,
+                AverageNdvi = data.AverageNdvi,
+                AverageSurfaceTemperature = data.AverageSurfaceTemperature,
+                MaximumSurfaceTemperature = data.MaximumSurfaceTemperature,
+                AverageSurfaceTemperatureAnomaly = data.AverageSurfaceTemperatureAnomaly,
+                VegetationSampleCount = data.VegetationSampleCount,
+                SurfaceSampleCount = data.SurfaceSampleCount,
+                AnomalySampleCount = data.AnomalySampleCount,
+                LowVegetationRegions = data.LowVegetationRegions,
+                HeatIslandCandidates = data.HeatIslandCandidates,
+                FirstObservationAt = data.FirstObservationAt,
+                LastObservationAt = data.LastObservationAt
             };
-
         }
         finally
         {

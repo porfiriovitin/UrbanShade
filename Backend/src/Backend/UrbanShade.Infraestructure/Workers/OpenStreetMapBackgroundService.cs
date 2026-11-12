@@ -27,9 +27,18 @@ public sealed class OpenStreetMapBackgroundService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!_settings.Enabled) return;
+
         var nextSchedule = DateTime.MinValue;
-        try { await Task.Delay(TimeSpan.FromSeconds(10), _time, stoppingToken); }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { return; }
+
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(10), _time, stoppingToken);
+        }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+        {
+            return;
+        }
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -40,17 +49,34 @@ public sealed class OpenStreetMapBackgroundService : BackgroundService
                     var jobs = scope.ServiceProvider.GetRequiredService<IGeoAnalysisJobRepository>();
                     var refresh = scope.ServiceProvider.GetRequiredService<IRefreshOpenStreetMapUseCase>();
                     var regions = await jobs.GetDueRegions(_time.GetUtcNow().UtcDateTime.AddDays(-_settings.RefreshIntervalDays), 10, stoppingToken, GeoJobType.OpenStreetMap);
-                    foreach (var region in regions) await refresh.Execute(region.Id, stoppingToken);
+
+                    foreach (var region in regions)
+                        await refresh.Execute(region.Id, stoppingToken);
+
                     nextSchedule = _time.GetUtcNow().UtcDateTime.AddMinutes(5);
                 }
+
                 await using var importScope = _scopes.CreateAsyncScope();
                 await importScope.ServiceProvider.GetRequiredService<IImportOpenStreetMapUseCase>().Execute(stoppingToken);
             }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
-            catch (Exception exception) { _logger.LogError("OpenStreetMap worker failed with {ExceptionType}", exception.GetType().Name); }
-            /// :: Space public Overpass requests, including when multiple jobs are waiting.
-            try { await Task.Delay(TimeSpan.FromSeconds(10), _time, stoppingToken); }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { break; }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError("OpenStreetMap worker failed with {ExceptionType}", exception.GetType().Name);
+            }
+
+            /// :: Space requests to the public Overpass service.
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(10), _time, stoppingToken);
+            }
+            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
         }
     }
 }

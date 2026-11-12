@@ -9,5 +9,6 @@ namespace UrbanShade.Application.UseCases.GeoRegions.Query;
 public interface IQueryGeoRegionsUseCase
 {
     Task<List<GeoRegionResponse>> GetAll(Guid? cityId, int page, int pageSize, CancellationToken cancellationToken);
+
     Task<GeoRegionResponse> GetById(Guid id, CancellationToken cancellationToken);
 }

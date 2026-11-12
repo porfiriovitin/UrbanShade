@@ -23,9 +23,10 @@ public sealed class GetRegionThermalRankingUseCase : IGetRegionThermalRankingUse
     public async Task<List<RegionThermalAnalysisResponse>> Execute(RegionThermalQueryRequest request, CancellationToken cancellationToken = default)
     {
         RegionThermalQueryValidator.ValidateRequest(request);
+
         ExposureLevel? level = request.ExposureLevel is null ? null : Enum.Parse<ExposureLevel>(request.ExposureLevel);
         var items = await _analyses.GetLatestRegions(null, null, request.MinExposureIndex, level, request.IncludePartial, true, request.Limit, cancellationToken);
+
         return items.Select(item => RegionThermalAnalysisMapper.ToResponse(item.Analysis, item.Region.Name)).ToList();
     }
 }
-

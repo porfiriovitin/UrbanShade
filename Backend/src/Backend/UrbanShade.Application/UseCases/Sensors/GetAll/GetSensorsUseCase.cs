@@ -20,10 +20,11 @@ public sealed class GetSensorsUseCase : IGetSensorsUseCase
     public async Task<List<SensorResponse>> Execute(GetSensorsRequest request, bool isAdministrator, CancellationToken cancellationToken = default)
     {
         Validate(request);
+
         SensorStatus? status = request.Status is null ? null : Enum.Parse<SensorStatus>(request.Status);
         var sensors = await _sensors.GetAll(!isAdministrator, status, request.Code, request.Name, cancellationToken, request.Page, request.PageSize);
 
-        return [.. sensors.Select(GetSensorByIdUseCase.ToResponse)];
+        return[.. sensors.Select(GetSensorByIdUseCase.ToResponse)];
     }
 
     private static void Validate(GetSensorsRequest request)

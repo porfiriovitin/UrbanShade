@@ -23,8 +23,10 @@ public sealed class GetOrganizationsUseCase : IGetOrganizationsUseCase
     public async Task<List<OrganizationResponse>> Execute(Guid actorId, CancellationToken cancellationToken = default)
     {
         var actor = await _access.GetActor(actorId, false, cancellationToken);
-        if (actor.Role == UserRoles.Citizen) return [];
+        if (actor.Role == UserRoles.Citizen) return[];
+
         var organizations = await _organizations.GetAccessible(actorId, actor.Role == UserRoles.PlatformAdministrator, cancellationToken);
+
         return organizations.Select(GetOrganizationByIdUseCase.ToResponse).ToList();
     }
 }

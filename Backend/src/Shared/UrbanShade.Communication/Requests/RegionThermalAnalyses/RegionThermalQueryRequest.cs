@@ -13,4 +13,3 @@ public sealed class RegionThermalQueryRequest
     public string? Bbox { get; set; }
     public string? Ids { get; set; }
 }
-

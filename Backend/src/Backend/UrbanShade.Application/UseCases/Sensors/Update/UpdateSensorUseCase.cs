@@ -24,6 +24,7 @@ public sealed class UpdateSensorUseCase : IUpdateSensorUseCase
     public async Task<SensorResponse> Execute(Guid id, UpdateSensorRequest request, CancellationToken cancellationToken = default)
     {
         Validate(request);
+
         var sensor = await _sensors.FindById(id, cancellationToken);
         if (sensor is null)
             throw new SensorException(ErrorKind.NotFound, "Sensor is unavailable.");
@@ -31,17 +32,14 @@ public sealed class UpdateSensorUseCase : IUpdateSensorUseCase
         var code = request.HasCode ? request.Code!.Trim().ToUpperInvariant() : sensor.Code;
         if (await _sensors.CodeExists(code, id, cancellationToken))
             throw new SensorException(ErrorKind.Conflict, "Sensor code already registered.");
-
         if (request.HasCityId && request.CityId.HasValue && await _cities.FindById(request.CityId.Value, cancellationToken) is null)
             throw new CityException(ErrorKind.NotFound, "City is unavailable.");
 
         /// :: Preserve omitted fields and allow clearing optional values.
-        if (request.HasCityId) sensor.AssignCity(request.CityId);
-        sensor.Update(code, request.HasName ? request.Name! : sensor.Name,
-            request.HasDescription ? request.Description : sensor.Description,
-            request.HasLatitude ? request.Latitude!.Value : sensor.Latitude,
-            request.HasLongitude ? request.Longitude!.Value : sensor.Longitude,
-            request.HasInstalledAt ? request.InstalledAt : sensor.InstalledAt);
+        if (request.HasCityId)
+            sensor.AssignCity(request.CityId);
+
+        sensor.Update(code, request.HasName ? request.Name! : sensor.Name, request.HasDescription ? request.Description : sensor.Description, request.HasLatitude ? request.Latitude!.Value : sensor.Latitude, request.HasLongitude ? request.Longitude!.Value : sensor.Longitude, request.HasInstalledAt ? request.InstalledAt : sensor.InstalledAt);
         await _unitOfWork.SaveChanges(cancellationToken);
 
         return GetSensorByIdUseCase.ToResponse(sensor);

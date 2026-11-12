@@ -5,7 +5,10 @@ namespace UrbanShade.Domain.Entities;
 
 public class SatelliteAnalysis : EntityBase
 {
-    private SatelliteAnalysis() { }
+    private SatelliteAnalysis()
+    {
+    }
+
     public SatelliteAnalysis(GeoAnalysisJob job, GeoAnalysisType type, SatelliteObservation observation)
     {
         GeoRegionId = job.GeoRegionId;
@@ -25,6 +28,7 @@ public class SatelliteAnalysis : EntityBase
         ImageId = observation.ImageId;
         Metadata = observation.Metadata;
     }
+
     public Guid GeoRegionId { get; private set; }
     public Guid GeoAnalysisJobId { get; private set; }
     public int BoundaryVersion { get; private set; }

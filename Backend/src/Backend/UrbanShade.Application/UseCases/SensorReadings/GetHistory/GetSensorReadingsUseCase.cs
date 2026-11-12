@@ -25,7 +25,7 @@ public sealed class GetSensorReadingsUseCase : IGetSensorReadingsUseCase
         if (!result.IsValid)
             throw new SensorException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
 
-        /// :: Deleted sensors remain accessible only through administrative history.
+        /// :: Restrict deleted sensors to administrative history.
         var sensor = await _sensors.FindForReadingHistory(sensorId, cancellationToken);
         if (sensor is null || (!isAdministrator && (!sensor.Active || sensor.DeletedAt.HasValue || sensor.Status != SensorStatus.ACTIVE)))
             throw new SensorException(ErrorKind.NotFound, "Sensor is unavailable.");

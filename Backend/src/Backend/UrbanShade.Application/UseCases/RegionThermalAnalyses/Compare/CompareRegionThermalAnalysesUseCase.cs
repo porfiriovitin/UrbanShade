@@ -22,13 +22,19 @@ public sealed class CompareRegionThermalAnalysesUseCase : ICompareRegionThermalA
     public async Task<RegionThermalComparisonResponse> Execute(RegionThermalQueryRequest request, CancellationToken cancellationToken = default)
     {
         RegionThermalQueryValidator.ValidateRequest(request);
-        var ids = RegionThermalQueryValidator.ReadIds(request.Ids)
-            ?? throw new RegionThermalAnalysisException(ErrorKind.Validation, "Provide between 2 and 20 distinct region IDs.");
+
+        var ids = RegionThermalQueryValidator.ReadIds(request.Ids) ?? throw new RegionThermalAnalysisException(ErrorKind.Validation, "Provide between 2 and 20 distinct region IDs.");
         var items = await _analyses.GetLatestRegions(ids, null, null, null, true, false, 20, cancellationToken);
-        if (items.Count != ids.Count) throw new RegionThermalAnalysisException(ErrorKind.NotFound, "An active region or its current analysis was not found.");
+        if (items.Count != ids.Count)
+            throw new RegionThermalAnalysisException(ErrorKind.NotFound, "An active region or its current analysis was not found.");
+
         var responses = items.Select(item => RegionThermalAnalysisMapper.ToResponse(item.Analysis, item.Region.Name)).ToList();
         var compositions = responses.Select(item => string.Join(",", item.SourceMetadata.GetProperty("scores").EnumerateObject().Select(property => property.Name).Order())).Distinct().Count();
-        return new RegionThermalComparisonResponse { Items = responses, HasComparisonLimitations = compositions > 1 || responses.Any(item => item.DataQuality != "COMPLETE") || responses.Select(item => item.AlgorithmVersion).Distinct().Count() > 1 };
+
+        return new RegionThermalComparisonResponse
+        {
+            Items = responses,
+            HasComparisonLimitations = compositions > 1 || responses.Any(item => item.DataQuality != "COMPLETE") || responses.Select(item => item.AlgorithmVersion).Distinct().Count() > 1
+        };
     }
 }
-

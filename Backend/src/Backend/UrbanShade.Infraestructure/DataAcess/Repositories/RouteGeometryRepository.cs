@@ -34,15 +34,19 @@ internal sealed class RouteGeometryRepository : IRouteGeometryRepository
                 / NULLIF(ST_Length(b.geom::geography),0) * 100 >= {_settings.DuplicateOverlapPercent}
             """).ToListAsync(cancellationToken);
         var selected = new List<int>();
+
         for (var index = 0; index < routes.Count && selected.Count < _settings.MaxAlternativeRoutes; index++)
-            if (!selected.Any(other => pairs.Any(pair => pair.First == other && pair.Second == index))) selected.Add(index);
+            if (!selected.Any(other => pairs.Any(pair => pair.First == other && pair.Second == index)))
+                selected.Add(index);
+
         return selected.Select(index => routes[index]).ToList();
     }
 
     public async Task<IReadOnlyList<RouteThermalSegment>> Analyze(IReadOnlyList<RouteCandidate> routes, CancellationToken cancellationToken)
     {
         var json = Serialize(routes);
-        /// :: Clip each directed edge separately to preserve distance when a route revisits the same street.
+
+        /// :: Clip directed edges separately to preserve repeated traversal.
         var rows = await _context.Database.SqlQuery<SegmentRow>($"""
             WITH routes AS (
                 SELECT (r->>'index')::int AS id, ST_SetSRID(ST_GeomFromGeoJSON(r->'geometry'),4326) AS geom
@@ -81,24 +85,33 @@ internal sealed class RouteGeometryRepository : IRouteGeometryRepository
             ORDER BY p.id,p.edge,p.position
             LIMIT {_settings.MaximumSegments * routes.Count + 1}
             """).ToListAsync(cancellationToken);
-        if (rows.Count > _settings.MaximumSegments * routes.Count) throw new InvalidOperationException("Route segmentation exceeds configured limits.");
-        return rows.Where(row => row.DistanceMeters > 0).Select(row => new RouteThermalSegment(row.RouteIndex, row.EdgeIndex, row.Position,
-            ReadLine(row.Geometry), row.DistanceMeters, row.GeoRegionId, row.AnalysisId, row.ExposureIndex,
-            Parse<ExposureLevel>(row.ExposureLevel), Parse<RegionDataQuality>(row.DataQuality), Parse<ConfidenceLevel>(row.ConfidenceLevel),
-            row.DataOrigin, row.AlgorithmVersion, row.AnalyzedAt, UrbanShade.Domain.RegionThermalAnalysis.AnalysisProvenance.Read(row.SourceMetadata))).ToList();
+        if (rows.Count > _settings.MaximumSegments * routes.Count)
+            throw new InvalidOperationException("Route segmentation exceeds configured limits.");
+
+        return rows.Where(row => row.DistanceMeters > 0).Select(row => new RouteThermalSegment(row.RouteIndex, row.EdgeIndex, row.Position, ReadLine(row.Geometry), row.DistanceMeters, row.GeoRegionId, row.AnalysisId, row.ExposureIndex, Parse<ExposureLevel>(row.ExposureLevel), Parse<RegionDataQuality>(row.DataQuality), Parse<ConfidenceLevel>(row.ConfidenceLevel), row.DataOrigin, row.AlgorithmVersion, row.AnalyzedAt, UrbanShade.Domain.RegionThermalAnalysis.AnalysisProvenance.Read(row.SourceMetadata))).ToList();
     }
 
-    private static T? Parse<T>(string? value) where T : struct, Enum => Enum.TryParse<T>(value, out var parsed) && Enum.IsDefined(parsed) ? parsed : null;
+    private static T? Parse<T>(string? value)
+        where T : struct, Enum => Enum.TryParse<T>(value, out var parsed) && Enum.IsDefined(parsed) ? parsed : null;
 
     private static string Serialize(IReadOnlyList<RouteCandidate> routes) => JsonSerializer.Serialize(routes.Select((route, index) => new
     {
-        index, geometry = new { type = "LineString", coordinates = route.Geometry.Coordinates.Select(point => new[] { point.X, point.Y }) }
+        index,
+        geometry = new
+        {
+            type = "LineString",
+            coordinates = route.Geometry.Coordinates.Select(point => new[] { point.X, point.Y })
+        }
     }));
 
     private static LineString ReadLine(string json)
     {
         using var document = JsonDocument.Parse(json);
-        return new LineString(document.RootElement.GetProperty("coordinates").EnumerateArray().Select(point => new Coordinate(point[0].GetDouble(),point[1].GetDouble())).ToArray()) { SRID = 4326 };
+
+        return new LineString(document.RootElement.GetProperty("coordinates").EnumerateArray().Select(point => new Coordinate(point[0].GetDouble(), point[1].GetDouble())).ToArray())
+        {
+            SRID = 4326
+        };
     }
 
     private sealed class DuplicatePair

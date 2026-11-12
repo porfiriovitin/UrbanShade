@@ -14,17 +14,11 @@ public sealed class RegionThermalAnalysisSettings
 
     public void Validate()
     {
-        if (string.IsNullOrWhiteSpace(AlgorithmVersion) || AlgorithmVersion.Length > 32 || AlgorithmVersion != AlgorithmVersion.Trim() ||
-            RefreshIntervalMinutes is < 1 or > 1440 || Weights is null || RiskThresholds is null || HeatIslandDetection is null || SourceValidity is null || Confidence is null)
+        if (string.IsNullOrWhiteSpace(AlgorithmVersion) || AlgorithmVersion.Length > 32 || AlgorithmVersion != AlgorithmVersion.Trim() || RefreshIntervalMinutes is < 1 or > 1440 || Weights is null || RiskThresholds is null || HeatIslandDetection is null || SourceValidity is null || Confidence is null)
             throw new InvalidOperationException("Invalid regional thermal analysis settings.");
-        if (Weights.Thermal <= 0 || Weights.SurfaceTemperature < 0 || Weights.Vegetation < 0 ||
-            Weights.Thermal + Weights.SurfaceTemperature + Weights.Vegetation != 1 || Weights.SurfaceTemperature + Weights.Vegetation <= 0)
+        if (Weights.Thermal <= 0 || Weights.SurfaceTemperature < 0 || Weights.Vegetation < 0 || Weights.Thermal + Weights.SurfaceTemperature + Weights.Vegetation != 1 || Weights.SurfaceTemperature + Weights.Vegetation <= 0)
             throw new InvalidOperationException("Exposure weights must total 1 and include thermal and environmental contributions.");
-        if (RiskThresholds.Moderate <= 0 || RiskThresholds.Moderate >= RiskThresholds.High || RiskThresholds.High >= RiskThresholds.Critical || RiskThresholds.Critical > 100 ||
-            HeatIslandDetection.MinimumSurfaceAnomaly <= 0 || HeatIslandDetection.MaximumVegetationCoverage is < 0 or > 100 ||
-            SourceValidity.SensorMinutes is < 1 or > 525600 || SourceValidity.WeatherMinutes is < 1 or > 525600 ||
-            SourceValidity.VegetationDays is < 1 or > 3650 || SourceValidity.SurfaceTemperatureDays is < 1 or > 3650 ||
-            Confidence.MinimumSensorsForHigh < 3 || Confidence.MinimumOccupiedQuadrants is < 3 or > 4 || Confidence.MinimumValidPixelPercent is < 90 or > 100)
+        if (RiskThresholds.Moderate <= 0 || RiskThresholds.Moderate >= RiskThresholds.High || RiskThresholds.High >= RiskThresholds.Critical || RiskThresholds.Critical > 100 || HeatIslandDetection.MinimumSurfaceAnomaly <= 0 || HeatIslandDetection.MaximumVegetationCoverage is < 0 or > 100 || SourceValidity.SensorMinutes is < 1 or > 525600 || SourceValidity.WeatherMinutes is < 1 or > 525600 || SourceValidity.VegetationDays is < 1 or > 3650 || SourceValidity.SurfaceTemperatureDays is < 1 or > 3650 || Confidence.MinimumSensorsForHigh < 3 || Confidence.MinimumOccupiedQuadrants is < 3 or > 4 || Confidence.MinimumValidPixelPercent is < 90 or > 100)
             throw new InvalidOperationException("Invalid exposure thresholds, source validity or confidence rules.");
     }
 }

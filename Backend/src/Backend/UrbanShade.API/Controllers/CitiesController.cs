@@ -22,6 +22,7 @@ public sealed class CitiesController : ControllerBase
     public async Task<IActionResult> Register(RegisterCityRequest request, [FromServices] IRegisterCityUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.Execute(request, cancellationToken);
+
         return CreatedAtAction(nameof(GetById), new { id = response.Id }, new PayloadResponse<CityResponse>
         {
             Status = nameof(ResponseStatus.Success),
@@ -33,6 +34,7 @@ public sealed class CitiesController : ControllerBase
     public async Task<IActionResult> GetAll([FromServices] IGetCitiesUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.Execute(cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<List<CityResponse>>
         {
             Status = nameof(ResponseStatus.Success),
@@ -44,6 +46,7 @@ public sealed class CitiesController : ControllerBase
     public async Task<IActionResult> GetById(Guid id, [FromServices] IGetCityByIdUseCase useCase, CancellationToken cancellationToken)
     {
         var response = await useCase.Execute(id, cancellationToken);
+
         return StatusCode(StatusCodes.Status200OK, new PayloadResponse<CityResponse>
         {
             Status = nameof(ResponseStatus.Success),

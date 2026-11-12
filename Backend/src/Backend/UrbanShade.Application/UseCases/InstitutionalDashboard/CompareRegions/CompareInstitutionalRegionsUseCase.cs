@@ -13,8 +13,7 @@ public sealed class CompareInstitutionalRegionsUseCase : ICompareInstitutionalRe
     private readonly IInstitutionalDashboardRepository _dashboard;
     private readonly ILogger<CompareInstitutionalRegionsUseCase> _logger;
 
-    public CompareInstitutionalRegionsUseCase(InstitutionalDashboardQuery query, IInstitutionalDashboardRepository dashboard,
-        ILogger<CompareInstitutionalRegionsUseCase> logger)
+    public CompareInstitutionalRegionsUseCase(InstitutionalDashboardQuery query, IInstitutionalDashboardRepository dashboard, ILogger<CompareInstitutionalRegionsUseCase> logger)
     {
         _query = query;
         _dashboard = dashboard;
@@ -24,15 +23,17 @@ public sealed class CompareInstitutionalRegionsUseCase : ICompareInstitutionalRe
     public async Task<List<InstitutionalRegionResponse>> Execute(Guid actorId, InstitutionalDashboardRequest request, CancellationToken cancellationToken = default)
     {
         var timer = Stopwatch.StartNew();
+
         try
         {
-            /// :: Validate filters and authorize the selected institutional scope before reading indicators.
+            /// :: Validate filters and access.
             var query = await _query.Prepare(actorId, request, null, false, cancellationToken);
             if (query.RegionIds.Length < 2)
                 throw new InstitutionalDashboardException(ErrorKind.Validation, "Provide between two and ten regionIds for comparison.");
-            var data = await _dashboard.GetRegions(query with { Page = 1, PageSize = 10 }, false, cancellationToken);
-            return data.Items.Select(region => _query.ToResponse(region)).ToList();
 
+            var data = await _dashboard.GetRegions(query with { Page = 1, PageSize = 10 }, false, cancellationToken);
+
+            return data.Items.Select(region => _query.ToResponse(region)).ToList();
         }
         finally
         {

@@ -21,9 +21,7 @@ public sealed record WeatherUnits
     public string SolarRadiation { get; init; } = "W/m²";
 }
 
-public sealed record WeatherCurrentResponse(Guid RegionId, string RegionName, string DataStatus, decimal? Temperature, decimal? Humidity,
-    decimal? ApparentTemperature, decimal? WindSpeed, decimal? Precipitation, decimal? CloudCover, int? WeatherCode,
-    DateTime? ObservedAt, DateTime? FetchedAt, double? Latitude, double? Longitude, int? BoundaryVersion)
+public sealed record WeatherCurrentResponse(Guid RegionId, string RegionName, string DataStatus, decimal? Temperature, decimal? Humidity, decimal? ApparentTemperature, decimal? WindSpeed, decimal? Precipitation, decimal? CloudCover, int? WeatherCode, DateTime? ObservedAt, DateTime? FetchedAt, double? Latitude, double? Longitude, int? BoundaryVersion)
 {
     public string Source { get; init; } = "OPEN_METEO";
     public string? Model { get; init; }
@@ -31,16 +29,12 @@ public sealed record WeatherCurrentResponse(Guid RegionId, string RegionName, st
     public WeatherUnits Units { get; init; } = new();
 }
 
-public sealed record WeatherHourlyResponse(DateTime ForecastAt, DateTime FetchedAt, decimal? Temperature, decimal? Humidity,
-    decimal? ApparentTemperature, decimal? PrecipitationProbability, decimal? WindSpeed, decimal? CloudCover, decimal? UvIndex, decimal? SolarRadiation);
-
-public sealed record WeatherForecastResponse(Guid RegionId, string DataStatus, DateTime? FetchedAt, double? Latitude, double? Longitude,
-    int BoundaryVersion, List<WeatherHourlyResponse> Hourly)
+public sealed record WeatherHourlyResponse(DateTime ForecastAt, DateTime FetchedAt, decimal? Temperature, decimal? Humidity, decimal? ApparentTemperature, decimal? PrecipitationProbability, decimal? WindSpeed, decimal? CloudCover, decimal? UvIndex, decimal? SolarRadiation);
+public sealed record WeatherForecastResponse(Guid RegionId, string DataStatus, DateTime? FetchedAt, double? Latitude, double? Longitude, int BoundaryVersion, List<WeatherHourlyResponse> Hourly)
 {
     public string Source { get; init; } = "OPEN_METEO";
     public WeatherAttribution Attribution { get; init; } = new();
     public WeatherUnits Units { get; init; } = new();
 }
 
-public sealed record WeatherOverviewResponse(int TotalRegions, int CurrentRegions, int StaleRegions, int NoDataRegions,
-    decimal? AverageTemperature, decimal? AverageHumidity, decimal? AverageApparentTemperature, List<WeatherCurrentResponse> Regions);
+public sealed record WeatherOverviewResponse(int TotalRegions, int CurrentRegions, int StaleRegions, int NoDataRegions, decimal? AverageTemperature, decimal? AverageHumidity, decimal? AverageApparentTemperature, List<WeatherCurrentResponse> Regions);

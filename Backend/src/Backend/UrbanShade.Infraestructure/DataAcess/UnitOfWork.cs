@@ -26,6 +26,7 @@ internal sealed class UnitOfWork : IUnitOfWork
         }
 
         public Task Commit(CancellationToken cancellationToken) => _transaction.CommitAsync(cancellationToken);
+
         public ValueTask DisposeAsync() => _transaction.DisposeAsync();
     }
 }

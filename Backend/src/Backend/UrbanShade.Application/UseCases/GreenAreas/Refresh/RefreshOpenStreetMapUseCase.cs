@@ -26,13 +26,17 @@ public sealed class RefreshOpenStreetMapUseCase : IRefreshOpenStreetMapUseCase
 
     public async Task<GeoJobResponse> Execute(Guid regionId, CancellationToken cancellationToken)
     {
-        if (!_settings.Enabled) throw new GeoException(ErrorKind.Unavailable, "OpenStreetMap import is disabled.");
+        if (!_settings.Enabled)
+            throw new GeoException(ErrorKind.Unavailable, "OpenStreetMap import is disabled.");
+
         var region = await _regions.FindById(regionId, cancellationToken) ?? throw new GeoException(ErrorKind.NotFound, "Region not found.");
         if (region.Boundary.EnvelopeInternal.Width > 1 || region.Boundary.EnvelopeInternal.Height > 1)
             throw new GeoException(ErrorKind.Validation, "OpenStreetMap import supports regions within one degree per axis.");
-        /// :: Repeated requests on the same UTC day reuse one import, independently of satellite credentials.
+
+        /// :: Reuse daily imports without satellite credentials.
         var day = _time.GetUtcNow().UtcDateTime.Date;
         var job = new GeoAnalysisJob(region, day, day.AddDays(1), "osm-v1", JsonSerializer.Serialize(_settings.Parameters()), GeoJobType.OpenStreetMap);
+
         return RefreshGeoRegionUseCase.ToResponse(await _jobs.Enqueue(job, cancellationToken));
     }
 }

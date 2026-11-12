@@ -24,6 +24,7 @@ public sealed class ThermalAnalysisSettings
         if (heatIndex >= RiskThresholds.Critical) return ThermalRiskLevel.CRITICAL;
         if (heatIndex >= RiskThresholds.High) return ThermalRiskLevel.HIGH;
         if (heatIndex >= RiskThresholds.Moderate) return ThermalRiskLevel.MODERATE;
+
         return ThermalRiskLevel.LOW;
     }
 }

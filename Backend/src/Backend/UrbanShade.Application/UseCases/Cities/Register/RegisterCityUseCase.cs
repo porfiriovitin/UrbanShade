@@ -29,6 +29,7 @@ public sealed class RegisterCityUseCase : IRegisterCityUseCase
         var city = new City(request.Name, request.State, request.IbgeCode);
         _cities.Add(city);
         await _unitOfWork.SaveChanges(cancellationToken);
+
         return GetCityByIdUseCase.ToResponse(city);
     }
 }

@@ -32,17 +32,19 @@ public sealed class GetThermalMapUseCase : IGetThermalMapUseCase
     {
         if (organizationId.HasValue)
         {
-            if (!actorId.HasValue) throw new OrganizationException(ErrorKind.Unauthenticated, "An authenticated account is required.");
+            if (!actorId.HasValue)
+                throw new OrganizationException(ErrorKind.Unauthenticated, "An authenticated account is required.");
+
             await _access.Require(organizationId.Value, actorId.Value, cancellationToken);
         }
+
         if (cityId.HasValue && await _cities.FindById(cityId.Value, cancellationToken) is null)
             throw new CityException(ErrorKind.NotFound, "City is unavailable.");
 
         var sensors = await _sensors.GetActiveForThermalMap(cityId, organizationId, cancellationToken);
         if (sensors.Count == 0) return new ThermalMapResponse();
 
-        var analyses = (await _analyses.GetLatestBySensors(sensors.Select(sensor => sensor.Id).ToList(), _settings.AlgorithmVersion, cancellationToken))
-            .ToDictionary(item => item.Reading.SensorId);
+        var analyses = (await _analyses.GetLatestBySensors(sensors.Select(sensor => sensor.Id).ToList(), _settings.AlgorithmVersion, cancellationToken)).ToDictionary(item => item.Reading.SensorId);
         var now = _time.GetUtcNow().UtcDateTime;
 
         return new ThermalMapResponse
@@ -50,25 +52,26 @@ public sealed class GetThermalMapUseCase : IGetThermalMapUseCase
             Sensors = sensors.Select(sensor =>
             {
                 var response = GetLatestThermalAnalysisUseCase.ToResponse(sensor.Id, analyses.TryGetValue(sensor.Id, out var item) ? item : null, now, _settings);
+
                 return new ThermalMapSensorResponse
-                {
-                    Id = response.Id,
-                    SensorId = sensor.Id,
-                    CityId = sensor.CityId,
-                    OrganizationId = sensor.OrganizationId,
-                    SensorName = sensor.Name,
-                    Latitude = sensor.Latitude,
-                    Longitude = sensor.Longitude,
-                    SensorReadingId = response.SensorReadingId,
-                    Temperature = response.Temperature,
-                    Humidity = response.Humidity,
-                    HeatIndex = response.HeatIndex,
-                    RiskLevel = response.RiskLevel,
-                    AlgorithmVersion = response.AlgorithmVersion,
-                    MeasuredAt = response.MeasuredAt,
-                    AnalyzedAt = response.AnalyzedAt,
-                    DataStatus = response.DataStatus
-                };
+            {
+                Id = response.Id,
+                SensorId = sensor.Id,
+                CityId = sensor.CityId,
+                OrganizationId = sensor.OrganizationId,
+                SensorName = sensor.Name,
+                Latitude = sensor.Latitude,
+                Longitude = sensor.Longitude,
+                SensorReadingId = response.SensorReadingId,
+                Temperature = response.Temperature,
+                Humidity = response.Humidity,
+                HeatIndex = response.HeatIndex,
+                RiskLevel = response.RiskLevel,
+                AlgorithmVersion = response.AlgorithmVersion,
+                MeasuredAt = response.MeasuredAt,
+                AnalyzedAt = response.AnalyzedAt,
+                DataStatus = response.DataStatus
+            };
             }).OrderBy(sensor => sensor.SensorName).ThenBy(sensor => sensor.SensorId).ToList()
         };
     }

@@ -7,4 +7,7 @@ using UrbanShade.Domain.Repositories;
 
 namespace UrbanShade.Application.UseCases.GeoAnalysisJobs.ProcessPending;
 
-public interface IProcessPendingGeoAnalysesUseCase { Task<bool> Execute(CancellationToken cancellationToken); }
+public interface IProcessPendingGeoAnalysesUseCase
+{
+    Task<bool> Execute(CancellationToken cancellationToken);
+}

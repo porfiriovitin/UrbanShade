@@ -4,10 +4,15 @@ namespace UrbanShade.Domain.Entities;
 
 public sealed class WeatherSnapshot : EntityBase
 {
-    private WeatherSnapshot() { }
+    private WeatherSnapshot()
+    {
+    }
+
     public WeatherSnapshot(Guid geoRegionId, int boundaryVersion, double latitude, double longitude, WeatherObservation observation)
     {
-        if (string.IsNullOrWhiteSpace(observation.Source) || observation.Source.Length > 32) throw new ArgumentException("A weather source is required.");
+        if (string.IsNullOrWhiteSpace(observation.Source) || observation.Source.Length > 32)
+            throw new ArgumentException("A weather source is required.");
+
         Source = observation.Source;
         GeoRegionId = geoRegionId;
         BoundaryVersion = boundaryVersion;
@@ -23,6 +28,7 @@ public sealed class WeatherSnapshot : EntityBase
         ObservedAt = observation.ObservedAt;
         FetchedAt = observation.FetchedAt;
     }
+
     public Guid GeoRegionId { get; private set; }
     public int BoundaryVersion { get; private set; }
     public double Latitude { get; private set; }

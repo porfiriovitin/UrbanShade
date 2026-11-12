@@ -13,6 +13,10 @@ public sealed class GetCitiesUseCase : IGetCitiesUseCase
         _cities = cities;
     }
 
-    public async Task<List<CityResponse>> Execute(CancellationToken cancellationToken = default) =>
-        (await _cities.GetAll(cancellationToken)).Select(GetCityByIdUseCase.ToResponse).ToList();
+    public async Task<List<CityResponse>> Execute(CancellationToken cancellationToken = default)
+    {
+        var cities = await _cities.GetAll(cancellationToken);
+
+        return (cities).Select(GetCityByIdUseCase.ToResponse).ToList();
+    }
 }

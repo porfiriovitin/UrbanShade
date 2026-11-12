@@ -11,5 +11,6 @@ namespace UrbanShade.Application.UseCases.GeoRegions.Update;
 public interface IUpdateGeoRegionUseCase
 {
     Task<GeoRegionResponse> Execute(Guid id, UpdateGeoRegionRequest request, CancellationToken cancellationToken);
+
     Task Deactivate(Guid id, CancellationToken cancellationToken);
 }

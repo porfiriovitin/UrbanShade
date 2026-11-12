@@ -159,6 +159,7 @@ public sealed class SensorsController : ControllerBase
     public async Task<IActionResult> Delete(Guid id, [FromServices] IDeleteSensorUseCase useCase, CancellationToken cancellationToken)
     {
         await useCase.Execute(id, cancellationToken);
+
         return NoContent();
     }
 }

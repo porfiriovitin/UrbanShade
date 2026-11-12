@@ -16,15 +16,12 @@ public sealed class GeoAnalysisSettings
     public double MinimumGreenAreaSquareMeters { get; set; } = 500;
     public int MaximumGreenAreas { get; set; } = 200;
     public string AlgorithmVersion { get; set; } = "geo-v1";
+
     public GeoProcessingParameters Parameters() => new(VegetationNdviThreshold, MinimumValidPixelPercent, MaxCloudProbability, MinimumGreenAreaSquareMeters, MaximumGreenAreas);
+
     public void Validate()
     {
-        if (RefreshIntervalDays < 1 || ObservationWindowDays < 1 || MaximumPeriodDays < ObservationWindowDays || MaximumPeriodDays > 3660 ||
-            MaximumVertices < 4 || MaximumRegionAreaSquareMeters <= 0 || OutdatedAfterDays < 1 ||
-            !double.IsFinite(VegetationNdviThreshold) || VegetationNdviThreshold is < -1 or > 1 ||
-            !double.IsFinite(MinimumValidPixelPercent) || MinimumValidPixelPercent is <= 0 or > 100 ||
-            MaxCloudProbability is < 0 or > 100 || MinimumGreenAreaSquareMeters <= 0 || MaximumGreenAreas is < 1 or > 1000 ||
-            string.IsNullOrWhiteSpace(AlgorithmVersion) || AlgorithmVersion.Length > 32)
+        if (RefreshIntervalDays < 1 || ObservationWindowDays < 1 || MaximumPeriodDays < ObservationWindowDays || MaximumPeriodDays > 3660 || MaximumVertices < 4 || MaximumRegionAreaSquareMeters <= 0 || OutdatedAfterDays < 1 || !double.IsFinite(VegetationNdviThreshold) || VegetationNdviThreshold is < -1 or > 1 || !double.IsFinite(MinimumValidPixelPercent) || MinimumValidPixelPercent is <= 0 or > 100 || MaxCloudProbability is < 0 or > 100 || MinimumGreenAreaSquareMeters <= 0 || MaximumGreenAreas is < 1 or > 1000 || string.IsNullOrWhiteSpace(AlgorithmVersion) || AlgorithmVersion.Length > 32)
             throw new InvalidOperationException("Invalid geospatial processing settings.");
     }
 }

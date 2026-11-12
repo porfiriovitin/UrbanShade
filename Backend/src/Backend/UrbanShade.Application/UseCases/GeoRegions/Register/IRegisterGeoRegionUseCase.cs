@@ -8,4 +8,7 @@ using UrbanShade.Exceptions;
 
 namespace UrbanShade.Application.UseCases.GeoRegions.Register;
 
-public interface IRegisterGeoRegionUseCase { Task<GeoRegionResponse> Execute(RegisterGeoRegionRequest request, CancellationToken cancellationToken); }
+public interface IRegisterGeoRegionUseCase
+{
+    Task<GeoRegionResponse> Execute(RegisterGeoRegionRequest request, CancellationToken cancellationToken);
+}

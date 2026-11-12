@@ -1,3 +1,7 @@
 namespace UrbanShade.Domain.Enums;
 
-public enum GeoJobType { Satellite, OpenStreetMap }
+public enum GeoJobType
+{
+    Satellite,
+    OpenStreetMap
+}

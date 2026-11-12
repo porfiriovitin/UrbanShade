@@ -21,7 +21,7 @@ public sealed class SensorReadingGenerator
         var temperature = Next(previous?.Temperature, _settings.MinTemperature, _settings.MaxTemperature, _settings.MaxTemperatureVariation);
         var humidity = Next(previous?.Humidity, _settings.MinHumidity, _settings.MaxHumidity, _settings.MaxHumidityVariation);
 
-        /// :: Validate the generated values before they reach persistence.
+        /// :: Validate readings before saving.
         if (temperature < _settings.MinTemperature || temperature > _settings.MaxTemperature || humidity < _settings.MinHumidity || humidity > _settings.MaxHumidity)
             throw new InvalidOperationException("Generated reading is outside the configured limits.");
 
@@ -30,7 +30,7 @@ public sealed class SensorReadingGenerator
 
     private decimal Next(decimal? previous, decimal minimum, decimal maximum, decimal variation)
     {
-        /// :: Rebase readings when simulation limits change between application starts.
+        /// :: Rebase readings when simulation limits change.
         if (previous.HasValue)
         {
             var baseline = Math.Clamp(previous.Value, minimum, maximum);

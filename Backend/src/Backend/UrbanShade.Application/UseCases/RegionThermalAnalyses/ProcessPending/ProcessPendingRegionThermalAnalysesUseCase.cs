@@ -26,10 +26,12 @@ public sealed class ProcessPendingRegionThermalAnalysesUseCase : IProcessPending
     public async Task Execute(CancellationToken cancellationToken = default)
     {
         Guid? after = null;
+
         while (!cancellationToken.IsCancellationRequested)
         {
             var ids = await _analyses.GetActiveRegionIds(after, 100, cancellationToken);
             if (ids.Count == 0) return;
+
             foreach (var id in ids)
             {
                 try
@@ -37,9 +39,16 @@ public sealed class ProcessPendingRegionThermalAnalysesUseCase : IProcessPending
                     await using var scope = _scopes.CreateAsyncScope();
                     await scope.ServiceProvider.GetRequiredService<IAnalyzeRegionThermalUseCase>().Execute(id, cancellationToken);
                 }
-                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
-                catch (Exception exception) { _logger.LogError(exception, "Regional thermal analysis failed for {RegionId}; continuing with other regions", id); }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception exception)
+                {
+                    _logger.LogError(exception, "Regional thermal analysis failed for {RegionId}; continuing with other regions", id);
+                }
             }
+
             after = ids[^1];
         }
     }

@@ -1,3 +1,7 @@
 namespace UrbanShade.Domain.Enums;
 
-public enum GeoAnalysisType { Vegetation, SurfaceTemperature }
+public enum GeoAnalysisType
+{
+    Vegetation,
+    SurfaceTemperature
+}

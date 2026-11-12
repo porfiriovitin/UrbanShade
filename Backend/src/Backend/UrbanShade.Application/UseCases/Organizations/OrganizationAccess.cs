@@ -18,12 +18,13 @@ public sealed class OrganizationAccess
 
     public async Task<User> GetActor(Guid userId, bool administratorOnly, CancellationToken cancellationToken)
     {
-        /// :: Claims provide context; current database permissions authorize institutional operations.
+        /// :: Authorize against current database permissions.
         var user = await _users.FindById(userId, cancellationToken);
         if (user is null || !user.Active || user.MustChangePassword)
             throw new OrganizationException(ErrorKind.Unauthenticated, "Account is unavailable.");
         if (administratorOnly && user.Role != UserRoles.PlatformAdministrator)
             throw new OrganizationException(ErrorKind.Forbidden, "Platform administration is required.");
+
         return user;
     }
 
@@ -33,13 +34,13 @@ public sealed class OrganizationAccess
         var organization = await _organizations.FindById(organizationId, cancellationToken);
         if (organization is null)
             throw new OrganizationException(ErrorKind.NotFound, "Organization is unavailable.");
-
         if (user.Role != UserRoles.PlatformAdministrator)
         {
             var member = await _organizations.FindMember(organizationId, userId, cancellationToken);
             if (user.Role != UserRoles.Manager || !organization.Active || member is null || !member.Active)
                 throw new OrganizationException(ErrorKind.NotFound, "Organization is unavailable.");
         }
+
         return organization;
     }
 }

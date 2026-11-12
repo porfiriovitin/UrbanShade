@@ -5,7 +5,10 @@ namespace UrbanShade.Domain.Entities;
 
 public class GeoAnalysisJob : EntityBase
 {
-    private GeoAnalysisJob() { }
+    private GeoAnalysisJob()
+    {
+    }
+
     public GeoAnalysisJob(GeoRegion region, DateTime start, DateTime end, string algorithmVersion, string parameters, GeoJobType jobType = GeoJobType.Satellite)
     {
         JobType = jobType;
@@ -17,8 +20,10 @@ public class GeoAnalysisJob : EntityBase
         AlgorithmVersion = algorithmVersion;
         Parameters = parameters;
     }
+
     public GeoJobType JobType { get; private set; }
     public Guid GeoRegionId { get; private set; }
+
     private Geometry _boundary = null!;
     public Geometry Boundary { get => (Geometry)_boundary.Copy(); private set => _boundary = (Geometry)value.Copy(); }
     public int BoundaryVersion { get; private set; }
@@ -34,6 +39,7 @@ public class GeoAnalysisJob : EntityBase
     public int Attempts { get; private set; }
     public string? ErrorMessage { get; private set; }
     public string? ResultSummary { get; private set; }
+
     public void Complete(string summary)
     {
         Status = GeoJobStatus.Completed;
@@ -42,6 +48,7 @@ public class GeoAnalysisJob : EntityBase
         ResultSummary = summary;
         ErrorMessage = null;
     }
+
     public void Fail(string message)
     {
         Status = GeoJobStatus.Failed;
@@ -49,6 +56,7 @@ public class GeoAnalysisJob : EntityBase
         LeaseExpiresAt = null;
         ErrorMessage = message;
     }
+
     public void Retry()
     {
         Status = GeoJobStatus.Pending;

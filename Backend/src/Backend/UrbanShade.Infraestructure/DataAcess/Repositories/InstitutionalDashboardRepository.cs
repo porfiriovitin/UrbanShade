@@ -23,9 +23,7 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
     private readonly TimeProvider _time;
     private readonly ILogger<InstitutionalDashboardRepository> _logger;
 
-    public InstitutionalDashboardRepository(UrbanShadeDbContext context, RegionThermalAnalysisSettings regional,
-        ThermalAnalysisSettings thermal, GeoAnalysisSettings geo, InstitutionalDashboardSettings settings, InstitutionalDashboardCache cache,
-        TimeProvider time, ILogger<InstitutionalDashboardRepository> logger)
+    public InstitutionalDashboardRepository(UrbanShadeDbContext context, RegionThermalAnalysisSettings regional, ThermalAnalysisSettings thermal, GeoAnalysisSettings geo, InstitutionalDashboardSettings settings, InstitutionalDashboardCache cache, TimeProvider time, ILogger<InstitutionalDashboardRepository> logger)
     {
         _context = context;
         _regional = regional;
@@ -37,7 +35,7 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
         _logger = logger;
     }
 
-    /// :: Every query checks live membership in SQL, including requests served from cache.
+    /// :: Check live membership before serving cached results.
     private const string Scope = """
         WITH scoped_regions AS (
             SELECT r.* FROM "GeoRegions" r
@@ -53,7 +51,6 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
             AND (@west IS NULL OR r."Boundary" && ST_MakeEnvelope(@west, @south, @east, @north, 4326))
         )
         """;
-
     private static readonly string Regions = """
         , region_sources AS (
             SELECT r.*, a."Id" AS analysis_id, a."ExposureIndex", a."ExposureLevel", a."DataQuality", a."DataOrigin",
@@ -85,7 +82,6 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
             FROM region_sources s
         )
         """.Replace("__ELIGIBILITY__", AnalysisEligibilitySql.Predicate("s"));
-
     private const string Sensors = """
         , selected_sensors AS (
             SELECT s.* FROM "Sensors" s WHERE s."OrganizationId" = @organization AND s."DeletedAt" IS NULL
@@ -102,41 +98,49 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
         )
         """;
 
-    private object[] Parameters(InstitutionalQuery query) =>
-    [
-        new NpgsqlParameter("enabled", _regional.Enabled),
-        new NpgsqlParameter("policyWeights", NpgsqlDbType.Jsonb) { Value = JsonSerializer.Serialize(_regional.Weights) },
-        new NpgsqlParameter("policyThresholds", NpgsqlDbType.Jsonb) { Value = JsonSerializer.Serialize(_regional.RiskThresholds) },
-        new NpgsqlParameter("organization", query.OrganizationId), new NpgsqlParameter("actor", query.ActorId),
-        new NpgsqlParameter("region", NpgsqlDbType.Uuid) { Value = (object?)query.RegionId ?? DBNull.Value },
-        new NpgsqlParameter("ids", NpgsqlDbType.Array | NpgsqlDbType.Uuid) { Value = query.RegionIds },
-        new NpgsqlParameter("start", NpgsqlDbType.TimestampTz) { Value = (object?)query.StartDate ?? DBNull.Value },
-        new NpgsqlParameter("end", NpgsqlDbType.TimestampTz) { Value = (object?)query.EndDate ?? DBNull.Value },
-        new NpgsqlParameter("now", _time.GetUtcNow().UtcDateTime),
-        new NpgsqlParameter("algorithm", _regional.AlgorithmVersion), new NpgsqlParameter("thermalAlgorithm", _thermal.AlgorithmVersion),
-        new NpgsqlParameter("sensorMinutes", Math.Min(_regional.SourceValidity.SensorMinutes, _thermal.StaleDataThresholdMinutes)),
-        new NpgsqlParameter("weatherMinutes", _regional.SourceValidity.WeatherMinutes),
-        new NpgsqlParameter("vegetationDays", _regional.SourceValidity.VegetationDays), new NpgsqlParameter("surfaceDays", _regional.SourceValidity.SurfaceTemperatureDays),
-        new NpgsqlParameter("west", NpgsqlDbType.Double) { Value = (object?)query.Bounds?.ElementAt(0) ?? DBNull.Value },
-        new NpgsqlParameter("south", NpgsqlDbType.Double) { Value = (object?)query.Bounds?.ElementAt(1) ?? DBNull.Value },
-        new NpgsqlParameter("east", NpgsqlDbType.Double) { Value = (object?)query.Bounds?.ElementAt(2) ?? DBNull.Value },
-        new NpgsqlParameter("north", NpgsqlDbType.Double) { Value = (object?)query.Bounds?.ElementAt(3) ?? DBNull.Value },
-        new NpgsqlParameter("level", NpgsqlDbType.Text) { Value = (object?)query.ExposureLevel ?? DBNull.Value },
-        new NpgsqlParameter("minimum", NpgsqlDbType.Numeric) { Value = (object?)query.MinExposureIndex ?? DBNull.Value },
-        new NpgsqlParameter("take", query.PageSize), new NpgsqlParameter("skip", (query.Page - 1) * query.PageSize),
-        new NpgsqlParameter("limit", query.Limit), new NpgsqlParameter("zone", query.TimeZoneId),
-        new NpgsqlParameter("interval", query.Interval.ToLowerInvariant()),
-        new NpgsqlParameter("satelliteType", query.Metric == "VEGETATION_COVERAGE" ? "Vegetation" : "SurfaceTemperature"),
-        new NpgsqlParameter("maxExport", _settings.MaxExportRows + 1), new NpgsqlParameter("maxFeatures", _settings.MaxMapFeatures + 1),
-        new NpgsqlParameter("lowVegetation", _settings.LowVegetationCoveragePercent),
-        new NpgsqlParameter("minimumPixels", (decimal)_geo.MinimumValidPixelPercent),
-        new NpgsqlParameter("geoAlgorithm", _geo.AlgorithmVersion)
-    ];
+    private object[] Parameters(InstitutionalQuery query) => [new NpgsqlParameter("enabled", _regional.Enabled), new NpgsqlParameter("policyWeights", NpgsqlDbType.Jsonb)
+    {
+        Value = JsonSerializer.Serialize(_regional.Weights)
+    }, new NpgsqlParameter("policyThresholds", NpgsqlDbType.Jsonb)
+    {
+        Value = JsonSerializer.Serialize(_regional.RiskThresholds)
+    }, new NpgsqlParameter("organization", query.OrganizationId), new NpgsqlParameter("actor", query.ActorId), new NpgsqlParameter("region", NpgsqlDbType.Uuid)
+    {
+        Value = (object?)query.RegionId ?? DBNull.Value
+    }, new NpgsqlParameter("ids", NpgsqlDbType.Array | NpgsqlDbType.Uuid)
+    {
+        Value = query.RegionIds
+    }, new NpgsqlParameter("start", NpgsqlDbType.TimestampTz)
+    {
+        Value = (object?)query.StartDate ?? DBNull.Value
+    }, new NpgsqlParameter("end", NpgsqlDbType.TimestampTz)
+    {
+        Value = (object?)query.EndDate ?? DBNull.Value
+    }, new NpgsqlParameter("now", _time.GetUtcNow().UtcDateTime), new NpgsqlParameter("algorithm", _regional.AlgorithmVersion), new NpgsqlParameter("thermalAlgorithm", _thermal.AlgorithmVersion), new NpgsqlParameter("sensorMinutes", Math.Min(_regional.SourceValidity.SensorMinutes, _thermal.StaleDataThresholdMinutes)), new NpgsqlParameter("weatherMinutes", _regional.SourceValidity.WeatherMinutes), new NpgsqlParameter("vegetationDays", _regional.SourceValidity.VegetationDays), new NpgsqlParameter("surfaceDays", _regional.SourceValidity.SurfaceTemperatureDays), new NpgsqlParameter("west", NpgsqlDbType.Double)
+    {
+        Value = (object?)query.Bounds?.ElementAt(0) ?? DBNull.Value
+    }, new NpgsqlParameter("south", NpgsqlDbType.Double)
+    {
+        Value = (object?)query.Bounds?.ElementAt(1) ?? DBNull.Value
+    }, new NpgsqlParameter("east", NpgsqlDbType.Double)
+    {
+        Value = (object?)query.Bounds?.ElementAt(2) ?? DBNull.Value
+    }, new NpgsqlParameter("north", NpgsqlDbType.Double)
+    {
+        Value = (object?)query.Bounds?.ElementAt(3) ?? DBNull.Value
+    }, new NpgsqlParameter("level", NpgsqlDbType.Text)
+    {
+        Value = (object?)query.ExposureLevel ?? DBNull.Value
+    }, new NpgsqlParameter("minimum", NpgsqlDbType.Numeric)
+    {
+        Value = (object?)query.MinExposureIndex ?? DBNull.Value
+    }, new NpgsqlParameter("take", query.PageSize), new NpgsqlParameter("skip", (query.Page - 1) * query.PageSize), new NpgsqlParameter("limit", query.Limit), new NpgsqlParameter("zone", query.TimeZoneId), new NpgsqlParameter("interval", query.Interval.ToLowerInvariant()), new NpgsqlParameter("satelliteType", query.Metric == "VEGETATION_COVERAGE" ? "Vegetation" : "SurfaceTemperature"), new NpgsqlParameter("maxExport", _settings.MaxExportRows + 1), new NpgsqlParameter("maxFeatures", _settings.MaxMapFeatures + 1), new NpgsqlParameter("lowVegetation", _settings.LowVegetationCoveragePercent), new NpgsqlParameter("minimumPixels", (decimal)_geo.MinimumValidPixelPercent), new NpgsqlParameter("geoAlgorithm", _geo.AlgorithmVersion)];
 
     private Task<List<T>> Query<T>(InstitutionalQuery query, string sql, CancellationToken cancellationToken)
     {
-        /// :: SQL fragments are fixed in this repository; all caller values use named parameters.
+        /// :: Use fixed SQL and named parameters.
         var commandText = string.Concat(Scope, sql).Replace("{", "{{").Replace("}", "}}");
+
         return _context.Database.SqlQueryRaw<T>(commandText, Parameters(query)).ToListAsync(cancellationToken);
     }
 
@@ -145,29 +149,32 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
         var values = await Query<string>(query, """
             SELECT COALESCE(string_agg(r."Id"::text || ':' || r."BoundaryVersion"::text || ':' || COALESCE(ref."Id"::text,'') || ':' || COALESCE(ref."BoundaryVersion"::text,'') || ':' || COALESCE(ref."Active"::text,''), ',' ORDER BY r."Id"), '') AS "Value" FROM selected_regions r LEFT JOIN "GeoRegions" ref ON ref."Id" = r."ReferenceGeoRegionId"
             """, cancellationToken);
+
         return values.Single();
     }
 
-    private async Task<T> Cached<T>(InstitutionalQuery query, string operation, int minutes, Func<Task<T>> load,
-        Func<T, DateTime?> validUntil, CancellationToken cancellationToken)
+    private async Task<T> Cached<T>(InstitutionalQuery query, string operation, int minutes, Func<Task<T>> load, Func<T, DateTime?> validUntil, CancellationToken cancellationToken)
     {
         var scope = await GetScopeVersion(query, cancellationToken);
         var key = $"institutional:{operation}:{JsonSerializer.Serialize(query)}:{scope}:{JsonSerializer.Serialize(_regional)}:{JsonSerializer.Serialize(_geo)}:{_thermal.AlgorithmVersion}:{_thermal.StaleDataThresholdMinutes}";
         if (_cache.TryGetValue<T>(key, out var cached) && (validUntil(cached!) is not { } deadlineAtRead || deadlineAtRead > _time.GetUtcNow().UtcDateTime))
         {
             _logger.LogInformation("Institutional cache hit for {Operation}, organization {OrganizationId}", operation, query.OrganizationId);
+
             return cached!;
         }
+
         var result = await load();
         var expires = _time.GetUtcNow().AddMinutes(minutes);
         if (validUntil(result) is { } deadline && deadline > _time.GetUtcNow().UtcDateTime && deadline < expires.UtcDateTime)
             expires = new DateTimeOffset(deadline);
+
         _cache.Set(key, result, expires);
+
         return result;
     }
 
-    public Task<InstitutionalOverviewData> GetOverview(InstitutionalQuery query, CancellationToken cancellationToken) =>
-        Cached(query, "overview", Math.Min(_settings.OverviewCacheMinutes, _settings.DistributionCacheMinutes), async () => (await Query<InstitutionalOverviewData>(query, Regions + """
+    public Task<InstitutionalOverviewData> GetOverview(InstitutionalQuery query, CancellationToken cancellationToken) => Cached(query, "overview", Math.Min(_settings.OverviewCacheMinutes, _settings.DistributionCacheMinutes), async () => (await Query<InstitutionalOverviewData>(query, Regions + """
             SELECT count(*)::int AS "TotalRegions", count(*) FILTER (WHERE current)::int AS "RegionsWithValidAnalysis",
                 count(*) FILTER (WHERE analysis_id IS NOT NULL AND (expires <= @now OR "AlgorithmVersion" <> @algorithm))::int AS "StaleRegions",
                 count(*) FILTER (WHERE current AND "ExposureLevel" = 'LOW')::int AS "Low",
@@ -182,8 +189,7 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
                 min(expires) FILTER (WHERE current) AS "ValidUntil" FROM region_current
             """, cancellationToken)).Single(), data => data.ValidUntil, cancellationToken);
 
-    public Task<InstitutionalSensorData> GetSensorsOverview(InstitutionalQuery query, CancellationToken cancellationToken) =>
-        Cached(query, "sensors", _settings.OverviewCacheMinutes, async () => (await Query<InstitutionalSensorData>(query, Sensors + """
+    public Task<InstitutionalSensorData> GetSensorsOverview(InstitutionalQuery query, CancellationToken cancellationToken) => Cached(query, "sensors", _settings.OverviewCacheMinutes, async () => (await Query<InstitutionalSensorData>(query, Sensors + """
             SELECT count(*)::int AS "TotalSensors", count(*) FILTER (WHERE "Status" = 'ACTIVE')::int AS "ActiveSensors",
                 count(*) FILTER (WHERE "Status" = 'INACTIVE')::int AS "InactiveSensors",
                 count(*) FILTER (WHERE "Status" = 'MAINTENANCE')::int AS "MaintenanceSensors",
@@ -215,8 +221,8 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
     public Task<(List<InstitutionalRegionData> Items, int Total)> GetRegions(InstitutionalQuery query, bool ranking, CancellationToken cancellationToken)
     {
         if (!ranking) return GetRegionRows(query, false, cancellationToken);
-        return Cached(query, "ranking", _settings.RankingCacheMinutes, () => GetRegionRows(query, true, cancellationToken),
-            data => data.Items.Select(item => item.ValidUntil).Min(), cancellationToken);
+
+        return Cached(query, "ranking", _settings.RankingCacheMinutes, () => GetRegionRows(query, true, cancellationToken), data => data.Items.Select(item => item.ValidUntil).Min(), cancellationToken);
     }
 
     private async Task<(List<InstitutionalRegionData> Items, int Total)> GetRegionRows(InstitutionalQuery query, bool ranking, CancellationToken cancellationToken)
@@ -225,11 +231,11 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
         var total = (await Query<int>(query, Regions + "SELECT count(*)::int AS \"Value\" FROM (" + RegionProjection + filter + ") rows", cancellationToken)).Single();
         var order = ranking ? (query.Sort == "ASC" ? " ORDER BY \"ExposureIndex\", \"Id\"" : " ORDER BY \"ExposureIndex\" DESC, \"Id\"") : " ORDER BY \"Name\", \"Id\"";
         var items = await Query<InstitutionalRegionData>(query, Regions + RegionProjection + filter + order + (ranking ? " LIMIT @limit" : " LIMIT @take OFFSET @skip"), cancellationToken);
+
         return (items, total);
     }
 
-    public Task<InstitutionalEnvironmentData> GetEnvironment(InstitutionalQuery query, CancellationToken cancellationToken) =>
-        Cached(query, "environment", _settings.EnvironmentCacheMinutes, async () => (await Query<InstitutionalEnvironmentData>(query, Regions + """
+    public Task<InstitutionalEnvironmentData> GetEnvironment(InstitutionalQuery query, CancellationToken cancellationToken) => Cached(query, "environment", _settings.EnvironmentCacheMinutes, async () => (await Query<InstitutionalEnvironmentData>(query, Regions + """
             , satellite_candidates AS (
                 SELECT r."Id" AS region_id, r."Boundary", s.*,
                     row_number() OVER (PARTITION BY r."Id", s."AnalysisType" ORDER BY s."ObservationEndAt" DESC, s."ProcessedAt" DESC, s."Id") AS rn
@@ -276,8 +282,7 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
             FROM pieces
             """, cancellationToken)).Single(), data => data.ValidUntil, cancellationToken);
 
-    public Task<List<InstitutionalTrendData>> GetTrends(InstitutionalQuery query, CancellationToken cancellationToken) =>
-        Cached(query, "trends", _settings.HistoryCacheMinutes, () => Query<InstitutionalTrendData>(query, HistoricalSource(query) + """
+    public Task<List<InstitutionalTrendData>> GetTrends(InstitutionalQuery query, CancellationToken cancellationToken) => Cached(query, "trends", _settings.HistoryCacheMinutes, () => Query<InstitutionalTrendData>(query, HistoricalSource(query) + """
             SELECT date_trunc(@interval, observed AT TIME ZONE @zone) AS "Date", avg(value) AS "Value", count(value)::int AS "SampleCount",
                 version AS "AlgorithmVersion", composition AS "Composition", origin AS "DataOrigin", quality AS "DataQuality"
             FROM observations WHERE observed >= @start AND observed <= @end AND observed <= @now
@@ -287,13 +292,14 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
 
     private static string HistoricalSource(InstitutionalQuery query)
     {
-        /// :: Only fixed SQL expressions are selected; metric names never become SQL supplied by the caller.
+        /// :: Select metrics from fixed SQL expressions.
         if (query.Metric is "SURFACE_TEMPERATURE" or "VEGETATION_COVERAGE")
         {
             var vegetation = query.Metric == "VEGETATION_COVERAGE";
             var value = vegetation ? "s.\"VegetationCoveragePercent\"" : "s.\"MeanValue\"";
             var valid = vegetation ? "s.\"VegetationCoveragePercent\" BETWEEN 0 AND 100 AND s.\"MeanValue\" BETWEEN -1 AND 1" : "s.\"MeanValue\" >= -273.15";
             var eligible = "s.\"ValidPixelPercent\" BETWEEN @minimumPixels AND 100 AND " + valid;
+
             return """
                 , satellite_history AS (
                     SELECT DISTINCT ON (s."GeoRegionId", s."BoundaryVersion", s."DataSource", s."DatasetId", s."ImageId", s."ObservationEndAt", s."AlgorithmVersion") s.*
@@ -307,13 +313,16 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
                 FROM satellite_history s)
                 """;
         }
+
         if (query.Metric == "EXPOSURE_INDEX") return """
             , observations AS (SELECT a."AnalyzedAt" AS observed, a."ExposureIndex" AS value, a."AlgorithmVersion" AS version,
                 a."BoundaryVersion"::text || ':' || COALESCE((a."SourceMetadata"->'appliedWeights')::text,'{}') AS composition,
                 a."DataOrigin" AS origin, a."DataQuality" AS quality
                 FROM "RegionThermalAnalyses" a JOIN selected_regions r ON r."Id" = a."GeoRegionId" WHERE a."Active")
             """;
+
         var temperature = query.Metric == "TEMPERATURE";
+
         return """
             , observations AS (SELECT reading."MeasuredAt" AS observed,
             """ + (temperature ? "reading.\"Temperature\"" : "a.\"HeatIndex\"") + """
@@ -352,6 +361,7 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
                         AND r."BoundaryVersion" = link."BoundaryVersion" WHERE link."GreenAreaId" = g."Id"))
                 AND (@west IS NULL OR g."Geometry" && ST_MakeEnvelope(@west,@south,@east,@north,4326))
             """ : "";
+
         return Query<InstitutionalFeatureData>(query, Regions + """
             SELECT * FROM (
                 SELECT "Id" AS "Id", 'REGION' AS "Kind", ST_AsGeoJSON("Boundary") AS "Geometry",
@@ -363,8 +373,7 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
             """ + sensors + green + " ) features ORDER BY \"Kind\", \"Id\" LIMIT @maxFeatures", cancellationToken);
     }
 
-    public Task<List<InstitutionalReportData>> GetReport(InstitutionalQuery query, CancellationToken cancellationToken) =>
-        Query<InstitutionalReportData>(query, """
+    public Task<List<InstitutionalReportData>> GetReport(InstitutionalQuery query, CancellationToken cancellationToken) => Query<InstitutionalReportData>(query, """
             SELECT a."GeoRegionId" AS "RegionId", r."Name" AS "RegionName", a."AnalyzedAt", a."ExposureIndex", a."ExposureLevel",
                 a."AverageHeatIndex" AS "HeatIndex", a."SurfaceTemperature", a."VegetationCoveragePercent", a."AlgorithmVersion", a."BoundaryVersion",
                 a."DataQuality", a."DataOrigin", a."SourceMetadata"::text AS "SourceMetadata"

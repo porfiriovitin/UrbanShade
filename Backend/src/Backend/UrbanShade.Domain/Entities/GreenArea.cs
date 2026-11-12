@@ -5,7 +5,10 @@ namespace UrbanShade.Domain.Entities;
 
 public class GreenArea : EntityBase
 {
-    private GreenArea() { }
+    private GreenArea()
+    {
+    }
+
     public GreenArea(Guid regionId, Guid analysisId, Geometry geometry, decimal area, DateTime referenceDate)
     {
         GeoRegionId = regionId;
@@ -14,6 +17,7 @@ public class GreenArea : EntityBase
         EstimatedAreaSquareMeters = area;
         ReferenceDate = referenceDate;
     }
+
     public string? OsmElementType { get; private set; }
     public long? OsmElementId { get; private set; }
     public DateTime? ImportedAt { get; private set; }

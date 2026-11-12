@@ -24,16 +24,7 @@ public sealed class RoutingSettings
 
     public void Validate()
     {
-        if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out var uri) || uri.Scheme != "https" ||
-            uri.Host != "api.heigit.org" || !uri.IsDefaultPort || uri.Fragment.Length > 0 || uri.AbsolutePath.TrimEnd('/') != "/openrouteservice/v2" || uri.Query.Length > 0 || uri.UserInfo.Length > 0 ||
-            Profile != "foot-walking" || MaxAlternativeRoutes is < 1 or > 3 ||
-            !double.IsFinite(MaximumWalkingDistanceMeters) || MaximumWalkingDistanceMeters is <= 0 or > 100000 ||
-            !double.IsFinite(MaximumSnapDistanceMeters) || MaximumSnapDistanceMeters is <= 0 or > 1000 ||
-            MinimumThermalCoveragePercent is <= 0 or > 100 || MinimumExposureImprovement is <= 0 or > 100 ||
-            MaximumDistanceIncreasePercent is < 0 or > 100 || !double.IsFinite(MaximumAdditionalDurationMinutes) || MaximumAdditionalDurationMinutes is < 0 or > 120 ||
-            CacheDurationMinutes is < 0 or > 60 || TimeoutSeconds is < 1 or > 120 || MaxRetryAttempts is < 0 or > 3 ||
-            MaximumGeometryPoints is < 2 or > 20000 || MaximumSegments is < 1 or > 100000 || MaximumResponseBytes is < 1000 or > 10000000 ||
-            !double.IsFinite(DuplicateToleranceMeters) || DuplicateToleranceMeters is <= 0 or > 100 || DuplicateOverlapPercent is < 90 or > 100)
+        if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out var uri) || uri.Scheme != "https" || uri.Host != "api.heigit.org" || !uri.IsDefaultPort || uri.Fragment.Length > 0 || uri.AbsolutePath.TrimEnd('/') != "/openrouteservice/v2" || uri.Query.Length > 0 || uri.UserInfo.Length > 0 || Profile != "foot-walking" || MaxAlternativeRoutes is < 1 or > 3 || !double.IsFinite(MaximumWalkingDistanceMeters) || MaximumWalkingDistanceMeters is <= 0 or > 100000 || !double.IsFinite(MaximumSnapDistanceMeters) || MaximumSnapDistanceMeters is <= 0 or > 1000 || MinimumThermalCoveragePercent is <= 0 or > 100 || MinimumExposureImprovement is <= 0 or > 100 || MaximumDistanceIncreasePercent is < 0 or > 100 || !double.IsFinite(MaximumAdditionalDurationMinutes) || MaximumAdditionalDurationMinutes is < 0 or > 120 || CacheDurationMinutes is < 0 or > 60 || TimeoutSeconds is < 1 or > 120 || MaxRetryAttempts is < 0 or > 3 || MaximumGeometryPoints is < 2 or > 20000 || MaximumSegments is < 1 or > 100000 || MaximumResponseBytes is < 1000 or > 10000000 || !double.IsFinite(DuplicateToleranceMeters) || DuplicateToleranceMeters is <= 0 or > 100 || DuplicateOverlapPercent is < 90 or > 100)
             throw new InvalidOperationException("Invalid routing settings.");
     }
 }

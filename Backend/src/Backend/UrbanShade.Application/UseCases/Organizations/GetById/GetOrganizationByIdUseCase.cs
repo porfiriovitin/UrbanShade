@@ -22,6 +22,7 @@ public sealed class GetOrganizationByIdUseCase : IGetOrganizationByIdUseCase
     public async Task<OrganizationResponse> Execute(Guid actorId, Guid id, CancellationToken cancellationToken = default)
     {
         var organization = await _access.Require(id, actorId, cancellationToken);
+
         return ToResponse(organization);
     }
 

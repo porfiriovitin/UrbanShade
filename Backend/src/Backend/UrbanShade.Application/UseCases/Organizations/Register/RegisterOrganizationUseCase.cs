@@ -25,6 +25,7 @@ public sealed class RegisterOrganizationUseCase : IRegisterOrganizationUseCase
     {
         await _access.GetActor(actorId, true, cancellationToken);
         Validate(request);
+
         var document = request.Document.Trim().ToUpperInvariant();
         if (await _organizations.DocumentExists(document, null, cancellationToken))
             throw new OrganizationException(ErrorKind.Conflict, "Organization document already registered.");
@@ -33,6 +34,7 @@ public sealed class RegisterOrganizationUseCase : IRegisterOrganizationUseCase
         organization.UpdateTimeZone(request.TimeZoneId);
         _organizations.Add(organization);
         await _unitOfWork.SaveChanges(cancellationToken);
+
         return GetOrganizationByIdUseCase.ToResponse(organization);
     }
 

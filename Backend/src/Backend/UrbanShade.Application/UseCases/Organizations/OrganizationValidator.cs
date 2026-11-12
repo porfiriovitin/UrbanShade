@@ -17,17 +17,30 @@ public sealed class OrganizationValidator : AbstractValidator<OrganizationReques
         RuleFor(request => request.TimeZoneId).Must(BeAValidTimeZone).WithMessage("A valid time zone is required.");
     }
 
-    private static bool BeAValidTimeZone(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value) || value.Length > 100) return false;
-        try { TimeZoneInfo.FindSystemTimeZoneById(value); return true; }
-        catch (TimeZoneNotFoundException) { return false; }
-        catch (InvalidTimeZoneException) { return false; }
-    }
-
     internal static bool BeAValidEmail(string? email)
     {
         var normalized = email?.Trim().ToLowerInvariant() ?? string.Empty;
+
         return normalized.Length <= 254 && MailAddress.TryCreate(normalized, out var address) && address.Address == normalized;
+    }
+
+    private static bool BeAValidTimeZone(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length > 100) return false;
+
+        try
+        {
+            TimeZoneInfo.FindSystemTimeZoneById(value);
+
+            return true;
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return false;
+        }
+        catch (InvalidTimeZoneException)
+        {
+            return false;
+        }
     }
 }

@@ -2,7 +2,9 @@ namespace UrbanShade.Domain.Entities;
 
 public class OrganizationMember : EntityBase
 {
-    private OrganizationMember() { }
+    private OrganizationMember()
+    {
+    }
 
     public OrganizationMember(Guid organizationId, Guid userId)
     {
@@ -14,5 +16,6 @@ public class OrganizationMember : EntityBase
     public Guid UserId { get; private set; }
 
     public void Activate() => Active = true;
+
     public void Deactivate() => Active = false;
 }

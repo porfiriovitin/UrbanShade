@@ -12,8 +12,7 @@ public sealed class GetInstitutionalRankingUseCase : IGetInstitutionalRankingUse
     private readonly IInstitutionalDashboardRepository _dashboard;
     private readonly ILogger<GetInstitutionalRankingUseCase> _logger;
 
-    public GetInstitutionalRankingUseCase(InstitutionalDashboardQuery query, IInstitutionalDashboardRepository dashboard,
-        ILogger<GetInstitutionalRankingUseCase> logger)
+    public GetInstitutionalRankingUseCase(InstitutionalDashboardQuery query, IInstitutionalDashboardRepository dashboard, ILogger<GetInstitutionalRankingUseCase> logger)
     {
         _query = query;
         _dashboard = dashboard;
@@ -23,13 +22,14 @@ public sealed class GetInstitutionalRankingUseCase : IGetInstitutionalRankingUse
     public async Task<List<InstitutionalRegionResponse>> Execute(Guid actorId, InstitutionalDashboardRequest request, CancellationToken cancellationToken = default)
     {
         var timer = Stopwatch.StartNew();
+
         try
         {
-            /// :: Validate filters and authorize the selected institutional scope before reading indicators.
+            /// :: Validate filters and access.
             var query = await _query.Prepare(actorId, request, null, false, cancellationToken);
             var data = await _dashboard.GetRegions(query, true, cancellationToken);
-            return data.Items.Select(region => _query.ToResponse(region)).ToList();
 
+            return data.Items.Select(region => _query.ToResponse(region)).ToList();
         }
         finally
         {

@@ -1,5 +1,3 @@
-using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.RateLimiting;
 using UrbanShade.API.Filters;
 using UrbanShade.API.Authentication;
 using UrbanShade.Application;
@@ -14,38 +12,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddSingleton<RequestAdmission>();
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.AddPolicy("Authentication", context => RateLimitPartition.GetFixedWindowLimiter(
-        context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = builder.Configuration.GetValue<int?>("SecurityTraffic:AuthenticationRequestsPerMinute") ?? 20,
-            Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
-    options.AddPolicy("PublicReads", context => RateLimitPartition.GetFixedWindowLimiter(
-        context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
-    options.AddPolicy("InstitutionalDashboard", context => RateLimitPartition.GetFixedWindowLimiter(
-        context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
-    options.AddPolicy("Routing", context => RateLimitPartition.GetFixedWindowLimiter(
-        context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
-    options.AddPolicy("RegionThermalAdministration", context => RateLimitPartition.GetFixedWindowLimiter(
-        context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
-    options.OnRejected = async (context, cancellationToken) =>
-        await context.HttpContext.Response.WriteAsJsonAsync(new PayloadResponse
-        {
-            Status = nameof(ResponseStatus.Error),
-            Messages = [context.HttpContext.Request.Path.StartsWithSegments("/api/routes") ? "Too many routing requests. Try again shortly." : "Too many administrative requests. Try again shortly."]
-        }, cancellationToken);
-    options.AddPolicy("GeoAdministration", context => RateLimitPartition.GetFixedWindowLimiter(
-        context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
-    options.AddPolicy("WeatherAdministration", context => RateLimitPartition.GetFixedWindowLimiter(
-        context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
-        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
-});
+builder.Services.AddRequestRateLimiting(builder.Configuration);
+
 builder.Services.AddSwaggerGen(options =>
 {
     /// :: Define the JWT Bearer authentication scheme for Swagger.
@@ -86,7 +54,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Production uses a separate deployment identity for DDL and seed operations.
 if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Tests"))
     await ExecuteMigrations();
 else
@@ -103,7 +70,7 @@ app.UseExceptionHandler(handler => handler.Run(async context =>
 
 app.UseHttpsRedirection();
 
-// Bound work before authentication, including the live account/session DB lookups.
+/// :: Bound work before authentication, including the live account/session DB lookups.
 app.Use(async (context, next) =>
 {
     var admission = context.RequestServices.GetRequiredService<RequestAdmission>();

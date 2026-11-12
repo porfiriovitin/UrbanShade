@@ -14,5 +14,6 @@ public sealed class RegionThermalAnalysisException : UrbanShadeBaseException
     }
 
     public override ErrorKind GetErrorKind() => _statusCode;
+
     public override List<string> GetErrorMessages() => [.. _messages];
 }

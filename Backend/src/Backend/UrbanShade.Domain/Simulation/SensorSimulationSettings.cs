@@ -15,13 +15,10 @@ public sealed class SensorSimulationSettings
     {
         if (!double.IsFinite(IntervalMinutes) || IntervalMinutes < 1d / 60000 || IntervalMinutes > 1440)
             throw new InvalidOperationException("SensorSimulation:IntervalMinutes must represent at least one millisecond and at most 1440 minutes.");
-
         if (MinTemperature > MaxTemperature || MinTemperature < -1000000 || MaxTemperature > 1000000)
             throw new InvalidOperationException("SensorSimulation temperature limits must be ordered and between -1000000 and 1000000.");
-
         if (MinHumidity < 0 || MaxHumidity > 100 || MinHumidity > MaxHumidity)
             throw new InvalidOperationException("SensorSimulation humidity limits must be ordered and between 0 and 100.");
-
         if (MaxTemperatureVariation < 0 || MaxHumidityVariation < 0 || MaxTemperatureVariation > 2000000 || MaxHumidityVariation > 100)
             throw new InvalidOperationException("SensorSimulation variations must be nonnegative and within the supported ranges.");
 

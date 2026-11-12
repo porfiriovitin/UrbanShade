@@ -36,65 +36,45 @@ public sealed class OrganizationMembersUseCase : IOrganizationMembersUseCase
     public async Task<List<UserResponse>> GetAll(Guid actorId, Guid organizationId, CancellationToken cancellationToken)
     {
         await _access.Require(organizationId, actorId, cancellationToken);
+
         return (await _organizations.GetMembers(organizationId, cancellationToken)).Select(TokenIssuer.ToResponse).ToList();
     }
 
     public async Task<OrganizationMemberResponse> Add(Guid actorId, Guid organizationId, AddOrganizationMemberRequest request, CancellationToken cancellationToken)
     {
         await _access.GetActor(actorId, true, cancellationToken);
-        var result = new OrganizationMemberValidator().Validate(request);
-        if (!result.IsValid)
-            throw new OrganizationException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
+        Validate(request);
 
         await using var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
         await RequireActiveOrganization(organizationId, cancellationToken);
-        var email = request.Email.Trim().ToLowerInvariant();
-        var user = await _accounts.FindByEmailForUpdate(email, cancellationToken);
-        string? temporaryPassword = null;
-
-        if (user is null)
-        {
-            temporaryPassword = Convert.ToBase64String(RandomNumberGenerator.GetBytes(24));
-            var hash = await _passwords.Hash(temporaryPassword);
-            user = new User(request.Name, email, hash);
-            user.UpdateRole(UserRoles.Manager);
-            user.SetTemporaryPassword(hash, DateTime.UtcNow.AddHours(_settings.TemporaryPasswordHours));
-            _users.Add(user);
-        }
-        else
-        {
-            if (!user.Active)
-                throw new OrganizationException(ErrorKind.Conflict, "The existing account is inactive.");
-            // Public registration does not prove identity. Promotion must replace the
-            // credentials and sessions established before the administrative handoff.
-            if (user.Role == UserRoles.Citizen)
-            {
-                user.UpdateRole(UserRoles.Manager);
-                temporaryPassword = await SetTemporaryPassword(user);
-                await _accounts.RevokeSessions(user.Id, DateTime.UtcNow, cancellationToken);
-            }
-        }
+        var (user, temporaryPassword) = await GetUser(request, cancellationToken);
 
         var member = await _organizations.FindMember(organizationId, user.Id, cancellationToken);
         if (member is not null && member.Active)
             throw new OrganizationException(ErrorKind.Conflict, "User is already a member.");
-        if (member is null) _organizations.Add(new OrganizationMember(organizationId, user.Id));
-        else member.Activate();
+        if (member is null)
+            _organizations.Add(new OrganizationMember(organizationId, user.Id));
+        else
+            member.Activate();
 
         await _unitOfWork.SaveChanges(cancellationToken);
         await transaction.Commit(cancellationToken);
+
         return ToResponse(organizationId, user, temporaryPassword);
     }
 
     public async Task Remove(Guid actorId, Guid organizationId, Guid userId, CancellationToken cancellationToken)
     {
         await _access.GetActor(actorId, true, cancellationToken);
+
         await using var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
         if (await _organizations.FindForUpdate(organizationId, cancellationToken) is null)
             throw new OrganizationException(ErrorKind.NotFound, "Organization is unavailable.");
+
         var member = await _organizations.FindMember(organizationId, userId, cancellationToken);
         if (member is null || !member.Active)
             throw new OrganizationException(ErrorKind.NotFound, "Membership is unavailable.");
+
         member.Deactivate();
         await _unitOfWork.SaveChanges(cancellationToken);
         await transaction.Commit(cancellationToken);
@@ -103,8 +83,10 @@ public sealed class OrganizationMembersUseCase : IOrganizationMembersUseCase
     public async Task<OrganizationMemberResponse> RegeneratePassword(Guid actorId, Guid organizationId, Guid userId, CancellationToken cancellationToken)
     {
         await _access.GetActor(actorId, true, cancellationToken);
+
         await using var transaction = await _unitOfWork.BeginTransaction(cancellationToken);
         await RequireActiveOrganization(organizationId, cancellationToken);
+
         var member = await _organizations.FindMember(organizationId, userId, cancellationToken);
         var user = await _accounts.FindForUpdate(userId, cancellationToken);
         if (member is null || !member.Active || user is null || !user.Active)
@@ -116,7 +98,47 @@ public sealed class OrganizationMembersUseCase : IOrganizationMembersUseCase
         await _accounts.RevokeSessions(user.Id, DateTime.UtcNow, cancellationToken);
         await _unitOfWork.SaveChanges(cancellationToken);
         await transaction.Commit(cancellationToken);
+
         return ToResponse(organizationId, user, temporaryPassword);
+    }
+
+    private static void Validate(AddOrganizationMemberRequest request)
+    {
+        var result = new OrganizationMemberValidator().Validate(request);
+        if (!result.IsValid)
+            throw new OrganizationException(ErrorKind.Validation, [.. result.Errors.Select(error => error.ErrorMessage)]);
+    }
+
+    private async Task<(User User, string? TemporaryPassword)> GetUser(AddOrganizationMemberRequest request, CancellationToken cancellationToken)
+    {
+        var email = request.Email.Trim().ToLowerInvariant();
+        var user = await _accounts.FindByEmailForUpdate(email, cancellationToken);
+        string? temporaryPassword = null;
+        if (user is null)
+        {
+            temporaryPassword = Convert.ToBase64String(RandomNumberGenerator.GetBytes(24));
+
+            var hash = await _passwords.Hash(temporaryPassword);
+            user = new User(request.Name, email, hash);
+            user.UpdateRole(UserRoles.Manager);
+            user.SetTemporaryPassword(hash, DateTime.UtcNow.AddHours(_settings.TemporaryPasswordHours));
+            _users.Add(user);
+        }
+        else
+        {
+            if (!user.Active)
+                throw new OrganizationException(ErrorKind.Conflict, "The existing account is inactive.");
+
+            /// :: Replace unverified credentials and sessions on promotion.
+            if (user.Role == UserRoles.Citizen)
+            {
+                user.UpdateRole(UserRoles.Manager);
+                temporaryPassword = await SetTemporaryPassword(user);
+                await _accounts.RevokeSessions(user.Id, DateTime.UtcNow, cancellationToken);
+            }
+        }
+
+        return (user, temporaryPassword);
     }
 
     private async Task RequireActiveOrganization(Guid organizationId, CancellationToken cancellationToken)
@@ -130,6 +152,7 @@ public sealed class OrganizationMembersUseCase : IOrganizationMembersUseCase
     {
         var password = Convert.ToBase64String(RandomNumberGenerator.GetBytes(24));
         user.SetTemporaryPassword(await _passwords.Hash(password), DateTime.UtcNow.AddHours(_settings.TemporaryPasswordHours));
+
         return password;
     }
 

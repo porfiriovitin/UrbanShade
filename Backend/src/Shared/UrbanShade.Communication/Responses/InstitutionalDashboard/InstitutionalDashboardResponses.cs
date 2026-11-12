@@ -3,7 +3,6 @@ using System.Text.Json;
 namespace UrbanShade.Communication.Responses.InstitutionalDashboard;
 
 public sealed record InstitutionalAverageResponse(decimal? Value, int SampleCount);
-
 public sealed record InstitutionalOverviewResponse
 {
     public Guid OrganizationId { get; init; }
@@ -29,7 +28,6 @@ public sealed record InstitutionalOverviewResponse
 }
 
 public sealed record InstitutionalDistributionResponse(int TotalRegions, int Low, int Moderate, int High, int Critical, int InsufficientData);
-
 public sealed record InstitutionalRegionResponse
 {
     public Guid RegionId { get; init; }
@@ -77,9 +75,7 @@ public sealed record InstitutionalSensorsResponse
 }
 
 public sealed record InstitutionalRegionLinkResponse(Guid RegionId, string Name);
-
 public sealed record InstitutionalRegionSensorResponse(Guid RegionId, string Name, int SensorCount);
-
 public sealed record InstitutionalEnvironmentResponse
 {
     public double? TotalAreaSquareMeters { get; init; }
@@ -107,6 +103,7 @@ public sealed record InstitutionalTrendsResponse(Guid RegionId, string Metric, s
 {
     public string GapPolicy { get; init; } = "OMITTED_INTERVALS_HAVE_NO_OBSERVATIONS";
 }
+
 public sealed record InstitutionalMapResponse(string Type, List<InstitutionalFeatureResponse> Features);
 public sealed record InstitutionalFeatureResponse(string Type, Guid Id, JsonElement Geometry, JsonElement Properties);
 public sealed record InstitutionalExportResponse(byte[] Content, string ContentType, string FileName);

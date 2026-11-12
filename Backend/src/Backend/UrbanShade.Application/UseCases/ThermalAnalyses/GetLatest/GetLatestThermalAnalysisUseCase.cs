@@ -29,6 +29,7 @@ public sealed class GetLatestThermalAnalysisUseCase : IGetLatestThermalAnalysisU
             throw new SensorException(ErrorKind.NotFound, "Sensor is unavailable.");
 
         var latest = await _analyses.GetLatest(sensorId, _settings.AlgorithmVersion, cancellationToken);
+
         return ToResponse(sensorId, latest, _time.GetUtcNow().UtcDateTime, _settings);
     }
 
@@ -44,8 +45,6 @@ public sealed class GetLatestThermalAnalysisUseCase : IGetLatestThermalAnalysisU
         AlgorithmVersion = item?.Analysis.AlgorithmVersion,
         MeasuredAt = item?.Reading.MeasuredAt,
         AnalyzedAt = item?.Analysis.AnalyzedAt,
-        DataStatus = item is null ? nameof(ThermalDataStatus.NO_DATA)
-            : now - item.Value.Reading.MeasuredAt > TimeSpan.FromMinutes(settings.StaleDataThresholdMinutes)
-                ? nameof(ThermalDataStatus.STALE) : nameof(ThermalDataStatus.CURRENT)
+        DataStatus = item is null ? nameof(ThermalDataStatus.NO_DATA) : now - item.Value.Reading.MeasuredAt > TimeSpan.FromMinutes(settings.StaleDataThresholdMinutes) ? nameof(ThermalDataStatus.STALE) : nameof(ThermalDataStatus.CURRENT)
     };
 }

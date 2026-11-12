@@ -23,9 +23,17 @@ public sealed class GetRegionThermalMapUseCase : IGetRegionThermalMapUseCase
     public async Task<RegionThermalMapResponse> Execute(RegionThermalQueryRequest request, CancellationToken cancellationToken = default)
     {
         RegionThermalQueryValidator.ValidateRequest(request);
+
         var items = await _analyses.GetLatestRegions(null, RegionThermalQueryValidator.ReadBounds(request.Bbox), null, null, true, false, request.Limit, cancellationToken);
-        var features = items.Select(item => new RegionThermalMapFeature { Geometry = GeoJsonGeometry.Write(item.Region.Boundary), Properties = RegionThermalAnalysisMapper.ToResponse(item.Analysis, item.Region.Name) }).ToList();
-        return new RegionThermalMapResponse { Features = features };
+        var features = items.Select(item => new RegionThermalMapFeature
+        {
+            Geometry = GeoJsonGeometry.Write(item.Region.Boundary),
+            Properties = RegionThermalAnalysisMapper.ToResponse(item.Analysis, item.Region.Name)
+        }).ToList();
+
+        return new RegionThermalMapResponse
+        {
+            Features = features
+        };
     }
 }
-

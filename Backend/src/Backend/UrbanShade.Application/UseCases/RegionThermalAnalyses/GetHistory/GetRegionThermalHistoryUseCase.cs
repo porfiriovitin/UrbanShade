@@ -23,10 +23,17 @@ public sealed class GetRegionThermalHistoryUseCase : IGetRegionThermalHistoryUse
     public async Task<RegionThermalHistoryResponse> Execute(Guid id, RegionThermalQueryRequest request, bool administrator, CancellationToken cancellationToken = default)
     {
         RegionThermalQueryValidator.ValidateRequest(request);
+
         var region = await RegionThermalQueryValidator.FindRegion(_regions, id, administrator, cancellationToken);
         ExposureLevel? level = request.ExposureLevel is null ? null : Enum.Parse<ExposureLevel>(request.ExposureLevel);
         var history = await _analyses.GetHistory(id, request.StartDate, request.EndDate, level, request.Page, request.PageSize, cancellationToken);
-        return new RegionThermalHistoryResponse { Items = history.Items.Select(item => RegionThermalAnalysisMapper.ToResponse(item, region.Name)).ToList(), TotalItems = history.Total, Page = request.Page, PageSize = request.PageSize };
+
+        return new RegionThermalHistoryResponse
+        {
+            Items = history.Items.Select(item => RegionThermalAnalysisMapper.ToResponse(item, region.Name)).ToList(),
+            TotalItems = history.Total,
+            Page = request.Page,
+            PageSize = request.PageSize
+        };
     }
 }
-

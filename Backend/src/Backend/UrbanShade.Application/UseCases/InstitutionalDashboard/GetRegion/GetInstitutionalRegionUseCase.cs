@@ -13,8 +13,7 @@ public sealed class GetInstitutionalRegionUseCase : IGetInstitutionalRegionUseCa
     private readonly IInstitutionalDashboardRepository _dashboard;
     private readonly ILogger<GetInstitutionalRegionUseCase> _logger;
 
-    public GetInstitutionalRegionUseCase(InstitutionalDashboardQuery query, IInstitutionalDashboardRepository dashboard,
-        ILogger<GetInstitutionalRegionUseCase> logger)
+    public GetInstitutionalRegionUseCase(InstitutionalDashboardQuery query, IInstitutionalDashboardRepository dashboard, ILogger<GetInstitutionalRegionUseCase> logger)
     {
         _query = query;
         _dashboard = dashboard;
@@ -24,15 +23,19 @@ public sealed class GetInstitutionalRegionUseCase : IGetInstitutionalRegionUseCa
     public async Task<InstitutionalRegionResponse> Execute(Guid actorId, Guid regionId, InstitutionalDashboardRequest request, CancellationToken cancellationToken = default)
     {
         var timer = Stopwatch.StartNew();
+
         try
         {
-            /// :: Validate filters and authorize the selected institutional scope before reading indicators.
+            /// :: Validate filters and access.
             var query = await _query.Prepare(actorId, request, regionId, false, cancellationToken);
             var data = await _dashboard.GetRegions(query with { Page = 1, PageSize = 1 }, false, cancellationToken);
             var region = data.Items.SingleOrDefault() ?? throw new InstitutionalDashboardException(ErrorKind.NotFound, "Region is unavailable.");
             var sensors = await _dashboard.GetSensorsOverview(query, cancellationToken);
-            return _query.ToResponse(region, true) with { AverageTemperature = new(sensors.AverageTemperature, sensors.TemperatureSampleCount) };
 
+            return _query.ToResponse(region, true)with
+            {
+                AverageTemperature = new(sensors.AverageTemperature, sensors.TemperatureSampleCount)
+            };
         }
         finally
         {

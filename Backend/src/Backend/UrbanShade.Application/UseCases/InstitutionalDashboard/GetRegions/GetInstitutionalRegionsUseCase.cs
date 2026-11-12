@@ -13,8 +13,7 @@ public sealed class GetInstitutionalRegionsUseCase : IGetInstitutionalRegionsUse
     private readonly IInstitutionalDashboardRepository _dashboard;
     private readonly ILogger<GetInstitutionalRegionsUseCase> _logger;
 
-    public GetInstitutionalRegionsUseCase(InstitutionalDashboardQuery query, IInstitutionalDashboardRepository dashboard,
-        ILogger<GetInstitutionalRegionsUseCase> logger)
+    public GetInstitutionalRegionsUseCase(InstitutionalDashboardQuery query, IInstitutionalDashboardRepository dashboard, ILogger<GetInstitutionalRegionsUseCase> logger)
     {
         _query = query;
         _dashboard = dashboard;
@@ -24,17 +23,20 @@ public sealed class GetInstitutionalRegionsUseCase : IGetInstitutionalRegionsUse
     public async Task<PagedResponse<InstitutionalRegionResponse>> Execute(Guid actorId, InstitutionalDashboardRequest request, CancellationToken cancellationToken = default)
     {
         var timer = Stopwatch.StartNew();
+
         try
         {
-            /// :: Validate filters and authorize the selected institutional scope before reading indicators.
+            /// :: Validate filters and access.
             var query = await _query.Prepare(actorId, request, null, false, cancellationToken);
             var data = await _dashboard.GetRegions(query, false, cancellationToken);
+
             return new PagedResponse<InstitutionalRegionResponse>
             {
                 Items = data.Items.Select(region => _query.ToResponse(region)).ToList(),
-                Page = query.Page, PageSize = query.PageSize, TotalItems = data.Total
+                Page = query.Page,
+                PageSize = query.PageSize,
+                TotalItems = data.Total
             };
-
         }
         finally
         {

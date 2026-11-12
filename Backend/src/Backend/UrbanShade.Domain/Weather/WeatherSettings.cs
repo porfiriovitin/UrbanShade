@@ -12,8 +12,7 @@ public class WeatherSettings
 
     public virtual void Validate()
     {
-        if (ForecastDays is < 1 or > 16 || MinimumRefreshIntervalMinutes < 1 || RefreshIntervalMinutes < MinimumRefreshIntervalMinutes ||
-            StaleDataThresholdMinutes < RefreshIntervalMinutes || CacheDurationMinutes is < 0 or > 15)
+        if (ForecastDays is < 1 or > 16 || MinimumRefreshIntervalMinutes < 1 || RefreshIntervalMinutes < MinimumRefreshIntervalMinutes || StaleDataThresholdMinutes < RefreshIntervalMinutes || CacheDurationMinutes is < 0 or > 15)
             throw new InvalidOperationException("Invalid weather refresh, forecast or cache settings.");
     }
 }
