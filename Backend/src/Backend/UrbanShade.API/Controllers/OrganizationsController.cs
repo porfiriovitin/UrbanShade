@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UrbanShade.Application.UseCases.Organizations.Regions;
@@ -23,6 +24,7 @@ using UrbanShade.Communication.Responses.ThermalAnalyses;
 namespace UrbanShade.API.Controllers;
 
 [ApiController]
+[EnableRateLimiting("PublicReads")]
 [Authorize]
 [Route("api/organizations")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]

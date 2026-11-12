@@ -285,7 +285,7 @@ public sealed class SensorSimulationTests : IClassFixture<UrbanShadeApplicationF
         public Task<Sensor?> FindById(Guid id, CancellationToken cancellationToken) => _inner.FindById(id, cancellationToken);
         public Task<Sensor?> FindForReadingHistory(Guid id, CancellationToken cancellationToken) => _inner.FindForReadingHistory(id, cancellationToken);
         public Task<bool> CodeExists(string code, Guid? exceptId, CancellationToken cancellationToken) => _inner.CodeExists(code, exceptId, cancellationToken);
-        public Task<List<Sensor>> GetAll(bool activeOnly, SensorStatus? status, string? code, string? name, CancellationToken cancellationToken) => _inner.GetAll(activeOnly, status, code, name, cancellationToken);
+        public Task<List<Sensor>> GetAll(bool activeOnly, SensorStatus? status, string? code, string? name, CancellationToken cancellationToken, int page = 1, int pageSize = 100) => _inner.GetAll(activeOnly, status, code, name, cancellationToken, page, pageSize);
         public void Add(Sensor sensor) => _inner.Add(sensor);
     }
 

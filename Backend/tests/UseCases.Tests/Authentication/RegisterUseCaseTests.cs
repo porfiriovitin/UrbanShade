@@ -13,29 +13,29 @@ namespace UseCases.Tests.Authentication;
 public sealed class RegisterUseCaseTests
 {
     [Fact]
-    public async Task Register_CreatesUserAndHashedSession_ThenSaves()
+    public async Task Register_CreatesUserWithoutSession_ThenSaves()
     {
         var store = new TestStore();
         var hasher = new Argon2idPasswordHasher();
         var tokens = new JwtTokenService(new JwtSettings { SigningKey = new string('k', 64) });
-        var useCase = new RegisterUseCase(store, hasher, new TokenIssuer(tokens, store), store);
+        var useCase = new RegisterUseCase(store, hasher, store);
         var request = RegisterRequestBuilder.Build();
-        var result = await useCase.Execute(request);
+        await useCase.Execute(request);
         Assert.Equal(request.Email, store.User!.Email);
         Assert.True(await hasher.Verify(request.Password, store.User.HashedPassword));
-        Assert.Equal("Citizen", result.User.Role);
-        Assert.Equal(tokens.HashRefreshToken(result.RefreshToken), store.Token!.Token);
+        Assert.Equal(UrbanShade.Domain.Enums.UserRoles.Citizen, store.User.Role);
+        Assert.Null(store.Token);
         Assert.True(store.Saved);
     }
 
     [Fact]
-    public async Task Register_RejectsDuplicateEmail()
+    public async Task Register_DoesNotDiscloseOrReplaceExistingAccount()
     {
         var store = new TestStore { User = new User("Existing", "existing@example.com", "hash") };
         var tokens = new JwtTokenService(new JwtSettings());
-        var useCase = new RegisterUseCase(store, new Argon2idPasswordHasher(), new TokenIssuer(tokens, store), store);
-        var exception = await Assert.ThrowsAsync<EmailAlreadyRegisteredException>(() => useCase.Execute(RegisterRequestBuilder.Build()));
-        Assert.Equal("Email already registered.", exception.Message);
+        var useCase = new RegisterUseCase(store, new Argon2idPasswordHasher(), store);
+        await useCase.Execute(RegisterRequestBuilder.Build());
+        Assert.Equal("hash", store.User!.HashedPassword);
         Assert.False(store.Saved);
     }
 
@@ -44,7 +44,7 @@ public sealed class RegisterUseCaseTests
     {
         var store = new TestStore();
         var tokens = new JwtTokenService(new JwtSettings { SigningKey = new string('k', 64) });
-        var useCase = new RegisterUseCase(store, new Argon2idPasswordHasher(), new TokenIssuer(tokens, store), store);
+        var useCase = new RegisterUseCase(store, new Argon2idPasswordHasher(), store);
         var request = new RegisterRequest { Name = "Test User", Email = " TEST@example.com ", Password = "Strong-password-123!" };
 
         await useCase.Execute(request);
@@ -70,6 +70,7 @@ public sealed class RegisterUseCaseTests
         public Task SaveChanges(CancellationToken cancellationToken) { Saved = true; return Task.CompletedTask; }
         public Task<RefreshTokens?> FindForUpdate(string tokenHash, CancellationToken cancellationToken) => Task.FromResult(Token);
         public Task RevokeFamily(Guid familyId, DateTime now, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<bool> IsSessionActive(Guid familyId, Guid userId, int securityVersion, DateTime now, CancellationToken cancellationToken) => Task.FromResult(false);
         public Task<ITransaction> BeginTransaction(CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 }

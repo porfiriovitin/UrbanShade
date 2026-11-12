@@ -13,9 +13,17 @@ using UrbanShade.Infraestructure.Migrations;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddSingleton<RequestAdmission>();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("Authentication", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = builder.Configuration.GetValue<int?>("SecurityTraffic:AuthenticationRequestsPerMinute") ?? 20,
+            Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    options.AddPolicy("PublicReads", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     options.AddPolicy("InstitutionalDashboard", context => RateLimitPartition.GetFixedWindowLimiter(
         context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 60, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
@@ -56,7 +64,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-builder.Services.AddMvc(options => { options.Filters.Add<ExceptionFilter>(); });
+builder.Services.AddMvc(options => { options.Filters.Add<ExceptionFilter>(); options.Filters.Add<AuthenticationThrottleFilter>(); });
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddApplication();
@@ -78,9 +86,38 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-await ExecuteMigrations();
+// Production uses a separate deployment identity for DDL and seed operations.
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Tests"))
+    await ExecuteMigrations();
+else
+    await UrbanShade.Infraestructure.DataAcess.RuntimeDatabaseSecurity.Validate(app.Services);
+
+app.UseExceptionHandler(handler => handler.Run(async context =>
+{
+    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+    await context.Response.WriteAsJsonAsync(new PayloadResponse
+    {
+        Status = nameof(ResponseStatus.Error), Messages = ["An unexpected error occurred."]
+    }, context.RequestAborted);
+}));
 
 app.UseHttpsRedirection();
+
+// Bound work before authentication, including the live account/session DB lookups.
+app.Use(async (context, next) =>
+{
+    var admission = context.RequestServices.GetRequiredService<RequestAdmission>();
+    using var address = admission.Address(context.Connection.RemoteIpAddress?.ToString() ?? "anonymous");
+    using var concurrency = admission.Enter();
+    if (!address.IsAcquired || !concurrency.IsAcquired)
+    {
+        context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        context.Response.Headers.RetryAfter = "60";
+        await context.Response.WriteAsJsonAsync(RequestAdmission.Rejection(), context.RequestAborted);
+        return;
+    }
+    await next();
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

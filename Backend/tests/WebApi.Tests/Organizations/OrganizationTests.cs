@@ -122,20 +122,24 @@ public sealed class OrganizationTests : BaseIntegrationTest
     }
 
     [Fact]
-    public async Task ExistingAccountKeepsPassword_AndCanRepresentMultipleOrganizations()
+    public async Task PublicAccountPromotion_ReplacesCredentialsAndSessions_AndCanRepresentMultipleOrganizations()
     {
         var first = await CreateOrganization();
         var second = await CreateOrganization();
         var email = Email();
-        var registered = await Client.PostAsJsonAsync("/api/auth/register", new { name = "Existing", email, password = PermanentPassword });
-        var original = (await registered.Content.ReadFromJsonAsync<PayloadResponse<AuthenticationResponse>>())!.Data!;
+        var original = await RegisterAndLogin(new() { Name = "Existing", Email = email, Password = PermanentPassword });
         var linked = await AddMember(first.Id, email);
-        Assert.Null(linked.TemporaryPassword);
+        Assert.NotNull(linked.TemporaryPassword);
         Assert.Equal(original.User.Id, linked.User.Id);
         Assert.Equal("Existing", linked.User.Name);
         Assert.Null((await AddMember(second.Id, email)).TemporaryPassword);
 
-        var session = await Login(email, PermanentPassword);
+        Use(original.AccessToken);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Client.GetAsync("/api/auth/me")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Refresh(original.RefreshToken)).StatusCode);
+        Client.DefaultRequestHeaders.Authorization = null;
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Client.PostAsJsonAsync("/api/auth/login", new { email, password = PermanentPassword })).StatusCode);
+        var session = await CompleteAccess(email, linked.TemporaryPassword!);
         Assert.Equal("Manager", session.User.Role);
         Assert.Equal(2, session.OrganizationIds.Count);
         Assert.Contains(first.Id, session.OrganizationIds);
@@ -279,7 +283,7 @@ public sealed class OrganizationTests : BaseIntegrationTest
         Assert.Equal(HttpStatusCode.Unauthorized, (await Client.PostAsJsonAsync("/api/organizations", request)).StatusCode);
     }
 
-    private void AsAdmin() => Use(Tokens().CreateAccessToken(_admin).Value);
+    private void AsAdmin() => Use(IssueSession(_admin));
     private void Use(string token) => Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     private static JwtTokenService Tokens() => new(new JwtSettings { SigningKey = UrbanShadeApplicationFactory.SigningKey });
     private static string Email() => Guid.NewGuid().ToString("N") + "@example.com";

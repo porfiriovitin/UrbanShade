@@ -18,8 +18,9 @@ public sealed class JwtTokenService : ITokenService
         _firstAccess = firstAccess ?? new FirstAccessSettings();
     }
 
-    public AccessToken CreateAccessToken(User user, IReadOnlyCollection<Guid>? organizationIds = null) =>
-        CreateToken(user, "access", DateTime.UtcNow.AddMinutes(_settings.AccessTokenMinutes), organizationIds);
+    public AccessToken CreateAccessToken(User user, Guid sessionId, IReadOnlyCollection<Guid>? organizationIds = null) =>
+        sessionId == Guid.Empty ? throw new ArgumentException("A registered session is required.", nameof(sessionId)) :
+        CreateToken(user, "access", DateTime.UtcNow.AddMinutes(_settings.AccessTokenMinutes), organizationIds, sessionId);
 
     public AccessToken CreateFirstAccessToken(User user)
     {
@@ -29,12 +30,13 @@ public sealed class JwtTokenService : ITokenService
         return CreateToken(user, "first_access", expires, null);
     }
 
-    private AccessToken CreateToken(User user, string purpose, DateTime expires, IReadOnlyCollection<Guid>? organizationIds)
+    private AccessToken CreateToken(User user, string purpose, DateTime expires, IReadOnlyCollection<Guid>? organizationIds, Guid? sessionId = null)
     {
         var now = DateTime.UtcNow;
         var descriptor = new SecurityTokenDescriptor
         {
             IssuedAt = now, NotBefore = now, Expires = expires,
+            Issuer = _settings.Issuer, Audience = _settings.Audience,
             Claims = new Dictionary<string, object>
             {
                 [JwtRegisteredClaimNames.Sub] = user.Id.ToString(),
@@ -42,6 +44,7 @@ public sealed class JwtTokenService : ITokenService
                 ["role"] = purpose == "access" ? user.Role.ToString() : "FirstAccess",
                 ["purpose"] = purpose,
                 ["security_version"] = user.SecurityVersion,
+                ["sid"] = sessionId?.ToString() ?? string.Empty,
                 ["organization_ids"] = organizationIds?.Select(id => id.ToString()).ToArray() ?? []
             },
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.SigningKey)), SecurityAlgorithms.HmacSha256)

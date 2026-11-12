@@ -46,6 +46,7 @@ public static class DependencyInjectionExtension
             .Validate(settings => { settings.Validate(); return true; })
             .ValidateOnStart();
         services.AddMemoryCache();
+        services.AddSingleton<InstitutionalDashboardCache>();
         services.AddScoped<IWeatherRepository, WeatherRepository>();
         services.AddHttpClient<IOpenMeteoService, OpenMeteoService>((provider, client) =>
         {

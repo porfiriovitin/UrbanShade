@@ -29,6 +29,12 @@ public sealed class SecurityTests
         Assert.Throws<InvalidOperationException>(() => new JwtSettings { SigningKey = new string('k', length) }.Validate());
 
     [Fact]
-    public void Settings_AcceptSigningKeyWithoutIssuerAndAudience() =>
+    public void Settings_ProvideDefaultIssuerAndAudience() =>
         new JwtSettings { SigningKey = new string('k', 32) }.Validate();
+
+    [Theory]
+    [InlineData("", "UrbanShade.API")]
+    [InlineData("UrbanShade", " ")]
+    public void Settings_RejectMissingTrustBoundary(string issuer, string audience) =>
+        Assert.Throws<InvalidOperationException>(() => new JwtSettings { SigningKey = new string('k', 32), Issuer = issuer, Audience = audience }.Validate());
 }

@@ -64,8 +64,14 @@ public sealed class OrganizationMembersUseCase : IOrganizationMembersUseCase
         {
             if (!user.Active)
                 throw new OrganizationException(HttpStatusCode.Conflict, "The existing account is inactive.");
-            /// :: Existing accounts keep their password and administrative privileges.
-            if (user.Role == UserRoles.Citizen) user.UpdateRole(UserRoles.Manager);
+            // Public registration does not prove identity. Promotion must replace the
+            // credentials and sessions established before the administrative handoff.
+            if (user.Role == UserRoles.Citizen)
+            {
+                user.UpdateRole(UserRoles.Manager);
+                temporaryPassword = await SetTemporaryPassword(user);
+                await _accounts.RevokeSessions(user.Id, DateTime.UtcNow, cancellationToken);
+            }
         }
 
         var member = await _organizations.FindMember(organizationId, user.Id, cancellationToken);

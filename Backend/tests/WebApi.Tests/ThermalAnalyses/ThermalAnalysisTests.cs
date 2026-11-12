@@ -305,7 +305,7 @@ public sealed class ThermalAnalysisTests : BaseIntegrationTest
         context.Users.Add(user);
         context.SaveChanges();
         var tokens = new JwtTokenService(new JwtSettings { SigningKey = UrbanShadeApplicationFactory.SigningKey });
-        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokens.CreateAccessToken(user).Value);
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", IssueSession(user));
     }
 
     private async Task<PagedResponse<ThermalAnalysisResponse>> History(Guid id, string query = "") =>

@@ -12,18 +12,16 @@ public sealed class RegisterUseCase : IRegisterUseCase
 {
     private readonly IUserRepository _users;
     private readonly IPasswordHasher _passwords;
-    private readonly TokenIssuer _issuer;
     private readonly IUnitOfWork _unitOfWork;
 
-    public RegisterUseCase(IUserRepository users, IPasswordHasher passwords, TokenIssuer issuer, IUnitOfWork unitOfWork)
+    public RegisterUseCase(IUserRepository users, IPasswordHasher passwords, IUnitOfWork unitOfWork)
     {
         _users = users;
         _passwords = passwords;
-        _issuer = issuer;
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<AuthenticationResponse> Execute(RegisterRequest request, CancellationToken cancellationToken = default)
+    public async Task Execute(RegisterRequest request, CancellationToken cancellationToken = default)
     {
         /// :: Validate the request.
         Validate(request);
@@ -31,11 +29,10 @@ public sealed class RegisterUseCase : IRegisterUseCase
         /// :: Normalize the email to lowercase and trim whitespace for consistent lookup.
         var email = request.Email.Trim().ToLowerInvariant();
 
-        /// :: Check if the email is already registered. 
-        if (await _users.FindByEmail(email, cancellationToken) is not null)
-            throw new EmailAlreadyRegisteredException();
-
+        // Perform the same password derivation for new and existing addresses.
         var passwordHash = await _passwords.Hash(request.Password);
+        if (await _users.FindByEmail(email, cancellationToken) is not null)
+            return;
 
         /// :: Create a new user entity with the provided name, normalized email, and hashed password.
         var user = new User(request.Name, email, passwordHash);
@@ -43,11 +40,9 @@ public sealed class RegisterUseCase : IRegisterUseCase
         /// :: Add the new user to the repository.
         _users.Add(user);
 
-        /// :: Issue a new authentication token for the registered user and save the changes.
-        AuthenticationResponse response = _issuer.Issue(user);
-        await _unitOfWork.SaveChanges(cancellationToken);
-
-        return response;
+        // A concurrent registration must have the same public response.
+        try { await _unitOfWork.SaveChanges(cancellationToken); }
+        catch (EmailAlreadyRegisteredException) { }
     }
 
     private static void Validate(RegisterRequest request)

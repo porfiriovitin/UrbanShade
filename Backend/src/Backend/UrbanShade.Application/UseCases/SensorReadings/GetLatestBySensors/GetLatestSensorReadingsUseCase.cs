@@ -23,7 +23,7 @@ public sealed class GetLatestSensorReadingsUseCase : IGetLatestSensorReadingsUse
     public async Task<List<LatestSensorReadingResponse>> Execute(CancellationToken cancellationToken = default)
     {
         /// :: The map displays only active sensors for every role.
-        var sensors = (await _sensors.GetAll(true, null, null, null, cancellationToken)).Where(sensor => sensor.Active).ToDictionary(sensor => sensor.Id);
+        var sensors = (await _sensors.GetActiveForThermalMap(null, null, cancellationToken)).ToDictionary(sensor => sensor.Id);
         if (sensors.Count == 0) return [];
 
         var readings = await _readings.GetLatestBySensors(sensors.Keys.ToList(), cancellationToken);

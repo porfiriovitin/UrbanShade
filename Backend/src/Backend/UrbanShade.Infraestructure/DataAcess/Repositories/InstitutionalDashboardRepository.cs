@@ -19,12 +19,12 @@ internal sealed class InstitutionalDashboardRepository : IInstitutionalDashboard
     private readonly ThermalAnalysisSettings _thermal;
     private readonly GeoAnalysisSettings _geo;
     private readonly InstitutionalDashboardSettings _settings;
-    private readonly IMemoryCache _cache;
+    private readonly InstitutionalDashboardCache _cache;
     private readonly TimeProvider _time;
     private readonly ILogger<InstitutionalDashboardRepository> _logger;
 
     public InstitutionalDashboardRepository(UrbanShadeDbContext context, RegionThermalAnalysisSettings regional,
-        ThermalAnalysisSettings thermal, GeoAnalysisSettings geo, InstitutionalDashboardSettings settings, IMemoryCache cache,
+        ThermalAnalysisSettings thermal, GeoAnalysisSettings geo, InstitutionalDashboardSettings settings, InstitutionalDashboardCache cache,
         TimeProvider time, ILogger<InstitutionalDashboardRepository> logger)
     {
         _context = context;

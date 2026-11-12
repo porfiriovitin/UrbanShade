@@ -31,11 +31,12 @@ public sealed class TokenIssuer
         }
 
         /// :: Create acess and refresh tokens for the user.
-        var access = _tokens.CreateAccessToken(user, organizationIds);
+        var sessionId = familyId ?? Guid.NewGuid();
+        var access = _tokens.CreateAccessToken(user, sessionId, organizationIds);
         var refresh = _tokens.CreateRefreshToken();
 
         /// :: If no family ID is provided, generate a new one for the refresh token.
-        _refreshTokens.Add(new RefreshTokens(refresh.Hash, user.Id, refresh.ExpiresAt, familyId, user.SecurityVersion));
+        _refreshTokens.Add(new RefreshTokens(refresh.Hash, user.Id, refresh.ExpiresAt, sessionId, user.SecurityVersion));
 
         /// :: Format token expiration dates for the authentication response.
         return new(access.Value, access.ExpiresAt.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture),

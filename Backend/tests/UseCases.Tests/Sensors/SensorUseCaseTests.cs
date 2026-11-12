@@ -122,7 +122,7 @@ public sealed class SensorUseCaseTests
         public bool Saved { get; private set; }
         public Task<Sensor?> FindById(Guid id, CancellationToken cancellationToken) => Task.FromResult(Sensor?.Id == id && Sensor.DeletedAt is null ? Sensor : null);
         public Task<bool> CodeExists(string code, Guid? exceptId, CancellationToken cancellationToken) => Task.FromResult(Duplicate);
-        public Task<List<Sensor>> GetAll(bool activeOnly, SensorStatus? status, string? code, string? name, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task<List<Sensor>> GetAll(bool activeOnly, SensorStatus? status, string? code, string? name, CancellationToken cancellationToken, int page = 1, int pageSize = 100) => throw new NotSupportedException();
         public void Add(Sensor sensor) => Sensor = sensor;
         public Task SaveChanges(CancellationToken cancellationToken) { Saved = true; return Task.CompletedTask; }
         public Task<ITransaction> BeginTransaction(CancellationToken cancellationToken) => throw new NotSupportedException();

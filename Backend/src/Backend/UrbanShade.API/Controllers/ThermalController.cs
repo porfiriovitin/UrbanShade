@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UrbanShade.Application.UseCases.ThermalAnalyses.GetMap;
@@ -9,6 +10,7 @@ using UrbanShade.Communication.Responses.ThermalAnalyses;
 namespace UrbanShade.API.Controllers;
 
 [ApiController]
+[EnableRateLimiting("PublicReads")]
 [Authorize]
 [Route("api/thermal")]
 public sealed class ThermalController : ControllerBase

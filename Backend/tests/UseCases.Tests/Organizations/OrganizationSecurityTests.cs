@@ -15,7 +15,9 @@ public sealed class OrganizationSecurityTests
         user.UpdateRole(UserRoles.Manager);
         var ids = new[] { Guid.NewGuid(), Guid.NewGuid() };
         var service = new JwtTokenService(new JwtSettings { SigningKey = new string('k', 64) });
-        var jwt = new JsonWebToken(service.CreateAccessToken(user, ids).Value);
+        var sessionId = Guid.NewGuid();
+        var jwt = new JsonWebToken(service.CreateAccessToken(user, sessionId, ids).Value);
+        Assert.Equal(sessionId.ToString(), jwt.GetClaim("sid").Value);
         Assert.Equal("access", jwt.GetClaim("purpose").Value);
         Assert.Equal("0", jwt.GetClaim("security_version").Value);
         Assert.All(ids, id => Assert.Contains(id.ToString(), jwt.Claims.Where(claim => claim.Type == "organization_ids").Select(claim => claim.Value)));

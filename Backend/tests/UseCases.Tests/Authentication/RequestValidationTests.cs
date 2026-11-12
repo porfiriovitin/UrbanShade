@@ -13,7 +13,7 @@ public sealed class RequestValidationTests
     [Fact]
     public async Task Register_RejectsInvalidRequestBeforeAccessingDependencies()
     {
-        var useCase = new RegisterUseCase(null!, null!, null!, null!);
+        var useCase = new RegisterUseCase(null!, null!, null!);
 
         var exception = await Assert.ThrowsAsync<AuthenticationException>(() => useCase.Execute(new RegisterRequest()));
 

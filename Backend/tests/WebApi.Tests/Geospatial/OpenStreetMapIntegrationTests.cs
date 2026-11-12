@@ -200,7 +200,7 @@ public sealed class OpenStreetMapIntegrationTests : BaseIntegrationTest
         user.UpdateRole(role);
         context.Users.Add(user);
         await context.SaveChangesAsync();
-        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", new JwtTokenService(new JwtSettings { SigningKey = UrbanShadeApplicationFactory.SigningKey }).CreateAccessToken(user).Value);
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", IssueSession(user));
     }
     private sealed class FakeSource(OpenStreetMapSnapshot? snapshot) : IOpenStreetMapService
     {

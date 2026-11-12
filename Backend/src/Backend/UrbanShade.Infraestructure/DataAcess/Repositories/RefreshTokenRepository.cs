@@ -15,6 +15,10 @@ internal sealed class RefreshTokenRepository : IRefreshTokenRepository
 
     public void Add(RefreshTokens token) => _context.RefreshTokens.Add(token);
 
+    public Task<bool> IsSessionActive(Guid familyId, Guid userId, int securityVersion, DateTime now, CancellationToken cancellationToken) =>
+        _context.RefreshTokens.AsNoTracking().AnyAsync(token => token.FamilyId == familyId && token.UserId == userId &&
+            token.SecurityVersion == securityVersion && token.RevokedAt == null && token.ExpiresAt > now, cancellationToken);
+
     public async Task<RefreshTokens?> FindForUpdate(string tokenHash, CancellationToken cancellationToken)
     {
         /// :: Serialize the entire family, including attempts using different generations of its token.

@@ -294,7 +294,7 @@ public sealed class CityThermalTests : BaseIntegrationTest
         if (organizationId.HasValue) context.OrganizationMembers.Add(new OrganizationMember(organizationId.Value, user.Id));
         await context.SaveChangesAsync();
         var tokens = new JwtTokenService(new JwtSettings { SigningKey = UrbanShadeApplicationFactory.SigningKey });
-        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", tokens.CreateAccessToken(user).Value);
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", IssueSession(user));
         return user;
     }
 

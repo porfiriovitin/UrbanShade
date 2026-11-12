@@ -44,7 +44,7 @@ sequenceDiagram
 
 Uma instituição pode possuir vários sensores e responsáveis. Um responsável pode estar vinculado a várias instituições.
 
-O cadastro público `POST /api/auth/register` cria contas `Citizen`. A role enviada pelo cliente não concede privilégios administrativos. Para executar os passos administrativos deste guia, utilize uma conta já provisionada como `PlatformAdministrator`.
+O cadastro público `POST /api/auth/register` cria contas `Citizen` e retorna `202` genérico, sem tokens; depois o cliente chama login. A role enviada pelo cliente não concede privilégios administrativos. Para executar os passos administrativos deste guia, utilize uma conta já provisionada como `PlatformAdministrator`.
 
 ## 3. Preparar o ambiente e o Swagger
 
@@ -199,15 +199,15 @@ O administrador deve entregar ao responsável seu e-mail e a senha temporária r
 
 ### Quando o e-mail já possui conta
 
-- O backend associa a conta existente sem substituir sua senha ou seu nome.
-- Uma conta `Citizen` passa a `Manager`.
+- O backend preserva o nome da conta existente. Ao promover uma conta `Citizen`, substitui a senha, revoga as sessões e exige primeiro acesso com a nova credencial entregue pelo administrador.
+- Uma conta `Citizen` passa a `Manager`, com nova senha temporária.
 - Uma conta administrativa mantém a role `PlatformAdministrator`.
-- `temporaryPassword` e `temporaryPasswordExpiresAt` retornam `null`.
+- Para contas que já são `Manager` ou `PlatformAdministrator`, `temporaryPassword` e `temporaryPasswordExpiresAt` retornam `null`; as credenciais existentes são preservadas.
 - Uma conta inativa não pode ser associada; a operação retorna `409 Conflict`.
 - Um vínculo já ativo retorna `409 Conflict`.
 - Um vínculo anteriormente removido pode ser reativado por essa mesma operação.
 
-Se a conta já tem senha definitiva, o responsável usa sua senha atual. Se ainda está em primeiro acesso por outro vínculo, utiliza a credencial temporária que já recebeu.
+Se a conta já era `Manager` e tem senha definitiva, o responsável usa sua senha atual. Se ainda está em primeiro acesso por outro vínculo, utiliza a credencial temporária que já recebeu.
 
 O usuário deve fazer novo login após uma mudança de role. As instituições presentes no token são atualizadas no login e no refresh.
 

@@ -5,5 +5,5 @@ namespace UrbanShade.Application.UseCases.Authentication.Register;
 
 public interface IRegisterUseCase
 {
-    Task<AuthenticationResponse> Execute(RegisterRequest request, CancellationToken cancellationToken = default);
+    Task Execute(RegisterRequest request, CancellationToken cancellationToken = default);
 }

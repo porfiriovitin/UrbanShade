@@ -260,6 +260,6 @@ public sealed class WeatherTests : BaseIntegrationTest
         user.UpdateRole(role);
         context.Users.Add(user);
         await context.SaveChangesAsync();
-        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", new JwtTokenService(new JwtSettings { SigningKey = UrbanShadeApplicationFactory.SigningKey }).CreateAccessToken(user).Value);
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", IssueSession(user));
     }
 }

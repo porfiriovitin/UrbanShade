@@ -11,6 +11,7 @@ using UrbanShade.Domain.Enums;
 namespace UrbanShade.API.Controllers;
 
 [ApiController]
+[EnableRateLimiting("PublicReads")]
 [Authorize]
 [Route("api/weather")]
 public sealed class WeatherController : ControllerBase

@@ -34,6 +34,10 @@ public sealed class UrbanShadeApplicationFactory : WebApplicationFactory<Program
         {
             ["ConnectionStrings:DbConnection"] = ConnectionString,
             ["Jwt:SigningKey"] = SigningKey,
+            // Most integration tests share a loopback address; throttling has dedicated tests.
+            ["SecurityTraffic:RequestsPerMinute"] = "100000",
+            ["SecurityTraffic:AuthenticationRequestsPerMinute"] = "100000",
+            ["SecurityTraffic:AttemptsPerAccountPerMinute"] = "100000",
             ["SensorSimulation:Enabled"] = "false",
             ["ThermalAnalysis:Enabled"] = "false",
             ["OpenMeteo:AutomaticRefreshEnabled"] = "false",

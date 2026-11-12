@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UrbanShade.Application.UseCases.Cities.Register;
@@ -11,6 +12,7 @@ using UrbanShade.Communication.Responses.Cities;
 namespace UrbanShade.API.Controllers;
 
 [ApiController]
+[EnableRateLimiting("PublicReads")]
 [Authorize]
 [Route("api/cities")]
 public sealed class CitiesController : ControllerBase

@@ -29,11 +29,12 @@ public sealed class AuthenticationTests : BaseIntegrationTest
     {
         var request = RegisterRequestBuilder.Build();
         var result = await Client.PostAsJsonAsync("/api/auth/register", new { request.Name, Email = request.Email.ToUpperInvariant(), request.Password, Role = "PlatformAdministrator" });
-        Assert.Equal(HttpStatusCode.Created, result.StatusCode);
-        var data = (await result.Content.ReadFromJsonAsync<PayloadResponse<AuthenticationResponse>>())!.Data!;
+        Assert.Equal(HttpStatusCode.Accepted, result.StatusCode);
+        var login = await Client.PostAsJsonAsync("/api/auth/login", new { request.Email, request.Password });
+        var data = (await login.Content.ReadFromJsonAsync<PayloadResponse<AuthenticationResponse>>())!.Data!;
         var jwt = new JsonWebToken(data.AccessToken);
-        Assert.Empty(jwt.Issuer);
-        Assert.Empty(jwt.Audiences);
+        Assert.Equal("UrbanShade", jwt.Issuer);
+        Assert.Contains("UrbanShade.API", jwt.Audiences);
         Assert.Equal(data.User.Id.ToString(), jwt.Subject);
         Assert.Equal("Citizen", jwt.GetClaim("role").Value);
         await using var connection = new NpgsqlConnection(Factory.ConnectionString);
@@ -68,12 +69,12 @@ public sealed class AuthenticationTests : BaseIntegrationTest
     }
 
     [Fact]
-    public async Task DuplicateEmail_ReturnsConflict_EvenForConcurrentRegistrations()
+    public async Task DuplicateEmail_ReturnsSameEnvelope_EvenForConcurrentRegistrations()
     {
         var request = RegisterRequestBuilder.Build();
         var responses = await Task.WhenAll(Enumerable.Range(0, 2).Select(_ => Client.PostAsJsonAsync("/api/auth/register", request)));
-        Assert.Single(responses, r => r.StatusCode == HttpStatusCode.Created);
-        Assert.Single(responses, r => r.StatusCode == HttpStatusCode.Conflict);
+        Assert.All(responses, r => Assert.Equal(HttpStatusCode.Accepted, r.StatusCode));
+        Assert.Equal(await responses[0].Content.ReadAsStringAsync(), await responses[1].Content.ReadAsStringAsync());
     }
 
     [Theory]
@@ -106,8 +107,12 @@ public sealed class AuthenticationTests : BaseIntegrationTest
         var next = (await response.Content.ReadFromJsonAsync<PayloadResponse<AuthenticationResponse>>())!.Data!;
         Assert.NotEqual(original.RefreshToken, next.RefreshToken);
         Assert.NotEqual(original.AccessToken, next.AccessToken);
+        Client.DefaultRequestHeaders.Authorization = new("Bearer", original.AccessToken);
+        Assert.Equal(HttpStatusCode.OK, (await Client.GetAsync("/api/auth/me")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await Refresh(original.RefreshToken)).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await Refresh(next.RefreshToken)).StatusCode);
+        Client.DefaultRequestHeaders.Authorization = new("Bearer", next.AccessToken);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Client.GetAsync("/api/auth/me")).StatusCode);
     }
 
     [Fact]
@@ -124,12 +129,18 @@ public sealed class AuthenticationTests : BaseIntegrationTest
     [Fact]
     public async Task Logout_RevokesSession_AndIsIdempotent()
     {
-        var original = await Register();
+        var request = RegisterRequestBuilder.Build();
+        var original = await RegisterAndLogin(request);
+        var independent = await RegisterAndLogin(request);
         var response = await Refresh(original.RefreshToken);
         var next = (await response.Content.ReadFromJsonAsync<PayloadResponse<AuthenticationResponse>>())!.Data!;
         for (var i = 0; i < 2; i++)
             Assert.Equal(HttpStatusCode.NoContent, (await Client.PostAsJsonAsync("/api/auth/logout", new { original.RefreshToken })).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await Refresh(next.RefreshToken)).StatusCode);
+        Client.DefaultRequestHeaders.Authorization = new("Bearer", next.AccessToken);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Client.GetAsync("/api/auth/me")).StatusCode);
+        Client.DefaultRequestHeaders.Authorization = new("Bearer", independent.AccessToken);
+        Assert.Equal(HttpStatusCode.OK, (await Client.GetAsync("/api/auth/me")).StatusCode);
     }
 
     [Fact]
@@ -144,8 +155,7 @@ public sealed class AuthenticationTests : BaseIntegrationTest
     public async Task InactiveUser_CannotLoginRefreshOrGetProfile()
     {
         var request = RegisterRequestBuilder.Build();
-        var response = await Client.PostAsJsonAsync("/api/auth/register", request);
-        var data = (await response.Content.ReadFromJsonAsync<PayloadResponse<AuthenticationResponse>>())!.Data!;
+        var data = await RegisterAndLogin(request);
         await ExecuteSql("UPDATE \"Users\" SET \"Active\" = false WHERE \"Id\" = @id", data.User.Id);
         Assert.Equal(HttpStatusCode.Unauthorized, (await Client.PostAsJsonAsync("/api/auth/login", new { request.Email, request.Password })).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await Refresh(data.RefreshToken)).StatusCode);
@@ -160,6 +170,28 @@ public sealed class AuthenticationTests : BaseIntegrationTest
         await ExecuteSql("UPDATE \"Users\" SET \"Role\" = 'Manager' WHERE \"Id\" = @id", data.User.Id);
         var result = (await (await Refresh(data.RefreshToken)).Content.ReadFromJsonAsync<PayloadResponse<AuthenticationResponse>>())!.Data!;
         Assert.Equal("Manager", new JsonWebToken(result.AccessToken).GetClaim("role").Value);
+    }
+
+    [Theory]
+    [InlineData("issuer")]
+    [InlineData("audience")]
+    [InlineData("session")]
+    public async Task Bearer_RejectsOtherTrustBoundaryOrUnregisteredSession(string scenario)
+    {
+        var data = await Register();
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var user = await scope.ServiceProvider.GetRequiredService<UrbanShadeDbContext>().Users.AsNoTracking().SingleAsync(u => u.Id == data.User.Id);
+        var sessionId = Guid.Parse(new JsonWebToken(data.AccessToken).GetClaim("sid").Value);
+        var settings = new UrbanShade.Infraestructure.Security.JwtSettings
+        {
+            SigningKey = UrbanShadeApplicationFactory.SigningKey,
+            Issuer = scenario == "issuer" ? "other-environment" : "UrbanShade",
+            Audience = scenario == "audience" ? "other-service" : "UrbanShade.API"
+        };
+        var token = new UrbanShade.Infraestructure.Security.JwtTokenService(settings).CreateAccessToken(user,
+            sessionId: scenario == "session" ? Guid.NewGuid() : sessionId);
+        Client.DefaultRequestHeaders.Authorization = new("Bearer", token.Value);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Client.GetAsync("/api/auth/me")).StatusCode);
     }
 
     [Theory]
@@ -207,7 +239,7 @@ public sealed class AuthenticationTests : BaseIntegrationTest
             await context.SaveChangesAsync();
         }
         var tokens = new UrbanShade.Infraestructure.Security.JwtTokenService(new() { SigningKey = UrbanShadeApplicationFactory.SigningKey });
-        Client.DefaultRequestHeaders.Authorization = new("Bearer", tokens.CreateAccessToken(user).Value);
+        Client.DefaultRequestHeaders.Authorization = new("Bearer", IssueSession(user));
         var response = await Client.GetAsync("/test/administration");
         Assert.Equal(expected, response.StatusCode);
         if (expected == HttpStatusCode.Forbidden)

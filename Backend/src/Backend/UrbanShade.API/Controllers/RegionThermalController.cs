@@ -15,6 +15,7 @@ using UrbanShade.Application.UseCases.RegionThermalAnalyses.GetMap;
 namespace UrbanShade.API.Controllers;
 
 [ApiController]
+[EnableRateLimiting("PublicReads")]
 [Authorize]
 [Route("api/thermal/regions")]
 public sealed class RegionThermalController : ControllerBase

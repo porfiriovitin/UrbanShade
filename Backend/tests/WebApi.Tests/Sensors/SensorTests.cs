@@ -174,7 +174,26 @@ public sealed class SensorTests : BaseIntegrationTest
         context.Users.Add(user);
         context.SaveChanges();
         var service = new JwtTokenService(new JwtSettings { SigningKey = UrbanShadeApplicationFactory.SigningKey });
-        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", service.CreateAccessToken(user).Value);
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", IssueSession(user));
+    }
+
+    [Fact]
+    public async Task Listing_PaginatesInSql_AndRejectsOversizedPages()
+    {
+        Authenticate(UserRoles.Citizen);
+        var prefix = "PAGED-" + Guid.NewGuid().ToString("N");
+        using (var scope = Factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<UrbanShadeDbContext>();
+            context.Sensors.AddRange(Enumerable.Range(0, 103).Select(i => new Sensor(prefix + i.ToString("D3"), prefix, null, 0, 0, null)));
+            await context.SaveChangesAsync();
+        }
+        var first = await List($"?name={prefix}&page=1&pageSize=100");
+        var second = await List($"?name={prefix}&page=2&pageSize=100");
+        Assert.Equal(100, first.Count);
+        Assert.Equal(3, second.Count);
+        Assert.Empty(first.Select(s => s.Id).Intersect(second.Select(s => s.Id)));
+        Assert.Equal(HttpStatusCode.BadRequest, (await Client.GetAsync("/api/sensors?pageSize=101")).StatusCode);
     }
 
     private static RegisterSensorRequest Request() => new()

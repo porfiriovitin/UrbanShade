@@ -25,8 +25,10 @@ internal static class BearerConfiguration
             /// :: Set parameters for validating the JWT tokens.
             options.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = false,
-                ValidateAudience = false,
+                ValidateIssuer = true,
+                ValidIssuer = settings.Issuer,
+                ValidateAudience = true,
+                ValidAudience = settings.Audience,
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.SigningKey)),
                 ValidateLifetime = true, 
@@ -58,7 +60,17 @@ internal static class BearerConfiguration
                     if (user is null || !user.Active || user.SecurityVersion != version ||
                         (firstAccess ? !user.MustChangePassword || !user.TemporaryPasswordExpiresAt.HasValue || user.TemporaryPasswordExpiresAt <= DateTime.UtcNow
                             : user.MustChangePassword || principal.FindFirst("purpose")?.Value != "access" || principal.FindFirst("role")?.Value != user.Role.ToString()))
+                    {
                         context.Fail("Account or session is unavailable.");
+                        return;
+                    }
+                    if (!firstAccess)
+                    {
+                        var sessions = context.HttpContext.RequestServices.GetRequiredService<IRefreshTokenRepository>();
+                        if (!Guid.TryParse(principal.FindFirst("sid")?.Value, out var sessionId) ||
+                            !await sessions.IsSessionActive(sessionId, id, version, DateTime.UtcNow, context.HttpContext.RequestAborted))
+                            context.Fail("Account or session is unavailable.");
+                    }
                 },
                 OnChallenge = async context =>
                 {

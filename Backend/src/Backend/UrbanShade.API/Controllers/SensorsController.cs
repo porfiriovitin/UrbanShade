@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UrbanShade.Application.UseCases.Sensors.Register;
@@ -24,6 +25,7 @@ using UrbanShade.Communication.Responses.ThermalAnalyses;
 namespace UrbanShade.API.Controllers;
 
 [ApiController]
+[EnableRateLimiting("PublicReads")]
 [Authorize]
 [Route("api/sensors")]
 public sealed class SensorsController : ControllerBase

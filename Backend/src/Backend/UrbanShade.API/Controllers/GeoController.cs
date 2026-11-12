@@ -15,6 +15,7 @@ using UrbanShade.Communication.Responses;
 namespace UrbanShade.API.Controllers;
 
 [ApiController]
+[EnableRateLimiting("PublicReads")]
 [Authorize]
 [Route("api/geo")]
 public sealed class GeoController : ControllerBase

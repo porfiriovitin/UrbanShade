@@ -15,6 +15,6 @@ public static class RegionThermalAnalysisMapper
         IsHeatIslandCandidate = analysis.IsHeatIslandCandidate, DataQuality = analysis.DataQuality.ToString(), ConfidenceLevel = analysis.ConfidenceLevel.ToString(),
         DataOrigin = analysis.DataOrigin, AnalysisMode = analysis.DataOrigin == "SIMULATED_SENSORS" ? "DEMONSTRATION" : "EXPERIMENTAL",
         AlgorithmVersion = analysis.AlgorithmVersion, AnalyzedAt = analysis.AnalyzedAt,
-        SourceMetadata = JsonSerializer.Deserialize<JsonElement>(analysis.SourceMetadata)
+        SourceMetadata = UrbanShade.Application.UseCases.InstitutionalDashboard.InstitutionalDashboardQuery.PublicMetadata(analysis.SourceMetadata)
     };
 }

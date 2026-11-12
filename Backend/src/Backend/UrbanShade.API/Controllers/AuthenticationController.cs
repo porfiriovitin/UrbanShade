@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using UrbanShade.Application.UseCases.Authentication.Login.WithEmailAndPassword;
 using UrbanShade.Application.UseCases.Authentication.Register;
 using UrbanShade.Application.UseCases.Authentication.Refresh;
@@ -16,6 +17,8 @@ namespace UrbanShade.API.Controllers;
 [ApiController]
 [Route("api/auth")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+[EnableRateLimiting("Authentication")]
+[RequestSizeLimit(8192)]
 public sealed class AuthenticationController : ControllerBase
 {
     [Authorize(Policy = "FirstAccess")]
@@ -40,12 +43,11 @@ public sealed class AuthenticationController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterRequest request, [FromServices] IRegisterUseCase useCase, CancellationToken cancellationToken)
     {
-        var response = await useCase.Execute(request, cancellationToken);
-
-        return StatusCode(StatusCodes.Status201Created, new PayloadResponse<AuthenticationResponse>
+        await useCase.Execute(request, cancellationToken);
+        return Accepted(new PayloadResponse
         {
             Status = nameof(ResponseStatus.Success),
-            Data = response
+            Messages = ["If registration is available, the account has been created. Sign in with your credentials."]
         });
     }
 

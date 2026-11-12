@@ -35,7 +35,8 @@ public sealed class RegionThermalAnalysisTests : BaseIntegrationTest
         Assert.Equal("PARTIAL", first.DataQuality);
         Assert.Equal("SIMULATED_SENSORS", first.DataOrigin);
         Assert.Null(first.IsHeatIslandCandidate);
-        Assert.Equal(2, first.SourceMetadata.GetProperty("sensors").GetArrayLength());
+        Assert.False(first.SourceMetadata.TryGetProperty("sensors", out _));
+        Assert.Equal(2, first.SourceMetadata.GetProperty("sensorObservations").GetArrayLength());
         Assert.Equal(first.Id, (await Analyze(region.Id)).Id);
         await using (var scope = Factory.Services.CreateAsyncScope())
         {
@@ -182,6 +183,6 @@ public sealed class RegionThermalAnalysisTests : BaseIntegrationTest
         user.UpdateRole(role);
         context.Users.Add(user);
         await context.SaveChangesAsync();
-        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", new JwtTokenService(new JwtSettings { SigningKey = UrbanShadeApplicationFactory.SigningKey }).CreateAccessToken(user).Value);
+        Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", IssueSession(user));
     }
 }

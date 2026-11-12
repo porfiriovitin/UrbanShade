@@ -62,7 +62,7 @@ public sealed class InstitutionalDashboardTests : BaseIntegrationTest
         await using var scope = Factory.Services.CreateAsyncScope();
         var services = scope.ServiceProvider;
         var clock = new DashboardClock(DateTimeOffset.UtcNow);
-        using var cache = new MemoryCache(new MemoryCacheOptions());
+        using var cache = new InstitutionalDashboardCache();
         var repository = new InstitutionalDashboardRepository(services.GetRequiredService<UrbanShadeDbContext>(),
             services.GetRequiredService<RegionThermalAnalysisSettings>(), services.GetRequiredService<ThermalAnalysisSettings>(),
             services.GetRequiredService<GeoAnalysisSettings>(), services.GetRequiredService<InstitutionalDashboardSettings>(), cache,
@@ -333,7 +333,7 @@ public sealed class InstitutionalDashboardTests : BaseIntegrationTest
 
     private static string Period() => $"&startDate={Uri.EscapeDataString(DateTime.UtcNow.AddDays(-3).ToString("O"))}&endDate={Uri.EscapeDataString(DateTime.UtcNow.AddMinutes(1).ToString("O"))}";
     private static JwtTokenService TokenService() => new(new JwtSettings { SigningKey = UrbanShadeApplicationFactory.SigningKey });
-    private void Authenticate(User user) => Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", TokenService().CreateAccessToken(user).Value);
+    private void Authenticate(User user) => Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", IssueSession(user));
 
     private async Task SaveUser(User user)
     {
