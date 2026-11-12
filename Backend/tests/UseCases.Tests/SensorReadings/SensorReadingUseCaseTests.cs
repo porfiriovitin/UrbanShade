@@ -61,7 +61,7 @@ public sealed class SensorReadingUseCaseTests
         store.Sensors.Add(new Sensor("ONE", "One", null, 0, 0, null));
         store.Sensors.Add(new Sensor("TWO", "Two", null, 0, 0, null));
         var settings = new SensorSimulationSettings();
-        await new GenerateSensorReadingsUseCase(store, store, store, new SensorReadingGenerator(settings, new Random(42), new FixedTime()), settings).Execute();
+        await new GenerateSensorReadingsUseCase(store, store, store, new SensorReadingGenerator(settings, new Random(42), new FixedTime()), settings, new FixedTime()).Execute();
         Assert.Equal(2, store.Readings.Count);
         Assert.Equal(1, store.BatchCalls);
         Assert.True(store.Saved);
@@ -74,7 +74,7 @@ public sealed class SensorReadingUseCaseTests
     {
         var store = new TestStore();
         var settings = new SensorSimulationSettings { Enabled = false };
-        await new GenerateSensorReadingsUseCase(store, store, store, new SensorReadingGenerator(settings, new Random(42), new FixedTime()), settings).Execute();
+        await new GenerateSensorReadingsUseCase(store, store, store, new SensorReadingGenerator(settings, new Random(42), new FixedTime()), settings, new FixedTime()).Execute();
         Assert.False(store.Began);
         Assert.Empty(store.Readings);
     }
@@ -86,7 +86,7 @@ public sealed class SensorReadingUseCaseTests
         store.Sensors.Add(new Sensor("ONE", "One", null, 0, 0, null));
         var settings = new SensorSimulationSettings();
         await Assert.ThrowsAsync<InvalidOperationException>(() => new GenerateSensorReadingsUseCase(store, store, store,
-            new SensorReadingGenerator(settings, new Random(42), new FixedTime()), settings).Execute());
+            new SensorReadingGenerator(settings, new Random(42), new FixedTime()), settings, new FixedTime()).Execute());
         Assert.False(store.Committed);
         Assert.True(store.Disposed);
     }

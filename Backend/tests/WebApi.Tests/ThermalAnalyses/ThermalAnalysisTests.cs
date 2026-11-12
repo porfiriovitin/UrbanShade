@@ -255,7 +255,7 @@ public sealed class ThermalAnalysisTests : BaseIntegrationTest
             var context = scope.ServiceProvider.GetRequiredService<UrbanShadeDbContext>();
             var settings = new SensorSimulationSettings { MinTemperature = 33.1m, MaxTemperature = 33.1m, MinHumidity = 56.4m, MaxHumidity = 56.4m };
             await new GenerateSensorReadingsUseCase(new SensorRepository(context), new SensorReadingRepository(context), new UnitOfWork(context),
-                new SensorReadingGenerator(settings, new Random(42), TimeProvider.System), settings).Execute();
+                new SensorReadingGenerator(settings, new Random(42), TimeProvider.System), settings, TimeProvider.System).Execute();
         }
         await Process();
         await using var verification = Factory.Services.CreateAsyncScope();

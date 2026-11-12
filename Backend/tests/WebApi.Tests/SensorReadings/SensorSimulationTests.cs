@@ -27,6 +27,23 @@ public sealed class SensorSimulationTests : IClassFixture<UrbanShadeApplicationF
     }
 
     [Fact]
+    public async Task ConcurrentGenerators_ProduceOneReadingPerInterval()
+    {
+        var sensor = Sensor();
+        await using (var context = Context()) { context.Sensors.Add(sensor); await context.SaveChangesAsync(); }
+        await using var first = Context();
+        await using var second = Context();
+        var settings = new SensorSimulationSettings();
+        await Task.WhenAll(Cycle(first, settings).Execute(), Cycle(second, settings).Execute());
+        await using var verification = Context();
+        Assert.Equal(1, await verification.SensorReadings.CountAsync(item => item.SensorId == sensor.Id));
+        await verification.SensorReadings.Where(item => item.SensorId == sensor.Id)
+            .ExecuteUpdateAsync(update => update.SetProperty(item => item.MeasuredAt, DateTime.UtcNow.AddMinutes(-settings.IntervalMinutes - 1)));
+        await Cycle(verification, settings).Execute();
+        Assert.Equal(2, await verification.SensorReadings.CountAsync(item => item.SensorId == sensor.Id));
+    }
+
+    [Fact]
     public async Task Generation_PersistsOnlyForActiveSensors_AndLoadsPreviousValuesInTwoQueries()
     {
         var settings = new SensorSimulationSettings();
@@ -71,7 +88,7 @@ public sealed class SensorSimulationTests : IClassFixture<UrbanShadeApplicationF
         await using (var context = Context())
             await Cycle(context, settings).Execute();
         await using (var context = Context())
-            Assert.Equal(3, await context.SensorReadings.CountAsync(reading => reading.SensorId == activeId));
+            Assert.Equal(2, await context.SensorReadings.CountAsync(reading => reading.SensorId == activeId));
     }
 
     [Fact]
@@ -89,7 +106,7 @@ public sealed class SensorSimulationTests : IClassFixture<UrbanShadeApplicationF
             var readings = new InvalidReadingRepository(new SensorReadingRepository(context));
             var settings = new SensorSimulationSettings();
             var useCase = new GenerateSensorReadingsUseCase(new SensorRepository(context), readings, new UnitOfWork(context),
-                new SensorReadingGenerator(settings, new Random(42), TimeProvider.System), settings);
+                new SensorReadingGenerator(settings, new Random(42), TimeProvider.System), settings, TimeProvider.System);
             await Assert.ThrowsAsync<DbUpdateException>(() => useCase.Execute());
         }
 
@@ -118,7 +135,7 @@ public sealed class SensorSimulationTests : IClassFixture<UrbanShadeApplicationF
         var gate = new GatedSensorRepository(new SensorRepository(generationContext));
         var settings = new SensorSimulationSettings();
         var useCase = new GenerateSensorReadingsUseCase(gate, new SensorReadingRepository(generationContext), new UnitOfWork(generationContext),
-            new SensorReadingGenerator(settings, new Random(42), TimeProvider.System), settings);
+            new SensorReadingGenerator(settings, new Random(42), TimeProvider.System), settings, TimeProvider.System);
         var generation = useCase.Execute();
         await gate.Locked.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
@@ -242,7 +259,7 @@ public sealed class SensorSimulationTests : IClassFixture<UrbanShadeApplicationF
 
     private static GenerateSensorReadingsUseCase Cycle(UrbanShadeDbContext context, SensorSimulationSettings settings) =>
         new(new SensorRepository(context), new SensorReadingRepository(context), new UnitOfWork(context),
-            new SensorReadingGenerator(settings, new Random(42), TimeProvider.System), settings);
+            new SensorReadingGenerator(settings, new Random(42), TimeProvider.System), settings, TimeProvider.System);
 
     private sealed class SelectCounter : DbCommandInterceptor
     {

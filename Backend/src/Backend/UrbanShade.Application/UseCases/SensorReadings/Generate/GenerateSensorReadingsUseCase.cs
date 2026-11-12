@@ -10,14 +10,16 @@ public sealed class GenerateSensorReadingsUseCase : IGenerateSensorReadingsUseCa
     private readonly IUnitOfWork _unitOfWork;
     private readonly SensorReadingGenerator _generator;
     private readonly SensorSimulationSettings _settings;
+    private readonly TimeProvider _time;
 
-    public GenerateSensorReadingsUseCase(ISensorRepository sensors, ISensorReadingRepository readings, IUnitOfWork unitOfWork, SensorReadingGenerator generator, SensorSimulationSettings settings)
+    public GenerateSensorReadingsUseCase(ISensorRepository sensors, ISensorReadingRepository readings, IUnitOfWork unitOfWork, SensorReadingGenerator generator, SensorSimulationSettings settings, TimeProvider time)
     {
         _sensors = sensors;
         _readings = readings;
         _unitOfWork = unitOfWork;
         _generator = generator;
         _settings = settings;
+        _time = time;
     }
 
     public async Task Execute(CancellationToken cancellationToken = default)
@@ -33,7 +35,8 @@ public sealed class GenerateSensorReadingsUseCase : IGenerateSensorReadingsUseCa
         var previous = (await _readings.GetLatestBySensors(sensors.Select(sensor => sensor.Id).ToList(), cancellationToken))
             .ToDictionary(reading => reading.SensorId);
 
-        var readings = sensors.Select(sensor => _generator.Generate(sensor.Id, previous.GetValueOrDefault(sensor.Id))).ToList();
+        var cutoff = _time.GetUtcNow().UtcDateTime.AddMinutes(-_settings.IntervalMinutes);
+        var readings = sensors.Where(sensor => !previous.TryGetValue(sensor.Id, out var latest) || latest.MeasuredAt <= cutoff).Select(sensor => _generator.Generate(sensor.Id, previous.GetValueOrDefault(sensor.Id))).ToList();
         _readings.AddRange(readings);
         await _unitOfWork.SaveChanges(cancellationToken);
         await transaction.Commit(cancellationToken);
