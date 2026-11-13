@@ -4,308 +4,176 @@
 
 **Global Solution 2026/2 — FIAP | Engenharia de Software**
 
-> Transformando dados ambientais em decisões inteligentes para combater os efeitos do calor urbano e construir cidades mais sustentáveis.
+> Dados ambientais para compreender o calor urbano e apoiar decisões sobre cidades mais confortáveis.
+
+[Visão geral](#-sobre-o-projeto) · [Backend](#-backend-implementado) · [Execução](#-como-executar) · [Documentação](#-documentação-técnica) · [Uso de IA](#-uso-de-inteligência-artificial--declaração-fiap)
 
 ---
 
 ## 📖 Sobre o projeto
 
-O **UrbanShade** é uma plataforma de inteligência climática urbana desenvolvida para monitorar condições ambientais, identificar áreas com maior exposição ao calor e auxiliar gestores públicos na priorização de intervenções urbanas.
+O **UrbanShade** é uma plataforma de inteligência climática urbana desenvolvida para monitorar condições ambientais, identificar áreas com maior exposição ao calor e apoiar gestores públicos no planejamento de intervenções urbanas.
 
-A solução combina dados meteorológicos, sensores IoT, geolocalização e algoritmos de análise para apoiar decisões relacionadas à arborização, ao sombreamento e à melhoria do conforto térmico da população.
+A solução combina sensores simulados, meteorologia, dados geográficos e análises térmicas. Também oferece recursos no backend para comparar rotas a pé considerando as condições ambientais disponíveis.
 
-O projeto está sendo desenvolvido como parte da **Global Solution 2026/2 da FIAP**, cujo tema é *CitizenTech — Tecnologia com o cidadão no centro da inovação*.
+O projeto integra a **Global Solution 2026/2 da FIAP**, com o tema *CitizenTech — Tecnologia com o cidadão no centro da inovação*.
 
-## 🎯 O problema
+## 🎯 Problema e público-alvo
 
-O crescimento urbano, a impermeabilização do solo e a redução da cobertura vegetal contribuem para a formação de ilhas de calor.
+A impermeabilização do solo e a redução da cobertura vegetal contribuem para ilhas de calor. A exposição afeta especialmente idosos, crianças, trabalhadores ao ar livre e pedestres.
 
-Ruas com pouca arborização e grandes superfícies asfaltadas podem apresentar condições térmicas significativamente diferentes de regiões com vegetação e sombreamento.
+O UrbanShade busca apoiar **prefeituras e gestores públicos** na identificação de regiões que precisam de atenção e oferecer aos **cidadãos** acesso às condições ambientais e à comparação de deslocamentos. O modelo de negócio proposto é **B2G — Business to Government**.
 
-Essa realidade afeta especialmente:
+## 📌 Estado da entrega
 
-- Pessoas idosas e crianças;
-- Trabalhadores expostos ao sol;
-- Pedestres e usuários do transporte público;
-- Pessoas que precisam acessar escolas, hospitais e outros serviços essenciais.
+| Frente | Situação no repositório |
+| --- | --- |
+| Backend | Implementado em ASP.NET Core, com autenticação, serviços ambientais, análises e rotas |
+| Persistência | PostgreSQL, Entity Framework Core e migrations |
+| Testes | Suítes de validadores, casos de uso e API disponíveis |
+| Mobile | Base Expo/React Native criada; telas de negócio e integração ainda pendentes |
+| Serviços externos | Dependem das credenciais, configurações e dados disponíveis no ambiente |
+| Entrega acadêmica | Validação com usuários, evidências e vídeo pitch devem ser consolidados pela equipe |
 
-Além disso, municípios com recursos limitados enfrentam dificuldades para determinar quais regiões devem receber investimentos prioritários em infraestrutura verde.
+A implementação do backend não implica que todas as integrações externas estejam habilitadas ou que as funcionalidades já estejam disponíveis no aplicativo.
 
-**Como ajudar uma cidade a identificar onde intervenções contra o calor urbano podem beneficiar mais pessoas?**
+## ⚙️ Backend implementado
 
-Essa é a pergunta que o UrbanShade busca responder.
+| Módulo | Recursos |
+| --- | --- |
+| Autenticação | Cadastro, login, renovação de tokens, encerramento de sessão e gerenciamento de senha |
+| Organizações | Gestão de instituições, vínculos e fluxo de primeiro acesso |
+| Cidades e regiões | Cadastro, consultas e delimitação geográfica |
+| Sensores | Gestão de sensores, simulação de temperatura e umidade e histórico de leituras |
+| Meteorologia | Condições atuais, previsão e histórico com integração Open-Meteo |
+| Análise térmica | Indicadores por sensor e região, mapas, histórico, ranking e comparação |
+| Geoprocessamento | Integração com dados de satélite e áreas verdes, conforme configuração |
+| Rotas | Comparação de trajetos a pé com critérios ambientais |
+| Painel institucional | Consultas e indicadores para acompanhamento das regiões |
 
-## 💡 Nossa solução
+Os contratos completos, parâmetros e permissões estão nos [controladores da API](Backend/src/Backend/UrbanShade.API/Controllers) e no Swagger do ambiente de desenvolvimento.
 
-O UrbanShade propõe uma plataforma de monitoramento e apoio à decisão, dividida em três módulos principais.
+### Critérios ambientais
 
-### 🌡️ 1. Monitoramento ambiental
+A análise térmica regional combina condições térmicas, temperatura de superfície e vegetação, considerando validade, qualidade e procedência das fontes. Histórico não significa dado atual: resultados podem perder validade e deixar de ser elegíveis para recomendações.
 
-Coleta e processamento de informações climáticas provenientes de sensores IoT simulados e fontes meteorológicas externas.
+Os dados de sensores de demonstração são **simulados**. Integrações meteorológicas e geográficas dependem de seus provedores e configurações. Consulte a documentação técnica para as regras de cada análise.
 
-Funcionalidades planejadas:
+## 🏗️ Arquitetura e tecnologias
 
-- Monitoramento de temperatura e umidade;
-- Registro histórico de medições;
-- Identificação de condições térmicas desfavoráveis;
-- Geração automática de alertas;
-- Consulta de dados ambientais por localização.
-
-### 🗺️ 2. Mapeamento climático
-
-Visualização geográfica dos pontos monitorados, permitindo identificar regiões que necessitam de maior atenção.
-
-Funcionalidades planejadas:
-
-- Mapa interativo com pontos de monitoramento;
-- Indicadores ambientais por localização;
-- Identificação de áreas prioritárias;
-- Visualização de alertas;
-- Consulta do histórico de medições.
-
-As informações serão identificadas conforme sua origem: dados reais, estimativas ou simulações.
-
-### 🧠 3. Priorização inteligente
-
-Um mecanismo de análise multicritério destinado a apoiar decisões de planejamento urbano.
-
-O algoritmo considerará fatores como:
-
-- Indicadores de exposição ao calor;
-- Disponibilidade de arborização e sombreamento;
-- Circulação estimada de pessoas;
-- Proximidade de escolas, hospitais e pontos de transporte;
-- Vulnerabilidade dos grupos beneficiados.
-
-Com base nesses fatores, o sistema calculará um **índice de prioridade de intervenção**, permitindo comparar diferentes regiões e justificar as recomendações apresentadas.
-
-O objetivo não é substituir especialistas em planejamento urbano, mas fornecer informações para apoiar decisões mais transparentes e fundamentadas.
-
-## 👥 Público-alvo
-
-### Cliente principal
-
-**Prefeituras municipais**, especialmente por meio das Secretarias de Meio Ambiente, Urbanismo e Planejamento.
-
-A plataforma poderá apoiar a identificação de regiões prioritárias e o planejamento de investimentos em infraestrutura verde.
-
-### Usuários
-
-**Gestores públicos:** consultam informações ambientais, monitoram indicadores e avaliam prioridades de intervenção.
-
-**Cidadãos:** acompanham as condições ambientais dos locais monitorados e recebem informações e alertas relevantes.
-
-O modelo de negócio proposto é **B2G (Business to Government)**, com possibilidade futura de licenciamento para outras organizações.
-
-## ⚙️ Arquitetura
-
-O projeto seguirá uma arquitetura cliente-servidor, com separação de responsabilidades entre aplicativo, API, banco de dados e simuladores IoT.
+O backend é um monólito organizado em camadas, com separação entre API, casos de uso, domínio e infraestrutura.
 
 ```mermaid
-flowchart TD
-    A["Aplicativo Mobile"] --> B["API REST - ASP.NET Core"]
-    C["Simuladores IoT"] --> B
-    D["Dados Meteorológicos"] --> B
-    B --> E["Serviços e Regras de Negócio"]
-    E --> F[("Banco de Dados")]
-    E --> G["Motor de Priorização"]
-    G --> F
-    E --> H["Alertas Ambientais"]
-    H --> F
+flowchart LR
+    Mobile[Mobile · integração pendente] -.-> API[ASP.NET Core API]
+    API --> App[Application]
+    App --> Domain[Domain]
+    App --> Infra[Infraestructure]
+    Infra --> DB[(PostgreSQL)]
+    Infra --> Providers[Clima · Satélites · Rotas · Áreas verdes]
+    Workers[Simulação e atualizações periódicas] --> Infra
 ```
 
-### Tecnologias planejadas
+| Camada | Tecnologias |
+| --- | --- |
+| API | C# / ASP.NET Core / .NET 10 |
+| Persistência | PostgreSQL / Entity Framework Core |
+| Autenticação | JWT, refresh tokens e políticas de autorização |
+| Documentação | Swagger / OpenAPI |
+| Mobile | Expo 58 / React Native 0.88 / React 19.3 / TypeScript |
+| Navegação | Expo Router |
+| Integrações | Open-Meteo, Google Earth Engine, OpenStreetMap e OpenRouteService |
+| Testes | xUnit e Testcontainers nas suítes HTTP |
 
-| Camada | Tecnologia |
-|---|---|
-| Backend | C# / ASP.NET Core |
-| API | RESTful / JSON |
-| Banco de dados | PostgreSQL |
-| ORM | Entity Framework Core |
-| Frontend mobile | A definir conforme as tecnologias permitidas pela FIAP |
-| IoT | Sensores simulados com integração HTTP |
-| Integração meteorológica | Open-Meteo |
-| Autenticação | JWT e controle de acesso por perfis |
-| Documentação da API | Swagger / OpenAPI |
-| Testes | xUnit e testes de integração |
+### Organização do repositório
 
-*As tecnologias poderão ser ajustadas durante o desenvolvimento para atender ao conteúdo curricular exigido pela Global Solution.*
-
-## 🗄️ Modelagem de dados
-
-O modelo relacional inicial contempla as seguintes entidades:
-
-| Entidade | Responsabilidade |
-|---|---|
-| `Users` | Usuários, credenciais e perfis |
-| `Locations` | Locais geográficos monitorados |
-| `Sensors` | Sensores associados a cada local |
-| `SensorReadings` | Histórico de medições ambientais |
-| `Alerts` | Alertas gerados pelas medições |
-| `Interventions` | Propostas de intervenções urbanas |
-
-A modelagem deverá garantir integridade referencial, normalização e consistência das informações.
-
-## 📱 Aplicativo mobile
-
-O aplicativo será desenvolvido para oferecer acesso simplificado às informações do UrbanShade.
-
-### Telas planejadas
-
-1. **Login:** autenticação e acesso seguro.
-2. **Mapa ambiental:** visualização de locais monitorados e alertas.
-3. **Detalhes do local:** indicadores, histórico e informações ambientais.
-4. **Alertas:** consulta de ocorrências e condições desfavoráveis.
-5. **Gestão de locais:** funcionalidades administrativas para cadastro e manutenção.
-
-As telas consumirão a API REST, com tratamento de erros de conexão e feedback ao usuário.
-
-## 📡 Simulação de IoT
-
-O UrbanShade utilizará pelo menos dois sensores simulados:
-
-**Sensor de temperatura:** responsável pelo envio de medições em graus Celsius.
-
-**Sensor de umidade:** responsável pelo envio da umidade relativa do ar.
-
-Os simuladores enviarão informações para a API, permitindo reproduzir cenários ambientais e demonstrar o processamento das medições.
-
-### Exemplo de leitura
-
-```json
-{
-  "locationId": 1,
-  "sensorId": 2,
-  "type": "TEMPERATURE",
-  "value": 36.5,
-  "unit": "C",
-  "timestamp": "2026-11-10T14:30:00-03:00"
-}
+```text
+Projeto/
+├── Architeture/                # Materiais de arquitetura
+├── Backend/
+│   ├── src/Backend/            # API, Application, Domain e Infraestructure
+│   ├── src/Shared/             # Contratos de comunicação e exceções
+│   ├── src/Docs/               # Documentação técnica
+│   ├── tests/                  # Validadores, casos de uso e API
+│   └── UrbanShade.slnx         # Solução .NET
+├── Mobile/                    # Aplicativo Expo / React Native
+└── readme.md
 ```
 
-*Exemplo ilustrativo de payload. O contrato definitivo será documentado no Swagger.*
+O [domínio](Backend/src/Backend/UrbanShade.Domain/Entities) inclui usuários, sessões, organizações, cidades, regiões geográficas, sensores, leituras, análises térmicas, dados meteorológicos, análises de satélite e áreas verdes.
 
-### Fluxo esperado
+## 🚀 Como executar
 
-1. O sensor gera uma leitura.
-2. A API recebe e valida os dados.
-3. A medição é armazenada no banco.
-4. O sistema avalia as condições ambientais.
-5. Caso necessário, um alerta é registrado.
-6. O aplicativo disponibiliza as novas informações.
-7. O motor de priorização pode recalcular os indicadores dos locais afetados.
+### Backend
+
+Pré-requisitos: **SDK .NET 10**, PostgreSQL acessível e configurações locais do ambiente. Para as suítes que usam Testcontainers, é necessário um ambiente Docker compatível.
+
+1. Prepare o banco e consulte [`Backend/example.env`](Backend/example.env) e [`docker-compose.yaml`](Backend/docker-compose.yaml) para a configuração local.
+2. Forneça a conexão `ConnectionStrings__DbConnection` e a chave `Jwt__SigningKey` por configuração segura do ambiente.
+3. Configure as integrações habilitadas. O roteamento exige a configuração do OpenRouteService; as demais integrações também possuem opções próprias.
+4. Na raiz do repositório, execute:
+
+```bash
+dotnet restore Backend/UrbanShade.slnx
+dotnet run --project Backend/src/Backend/UrbanShade.API --launch-profile http
+```
+
+**API local:** `http://localhost:5289`
+
+**Swagger:** `http://localhost:5289/swagger`
+
+Em `Development` e `Tests`, o startup executa migrations e prepara sensores de demonstração. Nos demais ambientes, as migrations devem ser aplicadas previamente com uma identidade de implantação separada. Veja o [guia de segurança e execução](Backend/src/Docs/seguranca-e-execucao.md).
+
+### Mobile
+
+Com Node.js e npm compatíveis com as dependências instalados:
+
+```bash
+cd Mobile
+npm ci
+npm start
+```
+
+O projeto também oferece `npm run android`, `npm run ios` e `npm run web`. O simulador local de iOS requer macOS. A base atual ainda apresenta as telas iniciais do Expo; o cliente HTTP, a autenticação e as telas ambientais serão integrados à API na etapa mobile.
+
+### Testes
+
+Na raiz do repositório:
+
+```bash
+dotnet test Backend/UrbanShade.slnx
+```
+
+As suítes HTTP utilizam bancos descartáveis em Testcontainers. Serviços externos reais exigem ativação explícita. A existência das suítes não substitui o registro das evidências de execução para a entrega acadêmica.
 
 ## 🔐 Segurança
 
-A aplicação será projetada considerando boas práticas de segurança:
+O backend implementa autenticação JWT, controle de sessões com refresh tokens, autorização por políticas, validação de entradas e limites de requisições. O fluxo institucional inclui troca de senha no primeiro acesso.
 
-- Autenticação de usuários;
-- Armazenamento seguro de senhas com hash;
-- Autorização baseada em perfis;
-- Validação das entradas recebidas pela API;
-- Proteção contra SQL Injection e outras vulnerabilidades comuns;
-- Tratamento adequado de erros;
-- Proteção de informações pessoais.
+Credenciais e chaves devem ser configuradas fora do repositório. Consulte o [guia de segurança](Backend/src/Docs/seguranca-e-execucao.md) para contratos de autenticação, limitações e requisitos de banco em produção.
 
-Os perfis iniciais previstos são **Administrador** e **Cidadão**.
+## 📚 Documentação técnica
 
-## 🧪 Testes e qualidade
+- [Segurança e execução](Backend/src/Docs/seguranca-e-execucao.md)
+- [Instituições e primeiro acesso](Backend/src/Docs/fluxo-instituicoes-primeiro-acesso.md)
+- [Municípios e análise térmica](Backend/src/Docs/municipios-e-analise-termica.md)
+- [Regiões e consultas geoespaciais](Backend/src/Docs/regioes-e-consultas-geoespaciais.md)
+- [Integração com satélites](Backend/src/Docs/integracao-satelites.md)
+- [Áreas verdes e OpenStreetMap](Backend/src/Docs/areas-verdes-openstreetmap.md)
 
-O projeto contará com um plano de testes que contemple cenários positivos, negativos e situações excepcionais.
+## 🌎 Impacto esperado
 
-Entre os cenários previstos:
+O projeto se relaciona aos **ODS 3 — Saúde e Bem-Estar**, **11 — Cidades e Comunidades Sustentáveis** e **13 — Ação Contra a Mudança Global do Clima**, ao apoiar o acesso a informações ambientais e decisões de adaptação ao calor urbano.
 
-- Autenticação válida e inválida;
-- Tentativa de acesso sem autorização;
-- Cadastro e atualização de locais;
-- Recebimento de leituras de sensores;
-- Rejeição de medições inválidas;
-- Geração de alertas por ultrapassagem de limites;
-- Consulta ao histórico ambiental;
-- Cálculo do índice de priorização;
-- Tratamento de indisponibilidade da API.
+O impacto esperado é ampliar a visibilidade das condições locais e apoiar investimentos em infraestrutura verde. Reduções efetivas de temperatura dependem de intervenções físicas e medições posteriores.
 
-As evidências de execução serão documentadas conforme os requisitos da Global Solution.
+**Prazo de entrega acadêmica:** 19 de novembro de 2026, às 23h55.
 
-## 🌎 Objetivos de Desenvolvimento Sustentável
+## 🤖 Uso de inteligência artificial — declaração FIAP
 
-O UrbanShade está alinhado aos seguintes ODS da ONU:
+O **OpenAI Codex foi utilizado para suporte técnico, revisão de código e aumento da produtividade** durante o desenvolvimento do UrbanShade, conforme a exigência de transparência da FIAP.
 
-### ODS 3 — Saúde e Bem-Estar
-
-Contribuir para a conscientização sobre condições de exposição ao calor e apoiar medidas preventivas.
-
-### ODS 11 — Cidades e Comunidades Sustentáveis
-
-Oferecer informações para apoiar o planejamento de espaços urbanos mais inclusivos, sustentáveis e confortáveis.
-
-### ODS 13 — Ação Contra a Mudança Global do Clima
-
-Auxiliar estratégias locais de adaptação aos efeitos do calor urbano.
-
-## 📊 Impacto esperado
-
-O projeto pretende contribuir para:
-
-- Maior visibilidade das condições ambientais locais;
-- Identificação de áreas que necessitam de atenção;
-- Apoio à priorização de investimentos públicos;
-- Maior transparência nos critérios de planejamento urbano;
-- Ampliação do acesso da população às informações ambientais.
-
-Durante o MVP, serão avaliados indicadores como quantidade de pontos monitorados, alertas gerados, consistência do algoritmo e resultados da validação com usuários.
-
-**Importante:** reduções reais de temperatura ou melhorias de conforto térmico dependerão de intervenções físicas e medições posteriores. O MVP não pretende comprovar esses efeitos antecipadamente.
-
-## 🚀 Escopo da Global Solution
-
-O projeto seguirá os requisitos da Global Solution 2026/2 para Engenharia de Software:
-
-- [ ] Banco de dados relacional com diagrama ER, scripts SQL e consultas.
-- [ ] API RESTful em ASP.NET Core com arquitetura em camadas.
-- [ ] Endpoints funcionais e documentação Swagger.
-- [ ] Plano de testes e evidências de execução.
-- [ ] Aplicativo mobile com integração à API.
-- [ ] Autenticação, autorização e boas práticas de segurança.
-- [ ] Dois sensores IoT simulados.
-- [ ] Geração e visualização de alertas ambientais.
-- [ ] Motor de priorização de intervenções.
-- [ ] Validação com usuários potenciais.
-- [ ] Documentação técnica e instruções de execução.
-- [ ] Vídeo pitch de até três minutos.
-
-**Prazo de entrega:** 19 de novembro de 2026, às 23h55.
-
-## 🛠️ Como executar
-
-As instruções de instalação e execução serão adicionadas à medida que os módulos forem implementados.
-
-O README definitivo incluirá:
-
-1. Pré-requisitos de ambiente;
-2. Configuração do banco de dados;
-3. Variáveis de ambiente necessárias;
-4. Execução das migrations e carga inicial;
-5. Inicialização da API;
-6. Inicialização do aplicativo mobile;
-7. Execução dos simuladores IoT;
-8. Comandos para execução dos testes.
-
-As configurações sensíveis deverão ser fornecidas por variáveis de ambiente. Credenciais reais não serão disponibilizadas no repositório.
-
-## 📌 Status do projeto
-
-**Em desenvolvimento — Global Solution 2026/2**
-
-Este repositório acompanhará a implementação da solução, suas decisões arquiteturais, testes e documentação.
-
-## 🤖 Uso de inteligência artificial generativa
-
-Ferramentas de IA generativa poderão ser utilizadas como apoio à pesquisa, estruturação de documentação, revisão de código e esclarecimento de conceitos técnicos.
-
-Todo conteúdo incorporado ao projeto deverá ser revisado, compreendido e validado pela equipe.
-
-As ferramentas efetivamente utilizadas e suas finalidades serão documentadas antes da entrega final, conforme o regulamento da FIAP.
+A ferramenta apoiou a compreensão e organização do código, a identificação de possíveis melhorias e a elaboração e revisão da documentação. As decisões técnicas, a validação das sugestões e a responsabilidade pela entrega final permanecem com os integrantes do projeto.
 
 ## 👨‍💻 Equipe
 
