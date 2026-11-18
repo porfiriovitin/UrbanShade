@@ -1,0 +1,9 @@
+<!-- Material Icons outlined/LocationOn. Copyright 2025 The Android Open Source Project. Apache License 2.0. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path android:fillColor="#FF000000" android:pathData="M12.0,2.0 C8.13,2.0,5.0,5.13,5.0,9.0 c0.0,5.25,7.0,13.0,7.0,13.0 s7.0,-7.75,7.0,-13.0 c0.0,-3.87,-3.13,-7.0,-7.0,-7.0 Z M7.0,9.0 c0.0,-2.76,2.24,-5.0,5.0,-5.0 s5.0,2.24,5.0,5.0 c0.0,2.88,-2.88,7.19,-5.0,9.88 C9.92,16.21,7.0,11.85,7.0,9.0 Z" />
+    <path android:fillColor="#FF000000" android:pathData="M12.0,9.0 m-2.5,0.0 a2.5,2.5,0.0,1,1,5.0,0.0 a2.5,2.5,0.0,1,1,-5.0,0.0" />
+</vector>

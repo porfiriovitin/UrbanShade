@@ -1,0 +1,16 @@
+<resources>
+    <string name="navigation_home">Início</string>
+    <string name="admin_home_brand">UrbanShade • Admin</string>
+    <string name="admin_home_title">Visão Geral</string>
+    <string name="admin_home_subtitle">São José dos Campos</string>
+    <string name="admin_home_active_sensors">Sensores ativos</string>
+    <string name="admin_home_alert_count">Alertas no período</string>
+    <string name="admin_home_average_temperature">Temperatura média</string>
+    <string name="admin_home_average_cover">Cobertura arbórea</string>
+    <string name="admin_home_chart">Temperatura média por horário</string>
+    <string name="admin_home_chart_description">Temperatura média dos locais monitorados. %1$s</string>
+    <string name="admin_home_telemetry">Telemetria de sensores</string>
+    <string name="admin_home_all_sensors">Ver todos</string>
+    <string name="admin_home_local_reading">Leitura do local às %1$s\n%2$s · %3$d%% umidade</string>
+    <string name="admin_home_featured_alert">Alertas em destaque</string>
+</resources>
